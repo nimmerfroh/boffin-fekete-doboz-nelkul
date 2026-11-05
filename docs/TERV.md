@@ -41,7 +41,7 @@ Minden kísérletre igaz:
 
 ### F) Fény és hang továbbítása
 - ✅ Fénytávíró (két rács: gyors villogó → üvegszál → fototranzisztor → hangszóró)
-- Mikrofon-erősítő → a G fejezetbe került (az U4 erősítő IC párja)
+- ✅ Hangosbemondó (két tranzisztoros mikrofon-erősítő, az U4 párja)
 - ✅ Hangra villogó LED (fújás gomb vagy a tablet mikrofonja)
 
 ### G) A fekete dobozok kinyitása
@@ -51,13 +51,13 @@ Menet: megépítjük egyszerű alkatrészekből → megértjük → mellé tessz
 |---|---|---|
 | ✅ U23 stroboszkóp (Light) | villogó | teljesen |
 | ✅ U2 riasztó (300) | sziréna | teljesen |
-| U4 erősítő (300) | mikrofon-erősítő | teljesen, gyengébb hangerővel |
-| U22 fényorgona (Light) | hangra villogó LED | jórészt |
-| U24 infravevő (Light) | fénytávíró látható fénnyel | jórészt |
-| U3 űrháború (300) | két rezgőkör keverése | részben |
-| ✅ U1 zene (U32 dallam még nincs) | hangszer + emlékező lámpa + késleltetés | elv |
+| ✅ U4 erősítő (300) | hangosbemondó | teljesen, gyengébb hangerővel |
+| ✅ U22 fényorgona (Light) | hangra villogó LED + emlékező lámpa | jórészt |
+| ✅ U24 infravevő (Light) | fénytávíró látható fénnyel | jórészt |
+| ✅ U3 űrháború (300) | sziréna + villogó + emlékező lámpa | részben |
+| ✅ U1 zene és ✅ U32 dallam | hangszer + emlékező lámpa + késleltetés | elv |
 | U5 rádió (300) | középhullámú rádió | bizonytalan, haladó |
-| D8 színes LED | több LED + villogó | elv |
+| ✅ D8 színes LED | villogó | elv |
 
 ## App
 - Fejezetes navigáció, haladásjelző, „kinyitott IC” jelvények.
@@ -73,7 +73,8 @@ Menet: megépítjük egyszerű alkatrészekből → megértjük → mellé tessz
 Minden fázis végén: tesztek, böngészős ellenőrzés, commit, push, a GitHub Pages frissül.
 
 ## Még hátravan
-- U4 erősítő IC és a diszkrét mikrofon-erősítő (hangosbemondó)
-- U22 fényorgona, U24 infravevő, U3 űrháború, U5 rádió (G fejezet folytatása)
+- ✅ U4 erősítő IC és a hangosbemondó
+- ✅ U22 fényorgona, U24 infravevő, U3 űrháború, U32 dallam, D8 színes LED
+- U5 rádió (középhullám, a Kossuth Rádió 540 kHz-en)
 - ✅ Offline működés (telepíthető webapp)
 - A valódi készleten szerzett tapasztalatok alapján a szimuláció finomítása

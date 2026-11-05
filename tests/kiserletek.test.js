@@ -294,3 +294,49 @@ test('puki: minden felvétel megvan, és a forrásuk fel van tüntetve', () => {
   const src = fs.readFileSync(path.join(dir, 'FORRASOK.md'), 'utf8');
   for (const f of files) { assert.ok(src.includes('| ' + f + ' |'), f + ' forrása'); assert.ok(fs.statSync(path.join(dir, f)).size > 2000); }
 });
+
+// ---- 4. fázis: mikrofon-erősítő és a többi IC ----
+function micSwing(lay, amp) {
+  const s = new E.Sim(lay); s.switches.S1 = true; s.mic.X1 = 0.05; run(s, 2, 0.002);
+  const i0 = s.cur.SP; let mx = -1, mn = 1; const dt = 1 / 48000;
+  for (let i = 0; i < 4800; i++) { s.mic.X1 = 0.05 + amp * Math.sin(2 * Math.PI * 300 * i * dt); s.step(dt); if (i > 1000) { mx = Math.max(mx, s.cur.SP); mn = Math.min(mn, s.cur.SP); } }
+  return { i0, pp: mx - mn };
+}
+test('hangosbemondó: a munkapont β-tól függetlenül kb. 14 mA, és a mikrofon jele felerősítve a hangszóróban', () => {
+  for (const bf of [80, 150, 300]) withBeta(bf, () => {
+    const { i0, pp } = micSwing(L.amp, 0.01);
+    assert.ok(i0 > 0.011 && i0 < 0.018, `β=${bf}: nyugalmi áram ${i0}`);
+    assert.ok(pp > 0.008, `β=${bf}: jel ${pp}`);
+  });
+});
+test('U4 erősítő: ugyanarra a mikrofonjelre sokkal nagyobb kitérés, mint a hangosbemondóé', () => {
+  const a = micSwing(L.amp, 0.01).pp, b = micSwing(L.ic_u4, 0.01).pp;
+  assert.ok(b > 5 * a, `U4 ${b}, hangosbemondó ${a}`);
+});
+test('U3 űrháború: az S2 minden nyomása a következő hangra léptet, nyolc után körbeér', () => {
+  const s = new E.Sim(L.ic_u3); s.switches.S1 = true; run(s, 0.1, 0.002);
+  const modes = [s.ic.U3.mode];
+  for (let k = 0; k < 8; k++) { s.switches.S2 = true; run(s, 0.05, 0.002); s.switches.S2 = false; run(s, 0.1, 0.002); modes.push(s.ic.U3.mode); }
+  assert.deepEqual(modes, [0, 1, 2, 3, 4, 5, 6, 7, 0]);
+  assert.ok(Math.abs(s.cur.SP) > 0.05, 'szól a hangszóró');
+});
+test('U22 fényorgona: minden fújásra másik szín, folyamatos fújásra csak egyet lép', () => {
+  const s = new E.Sim(L.ic_u22); s.switches.S1 = true; run(s, 0.2, 0.002);
+  const seen = [];
+  for (let k = 0; k < 3; k++) { s.mic.X1 = 1; run(s, 0.15, 0.002); s.mic.X1 = 0; run(s, 0.15, 0.002); seen.push(s.ic.U22.rgb.join('')); }
+  assert.equal(new Set(seen).size, 3, seen.join(' '));
+  const c = s.ic.U22.count; s.mic.X1 = 1; run(s, 1, 0.002); assert.equal(s.ic.U22.count, (c + 1) % 7);
+});
+test('U24 infravevő: a LED csak a távirányító jelére ég', () => {
+  const s = new E.Sim(L.ic_u24); s.switches.S1 = true; run(s, 0.1, 0.002);
+  assert.ok(Math.abs(s.cur.D1) < 1e-5);
+  s.ic.U24.remote = true; let sum = 0; for (let i = 0; i < 250; i++) { s.step(0.002); sum += s.cur.D1; }
+  assert.ok(sum / 250 > 0.003, 'átlag ' + sum / 250);
+});
+test('D8 és U32: a színes LED és a dallam IC áramot vesz fel; a dallam IC árama hangonként változik', () => {
+  let s = new E.Sim(L.ic_d8); s.switches.S1 = true; run(s, 0.05, 0.002);
+  assert.ok(s.cur.D8 > 0.004 && s.cur.D8 < 0.02, 'D8 ' + s.cur.D8);
+  s = new E.Sim(L.ic_u32, { meter: { M6: '50mA' } }); s.switches.S1 = true; let mx = 0, mn = 1;
+  for (let i = 0; i < 1500; i++) { s.step(0.002); const v = s.meterReading('M6').value; mx = Math.max(mx, v); mn = Math.min(mn, v); }
+  assert.ok(mx > 0.008 && mn < 0.003, `U32 mérő ${mn}–${mx}`);
+});

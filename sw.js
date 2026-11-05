@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Offline működés: az oldal, az ikonok és a betűtípusok a gyorsítótárba kerülnek.
 // A VERSION-t a build szkript tölti ki az oldal tartalmából, így új kiadásnál a régi gyorsítótár törlődik.
-const VERSION = 'f321bea58e5c';
+const VERSION = '20225802f591';
 const CACHE = 'fdn-' + VERSION;
 // a hangfájlok külön, verziótól független tárba kerülnek (nem töltődnek le újra minden kiadásnál)
 const SOUNDS = 'fdn-hangok-1';

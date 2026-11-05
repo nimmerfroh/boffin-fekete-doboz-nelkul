@@ -323,6 +323,14 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
     U1: { kind: 'ic', ic: 'music', pins: ['TRG', 'P', 'HLD', 'N', 'OUT'], name: 'Zene IC', short: 'U1' },
     U2: { kind: 'ic', ic: 'alarm', pins: ['IN1', 'IN2', 'IN3', 'N', 'OUT'], name: 'Riasztó IC', short: 'U2' },
     U23: { kind: 'ic', ic: 'strobe', pins: ['CTL', 'P', 'NC', 'N', 'OUT'], name: 'Stroboszkóp IC', short: 'U23' },
+    // pos: a lábak helye a modul bal felső sarkához képest [sor, oszlop]; body: a snap nélküli, takart pontok
+    U3: { kind: 'ic', ic: 'war', pins: ['P', 'OUT', 'IN1', 'N', 'IN2'], pos: [[0, 0], [0, 2], [1, 0], [1, 1], [1, 2]], body: [[0, 1]], name: 'Űrháború IC', short: 'U3' },
+    U4: { kind: 'ic', ic: 'amp', pins: ['N', 'INP', 'FIL', 'OUT', 'P'], name: 'Erősítő IC', short: 'U4' },
+    U22: { kind: 'ic', ic: 'organ', pins: ['R', 'G', 'B', 'P', 'N', 'FB', 'INP'], pos: [[0, 0], [0, 1], [0, 2], [1, 2], [2, 0], [2, 1], [2, 2]], body: [[1, 0], [1, 1]], name: 'Fényorgona', short: 'U22' },
+    U24: { kind: 'ic', ic: 'ir', pins: ['P', 'OUT', 'N'], pos: [[0, 0], [1, 1], [2, 0]], body: [[1, 0]], name: 'Infravevő', short: 'U24' },
+    U32: { kind: 'ic', ic: 'melody', pins: ['P', 'N'], pos: [[0, 0], [0, 2]], body: [[0, 1]], name: 'Dallam IC', short: 'U32' },
+    // színes LED: piros, zöld és kék LED egy tokban, egy kis vezérlőáramkörrel, beépített áramkorlátozó ellenállással
+    D8: { kind: 'led', color: 'rgb', Is: 2.3e-20, n: 2, Rs: 100, name: 'Színes LED', short: 'D8' },
     FC: { kind: 'fiber', name: 'Üvegszálas kábel (két tartóval)', short: 'FC' },
   };
 
@@ -337,9 +345,9 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
 
   // Melyik dobozban hány darab van (a hivatalos alkatrészlisták alapján).
   const KITS = {
-    '300': { name: 'Boffin I 300', parts: { J1: 1, J2: 1, W1: 6, W2: 9, W3: 4, W4: 2, W5: 1, W6: 1, W7: 1, B1: 2, S1: 1, S2: 1, R1: 1, R2: 1, R3: 1, R4: 1, R5: 1, RV: 1, D1: 1, D2: 1, C1: 1, C2: 1, C3: 1, C4: 1, C5: 1, Q1: 1, Q2: 1, Q4: 1, L1: 1, L2: 1, SP: 1, M1: 1, X1: 1, U1: 1, U2: 1 } },
-    light: { name: 'Boffin II Light', parts: { J1: 1, J2: 1, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, B1: 2, S1: 1, S2: 1, R1: 1, R3: 1, R5: 1, RV: 1, D1: 1, C2: 1, C4: 1, Q1: 1, Q2: 1, Q4: 1, SP: 1, M1: 1, X1: 1, FC: 1, U23: 1 } },
-    home: { name: 'Boffin II My Home', parts: { J1: 1, J2: 1, J4: 2, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, S1: 1, S2: 1, R3: 1, C5: 1, Q2: 1, Q4: 1, M4: 1, M6: 1 } },
+    '300': { name: 'Boffin I 300', parts: { J1: 1, J2: 1, W1: 6, W2: 9, W3: 4, W4: 2, W5: 1, W6: 1, W7: 1, B1: 2, S1: 1, S2: 1, R1: 1, R2: 1, R3: 1, R4: 1, R5: 1, RV: 1, D1: 1, D2: 1, C1: 1, C2: 1, C3: 1, C4: 1, C5: 1, Q1: 1, Q2: 1, Q4: 1, L1: 1, L2: 1, SP: 1, M1: 1, X1: 1, U1: 1, U2: 1, U3: 1, U4: 1 } },
+    light: { name: 'Boffin II Light', parts: { J1: 1, J2: 1, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, B1: 2, S1: 1, S2: 1, R1: 1, R3: 1, R5: 1, RV: 1, D1: 1, C2: 1, C4: 1, Q1: 1, Q2: 1, Q4: 1, SP: 1, M1: 1, X1: 1, FC: 1, U23: 1, U22: 1, U24: 1, D8: 1 } },
+    home: { name: 'Boffin II My Home', parts: { J1: 1, J2: 1, J4: 2, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, S1: 1, S2: 1, R3: 1, C5: 1, Q2: 1, Q4: 1, M4: 1, M6: 1, U32: 1, D8: 1 } },
   };
 
   function postKey(r, c) { return r + ',' + c; }
@@ -368,9 +376,12 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
       for (let i = 0; i < def.n; i++) snaps.push({ r: r0 + dr * i, c: c0 + dc * i, term: 'w' + i });
     } else if (def.kind === 'ic') {
       // 3 × 2-es modul: felső sor 3 lába, alsó sor két szélső lába; a középső alsó pont a test
-      const pos = [[0, 0], [0, 1], [0, 2], [1, 0], [1, 2]];
-      def.pins.forEach((t, i) => snaps.push({ r: r0 + pos[i][0], c: c0 + pos[i][1], term: t }));
-      body.push({ r: r0 + 1, c: c0 + 1 });
+      // a modul elforgatható: 'r' = alaphelyzet, 'd' = 90°-kal jobbra, 'l' = 180°, 'u' = 90°-kal balra
+      const pos0 = def.pos || [[0, 0], [0, 1], [0, 2], [1, 0], [1, 2]], body0 = def.body || [[1, 1]];
+      const all = pos0.concat(body0); const mr = Math.max(...all.map((q) => q[0])), mc = Math.max(...all.map((q) => q[1]));
+      const rot = ([r, c]) => (pl.dir === 'd' ? [c, mr - r] : pl.dir === 'l' ? [mr - r, mc - c] : pl.dir === 'u' ? [mc - c, r] : [r, c]);
+      def.pins.forEach((t, i) => { const [r, c] = rot(pos0[i]); snaps.push({ r: r0 + r, c: c0 + c, term: t }); });
+      for (const q of body0) { const [r, c] = rot(q); body.push({ r: r0 + r, c: c0 + c }); }
     } else if (def.kind === 'pot') {
       // két vége 2 egységre, a csúszka középen, a haladási irányhoz képest balra (lefelé haladva jobbra)
       const pr = -dc, pc = dr;
@@ -545,7 +556,7 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
       if (e.def.kind === 'meter') this.meter[e.id] = (opts.meter && opts.meter[e.id]) || '50mA';
       if (e.def.kind === 'motor') this.motor[e.id] = { w: 0, hand: 0 };
       if (e.def.kind === 'mic') this.mic[e.id] = 0;
-      if (e.def.kind === 'ic') this.ic[e.id] = { phase: 0, t: 0, f: 0, on: false, active: false, gOut: 1e-9, play: 0, note: 0, prevTrg: false, mode: 0 };
+      if (e.def.kind === 'ic') this.ic[e.id] = { phase: 0, t: 0, f: 0, on: false, active: false, gOut: 1e-9, play: 0, note: 0, prevTrg: false, mode: 0, vt: 0, avg: null, inHi: false, count: 0, rgb: [0, 0, 0], fbV: 0, remote: false, gP: 1e-9, lo1: false, lo2: false };
       if (e.def.kind === 'obj') this.obj[e.id] = (opts.obj && opts.obj[e.id] != null) ? opts.obj[e.id] : 1e12;
     }
   }
@@ -558,11 +569,36 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
     return ((h % 2001) / 1000 - 1) * 0.01;
   }
   // IC-modulok belső terhelései (láb → (−)) és a viselkedési modell
+  // [láb, ellenállás, másik láb (alapból a (−))]
   const IC_LOADS = {
     strobe: [['P', 30000], ['CTL', 10000]],
     alarm: [['IN1', 20000], ['IN2', 20000], ['IN3', 20000]],
     music: [['P', 30000], ['HLD', 100000], ['TRG', 100000]],
+    war: [['P', 30000], ['IN1', 100000, 'P'], ['IN2', 100000, 'P']],   // a bemenetek belül a (+)-ra húzva
+    amp: [['P', 600], ['FIL', 100, 'P'], ['INP', 50000]],              // FIL: szűrt táp a (+)-ról
+    organ: [['P', 1500], ['R', 1e6], ['G', 1e6], ['B', 1e6], ['INP', 1e6]],
+    ir: [['P', 3000]],
+    melody: [],
   };
+  // saját dallam a dallam IC (U32) modelljéhez
+  const TUNE2 = [[392, .25], [392, .25], [440, .5], [392, .5], [523, .5], [494, 1], [392, .25], [392, .25], [440, .5], [392, .5], [587, .5], [523, 1], [0, .5]];
+  const TUNE2_LEN = TUNE2.reduce((a, n) => a + n[1], 0);
+  // a fényorgona színsora: [piros, zöld, kék]
+  const ORGAN_COLORS = [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [0, 1, 1], [1, 0, 1], [1, 1, 1]];
+  // az űrháború IC nyolc hangja (saját közelítés)
+  function warTone(mode, t) {
+    const fr = (x) => x - Math.floor(x);
+    switch (mode) {
+      case 0: return 2200 - 1800 * fr(t * 6);                         // lézer: gyors lefelé söprés
+      case 1: return fr(t * 12) < 0.5 ? 700 : 0;                       // gépágyú
+      case 2: return 600 + 400 * Math.sin(2 * Math.PI * 7 * t);        // ufó: remegő hang
+      case 3: return 300 + 1500 * fr(t * 1.5);                         // rakéta: lassan emelkedik
+      case 4: return fr(t * 4) < 0.5 ? 1500 - 2000 * fr(t * 8) : 0;    // két lövés egymás után
+      case 5: return 180 + 120 * fr(t * 25);                           // motorzúgás
+      case 6: return fr(t * 3) < 0.5 ? 1200 : 900;                     // vészjelzés
+      default: return 400 + 2400 * Math.abs(Math.sin(2 * Math.PI * 0.8 * t)); // csillagkapu
+    }
+  }
   // saját dallam a zene IC modelljéhez (a valódi U1 dallamát nem ismerjük): [frekvencia Hz, hossz s]
   const TUNE = [[523, .3], [659, .3], [784, .3], [659, .3], [698, .3], [880, .6], [784, .3], [698, .3], [659, .3], [587, .3], [523, .6], [0, .2],
     [587, .3], [698, .3], [880, .3], [698, .3], [659, .3], [784, .6], [698, .3], [659, .3], [587, .3], [494, .3], [523, .6], [0, .4]];
@@ -610,12 +646,61 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
       st.on = st.active && st.f > 0 && x < TUNE[k][1] * 0.85;
       st.gOut = st.on ? 0.5 / 6 : 1e-9;
     }
+    else if (d.ic === 'war') {
+      st.active = v('P') > 2;
+      const lo1 = v('IN1') < 0.8, lo2 = v('IN2') < 0.8;   // a bemenetet a (−)-ra kötve lép a következő hangra
+      if (st.active && ((lo1 && !st.lo1) || (lo2 && !st.lo2))) { st.mode = (st.mode + 1) % 8; st.t = 0; }
+      st.lo1 = lo1; st.lo2 = lo2;
+      st.f = st.active ? warTone(st.mode, st.t) : 0;
+      st.on = st.active && st.f > 0;
+      st.gOut = st.on ? 0.5 / 6 : 1e-9;
+    } else if (d.ic === 'amp') {
+      // teljesítményerősítő: a bemenet változását (a lassú átlagához képest) 20-szorosára erősíti;
+      // a kimenet belül kondenzátoron át csatolt, a kitérés a tápfeszültség felénél korlátos
+      const vp = v('P'); st.active = vp > 2;
+      const vin = v('INP'); if (st.avg == null) st.avg = vin;
+      if (!this.freezeCaps) st.avg += (vin - st.avg) * Math.min(1, dt / 0.02);
+      const vmax = Math.max(0.05, vp / 2 - 0.3);
+      st.vt = st.active ? vmax * Math.tanh(20 * (vin - st.avg) / vmax) : 0;
+    } else if (d.ic === 'organ') {
+      const vp = v('P'); st.active = vp > 2.5;
+      const vi = v('INP');
+      const hi = st.inHi ? vi > 0.45 * vp : vi > 0.55 * vp;   // Schmitt-trigger a bemeneten
+      if (st.active && hi && !st.inHi) st.count = (st.count + 1) % ORGAN_COLORS.length;
+      st.inHi = hi; st.fbV = st.active && !hi ? vp : 0;     // FB: a bemenet fordítottja
+      const force = ['R', 'G', 'B'].map((k) => (v(k) > 1.2 ? 1 : 0));
+      st.rgb = !st.active ? [0, 0, 0] : force.some((x) => x) ? force : ORGAN_COLORS[st.count];
+      st.on = st.active;
+    } else if (d.ic === 'ir') {
+      st.active = v('P') > 2.5;
+      // a távirányító kódolt villanássorozatot küld; a vevő kimenete ennek ütemében a (−)-ra kapcsol
+      const ph = (st.t * 20) % 1;
+      st.on = st.active && st.remote && ph < 0.7;
+      st.gOut = st.on ? 1 / 100 : 1e-9;
+    } else if (d.ic === 'melody') {
+      st.active = v('P') > 2;
+      let x = st.t % TUNE2_LEN, k = 0; while (k < TUNE2.length - 1 && x >= TUNE2[k][1]) { x -= TUNE2[k][1]; k++; }
+      st.note = k; st.f = st.active ? TUNE2[k][0] : 0;
+      st.on = st.active && st.f > 0 && x < TUNE2[k][1] * 0.85;
+      st.gP = st.active ? (st.on ? 1 / 250 : 1 / 2000) : 1e-9;   // a beépített hangszóró árama hangonként
+    }
     // lábáramok (a kijelzéshez): a csomópontból az IC-be folyó áram
     const cur = {}; let sumN = 0;
-    for (const [pin, R] of IC_LOADS[d.ic]) { const i = t[pin] >= 0 ? v(pin) / R : 0; cur[pin] = i; sumN += i; }
-    const io = t.OUT >= 0 ? v('OUT') * st.gOut : 0; cur.OUT = io; cur.N = -(sumN + io);
+    const vpin = (pin) => (t[pin] >= 0 ? this.nodeV(t[pin]) : 0);
+    for (const [pin, R, to] of IC_LOADS[d.ic]) {
+      const o = to || 'N'; if (t[pin] < 0 || t[o] < 0) continue;
+      const i = (vpin(pin) - vpin(o)) / R; cur[pin] = (cur[pin] || 0) + i; if (o === 'N') sumN += i; else cur[o] = (cur[o] || 0) - i;
+    }
+    let io = 0;
+    if (d.ic === 'amp') io = t.OUT >= 0 ? (v('OUT') - st.vt) / AMP_ROUT : 0;
+    else if (t.OUT >= 0) io = v('OUT') * st.gOut;
+    cur.OUT = io;
+    if (d.ic === 'organ' && t.FB >= 0) { cur.FB = (v('FB') - st.fbV) / 47000; sumN += cur.FB; }
+    if (d.ic === 'melody' && t.P >= 0) { cur.P = v('P') * st.gP; sumN += cur.P; }
+    cur.N = -(sumN + io);
     this.cur[e.id] = cur;
   };
+  const AMP_ROUT = 0.5;
   function potR(d, p) { p = Math.max(0, Math.min(1, p)); return { ra: Math.max(1, d.R * p), rb: Math.max(1, d.R * (1 - p)) }; }
 
   // A motor tengelyének mozgása (explicit Euler, a lépés végén). Kézi pörgetésnél a sebességet a kéz adja.
@@ -700,8 +785,14 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
       }
       if (d.kind === 'ic') {
         const st = this.ic[e.id];
-        for (const [pin, R] of IC_LOADS[d.ic]) if (t[pin] >= 0 && t.N >= 0) stampG(I(t[pin]), I(t.N), 1 / R);
-        if (t.OUT >= 0 && t.N >= 0) stampG(I(t.OUT), I(t.N), st.gOut);
+        for (const [pin, R, to] of IC_LOADS[d.ic]) { const o = to || 'N'; if (t[pin] >= 0 && t[o] >= 0) stampG(I(t[pin]), I(t[o]), 1 / R); }
+        if (t.N < 0) continue;
+        if (d.ic === 'amp') {
+          // a kimenet feszültségforrás kis belső ellenállással (az előző lépés bemenetéből számolva)
+          if (t.OUT >= 0) { const g = 1 / AMP_ROUT; stampG(I(t.OUT), I(t.N), g); stampI(I(t.OUT), I(t.N), -st.vt * g); }
+        } else if (t.OUT >= 0) stampG(I(t.OUT), I(t.N), st.gOut);
+        if (d.ic === 'organ' && t.FB >= 0) { const g = 1 / 47000; stampG(I(t.FB), I(t.N), g); stampI(I(t.FB), I(t.N), -st.fbV * g); }
+        if (d.ic === 'melody' && t.P >= 0) stampG(I(t.P), I(t.N), st.gP);
         continue;
       }
       if (d.kind === 'pot') {
@@ -826,7 +917,7 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
         case 'motor': i = (u - MOTOR.Ke * this.motor[e.id].w) / MOTOR.Rm; this._motorStep(e.id, i, dt); break;
         case 'sw': i = u * (this.switches[e.id] ? 20 : 1e-10); break;
         case 'bat': i = (u - d.V) / d.Rint; break;
-        case 'cap': i = d.C / dt * (u - this.capV[e.id]); this.capV[e.id] = u; break;
+        case 'cap': i = d.C / dt * (u - this.capV[e.id]); if (!this.freezeCaps) this.capV[e.id] = u; break;
         case 'led': i = d.Is * (safeExp(u / (d.n * VT)) - 1); break;
         case 'photo': { const Iph = 1e-7 + 4e-3 * Math.pow(Math.max(0, Math.min(1, this.photoLight(e.id))), 1.6); i = (u >= 0 ? Iph * (1 - Math.exp(-u / 0.12)) : Iph * u / 0.12) + 1e-9 * u; break; }
       }
@@ -1305,6 +1396,107 @@ L.ic_u2 = icFrame.concat([
 
 // U1 zene: ugyanaz a keret; a (+) láb középen van, ugyanúgy a felső sínre kötve.
 L.ic_u1 = L.ic_u2.map((p) => (p.p === 'U2' ? { ...p, p: 'U1' } : p)).concat([{ p: 'S2', at: 'A3', dir: 'd' }]);  // S2: újraindítás (TRG)
+
+// ---- 4. fázis: mikrofon-erősítő és a többi IC ----
+
+// Mikrofon-erősítő (hangosbemondó): a mikrofon jele a C3-on át egy Darlington-párra (Q2a + Q2b) jut;
+// a munkapontot az R5 állítja be a kimenetről visszacsatolva, így a tranzisztorok erősítésétől alig függ.
+L.amp = [
+  { p: 'S1', at: 'A9', dir: 'd' },
+  { p: 'B1', at: 'E9', dir: 'd' },
+  { p: 'R2', at: 'A4', dir: 'l' },
+  { p: 'X1', at: 'G2', dir: 'r' },
+  { p: 'C3', at: 'C2', dir: 'r' },
+  { p: 'R5', at: 'B6', dir: 'l' },
+  { p: 'Q2', at: 'C5', dir: 'd', id: 'Q2a' },
+  { p: 'Q2', at: 'E6', dir: 'd', id: 'Q2b' },
+  { p: 'SP', at: 'A8', dir: 'd' },
+  { p: 'R1', at: 'D8', dir: 'l' },
+  { p: 'W6', at: 'A4', dir: 'r', id: 'Wp' },
+  { p: 'W3', at: 'C9', dir: 'd', id: 'Ws' },
+  { p: 'W6', at: 'G4', dir: 'r', id: 'Wn' },
+  { p: 'W7', at: 'A2', dir: 'd', id: 'Wm' },
+  { p: 'W3', at: 'B4', dir: 'd', id: 'Wb' },
+  { p: 'W4', at: 'B6', dir: 'd', id: 'Wo' },
+  { p: 'W2', at: 'E5', dir: 'd', id: 'We' },
+  { p: 'W2', at: 'C8', dir: 'd', id: 'Wx' },
+  { p: 'J1', at: 'B6', to: 'C5' },
+];
+
+// IC-keret: (+) sín az A sorban, (−) sín az F sorban, kapcsoló és elem a 8. oszlopban
+const icFrame2 = [
+  { p: 'W6', at: 'A3', dir: 'r', id: 'Wp' },
+  { p: 'W6', at: 'F3', dir: 'r', id: 'Wn' },
+  { p: 'W2', at: 'C8', dir: 'd', id: 'Ws' },
+];
+const icBat = [{ p: 'S1', at: 'A8', dir: 'd' }, { p: 'B1', at: 'D8', dir: 'd' }];
+
+// U4 erősítő IC (elforgatva): a mikrofont az R2 a szűrt tápról (FIL) táplálja, a hangszóró az OUT és a (−) között.
+// Itt a (−) sín van alul hosszabban, a 2. oszlopig.
+L.ic_u4 = [
+  { p: 'W6', at: 'A3', dir: 'r', id: 'Wp' },
+  { p: 'W7', at: 'F2', dir: 'r', id: 'Wn' },
+  { p: 'W2', at: 'C8', dir: 'd', id: 'Ws' },
+  { p: 'W3', at: 'B2', dir: 'd', id: 'Wi' },
+  { p: 'U4', at: 'B4', dir: 'u' },
+  { p: 'W2', at: 'A5', dir: 'd', id: 'Lp' },
+  { p: 'W3', at: 'D4', dir: 'd', id: 'Ln' },
+  { p: 'SP', at: 'D5', dir: 'd' },
+  { p: 'R2', at: 'B4', dir: 'l' },
+  { p: 'W3', at: 'C2', dir: 'r', id: 'Lin' },
+  { p: 'X1', at: 'D2', dir: 'd' },
+].concat(icBat);
+
+// U3 űrháború IC: hangszóró az OUT és a (+) között, az S2 az IN1-et a (−)-ra köti (következő hang).
+L.ic_u3 = icFrame2.concat([
+  { p: 'U3', at: 'C4' },
+  { p: 'W3', at: 'A4', dir: 'd', id: 'Lp' },
+  { p: 'SP', at: 'C6', dir: 'u' },
+  { p: 'W3', at: 'D5', dir: 'd', id: 'Ln' },
+  { p: 'S2', at: 'D4', dir: 'd' },
+], icBat);
+
+// U24 infravevő: a LED a (+) és a kimenet között (a modul kimenete belül korlátozza az áramot).
+L.ic_u24 = icFrame2.concat([
+  { p: 'U24', at: 'B4' },
+  { p: 'W2', at: 'A4', dir: 'd', id: 'Lp' },
+  { p: 'W3', at: 'D4', dir: 'd', id: 'Ln' },
+  { p: 'D1', at: 'A5', dir: 'd' },
+], icBat);
+
+// D8 színes LED: egyedül, a két sín között (az áramkorlátozó ellenállás a LED-be van építve).
+L.ic_d8 = icFrame2.concat([
+  { p: 'D8', at: 'B5', dir: 'd' },
+  { p: 'W2', at: 'A5', dir: 'd', id: 'Lp' },
+  { p: 'W3', at: 'D5', dir: 'd', id: 'Ln' },
+], icBat);
+
+// U32 dallam IC (beépített hangszóróval), előtte a mérőműszer (50 mA).
+L.ic_u32 = icFrame2.concat([
+  { p: 'M6', at: 'B4', dir: 'd' },
+  { p: 'U32', at: 'E4' },
+  { p: 'W2', at: 'A4', dir: 'd', id: 'Lp' },
+  { p: 'W2', at: 'D4', dir: 'd', id: 'Lm' },
+  { p: 'W2', at: 'E6', dir: 'd', id: 'Ln' },
+], icBat);
+
+// U22 fényorgona két elemmel (6 V): mikrofon a bemeneten, R3 a (+)-ról; két átkötő kábel.
+L.ic_u22 = [
+  { p: 'W5', at: 'A3', dir: 'r', id: 'Wp' },
+  { p: 'W6', at: 'G3', dir: 'r', id: 'Wn' },
+  { p: 'W1', at: 'C6', id: 'Wr' },
+  { p: 'U22', at: 'C3' },
+  { p: 'B1', at: 'A9', dir: 'd', id: 'B1a' },
+  { p: 'B1', at: 'E9', dir: 'd', id: 'B1b' },
+  { p: 'W3', at: 'E3', dir: 'd', id: 'Ln' },
+  { p: 'X1', at: 'E5', dir: 'd' },
+  { p: 'R3', at: 'A6', dir: 'd' },
+  { p: 'W3', at: 'C9', dir: 'd', id: 'Lb' },
+  { p: 'W2', at: 'G8', dir: 'r', id: 'Lg' },
+  { p: 'S1', at: 'A7', dir: 'r' },
+  { p: 'J1', at: 'D5', to: 'A5' },
+  { p: 'J2', at: 'C6', to: 'E5' },
+];
 
 module.exports = L;
 
@@ -2036,6 +2228,246 @@ const EXPS = [
       n: 'A modellünk egy saját, rövid dallamot játszik (a valódi U1 dallamát nem ismerjük), kb. 20 s-ig; a HLD a (+)-on folyamatos lejátszást ad, a TRG felfutó éle újraindít. Egy 20 hangos dallam néhány száz bitnyi memóriát igényel, ez több száz flip-flop lenne: ezért éri meg integrált áramkörbe zárni.',
     },
   },
+  // ===================== F) Mikrofon-erősítő =====================
+  {
+    id: 'amp', chapter: 'F', title: 'Hangosbemondó', tag: 'A mikrofon hangja a hangszóróból szól',
+    layout: LAY.amp, sim: { dt: 0.002, scale: 1 }, controls: ['S1', { mic: 'X1', echo: true }, 'sound'],
+    audio: { type: 'micamp', probe: 'SP', mic: 'X1', full: 0.04 },
+    intro: {
+      k: 'Beszélj bele a mikrofonba, és a hangszóróból a saját hangod szól! Ez egy kis hangosbemondó.',
+      m: 'A mikrofon (X1) a hang hatására egy picit megváltoztatja az ellenállását. Ez a változás nagyon kicsi, ezért két tranzisztor (Q2a és Q2b) felerősíti, és a hangszóró már hallhatóan megszólal.',
+      n: 'Kétfokozatú erősítő: a mikrofon az R2-vel feszültségosztót alkot, a váltakozó jel a C3-on át egy Darlington-pár bázisára jut. A munkapontot az R5 állítja be a kimenetről visszacsatolva, ezért a tranzisztorok β-jától alig függ. A hangszóró az R1-gyel sorban a kollektorkörben van.',
+    },
+    guess: {
+      q: { k: 'Ha beszélsz a mikrofonba, mi lesz?', m: 'Mi történik a hangszóróval, ha a mikrofonba beszélsz?', n: 'Mekkora lesz a hangszóró áramának változása a mikrofon ellenállásának változásához képest?' },
+      opts: [['Megszólal a hangszóró', 'sound'], ['Kigyullad egy lámpa', 'on'], ['Semmi', 'same']], right: 0,
+      after: { k: 'Igen! A hangszóróból a te hangod jön.', m: 'A tranzisztorok felerősítik a mikrofon kicsi változását, és a hangszóró a te hangodat szólaltatja meg.', n: 'A szimulációban a mikrofon ±90 Ω-os változása kb. 15 mA-es (csúcstól csúcsig) áramváltozást ad a hangszóróban, 14 mA-es nyugalmi áram mellett.' },
+    },
+    variants: [],
+    hint: {
+      k: 'Kapcsold be, aztán kapcsold be a hangot és a tablet mikrofonját, és mondj valamit! Vagy nyomd a „Fújj bele” gombot.',
+      m: 'Kapcsold be az S1-et, a hangot és a tablet mikrofonját. Beszélj halkan, aztán hangosan. A legjobb fejhallgatóval: ha a tablet hangszórója visszaszól a mikrofonba, sípolni kezd (ez a gerjedés, a valódi hangosításnál is előfordul).',
+      n: 'Figyeld a hangszóró áramát csendben és hangos beszédnél. Hangos hangnál a jel torzul: a kimenet nem tud a tápfeszültségnél nagyobbat és nullánál kisebbet adni.',
+    },
+    why: {
+      k: 'A mikrofonba érő hang egy picit megnyomja a mikrofont. Ez nagyon kicsi változás, a hangszóró ettől még nem szólna. A tranzisztorok olyanok, mint egy nagyító: a kicsi változásból nagyot csinálnak. Így szól a hangszóró a te hangoddal.',
+      m: 'Az erősítés azt jelenti, hogy egy kicsi változás vezérel egy nagyot. A mikrofon ellenállása a hangtól csak kicsit változik, de a tranzisztorok ezt sokszorosára nagyítják, és ez már meg tudja mozgatni a hangszóró membránját. A C3 kondenzátor csak a változást engedi át, az állandó feszültséget nem, ezért a tranzisztorok munkapontja nem csúszik el. A valódi készleten halkabb lesz, mint egy igazi hangosbemondó: ehhez kellene az U4 erősítő IC (a következő fejezetben).',
+      n: 'A Darlington-pár áramerősítése kb. β², így a kicsi bázisáram-változásból nagy kollektoráram-változás lesz. Az R5 negatív visszacsatolás: ha a kimenet feszültsége nő, több bázisáram folyik, a tranzisztorok jobban nyitnak, és a kimenetet visszahúzzák. Így a nyugalmi áram β = 80 és 300 között is kb. 14–15 mA marad. A hangot a tablet úgy állítja elő, hogy a szimulátorból kiszámolja az erősítő átviteli görbéjét (mikrofon-ellenállás → hangszóróáram), és ezen vezeti át a tablet mikrofonjának jelét; a túlvezérlés torzítása is ebből jön.',
+    },
+  },
+
+  // ===================== G) a többi fekete doboz =====================
+  {
+    id: 'u4', chapter: 'G', title: 'Kinyitjuk: U4 erősítő', tag: 'Hangosbemondó egy dobozban',
+    layout: LAY.ic_u4, sim: { dt: 0.002, scale: 1 }, controls: ['S1', { mic: 'X1', echo: true }, 'sound'],
+    audio: { type: 'micamp', probe: 'SP', mic: 'X1', full: 0.15 },
+    inside: {
+      title: 'Mi van az U4-ben?',
+      blocks: ['Erősítő tranzisztorok (mint a hangosbemondóban)', 'Csatolókondenzátorok: csak a változást engedik át', 'Szűrt táp (FIL) a mikrofonnak'],
+      built: ['amp'],
+      text: {
+        k: 'Az U4-ben is egy erősítő van, mint a hangosbemondódban. Csak erősebb, és kisebb helyen elfér.',
+        m: 'A 300-as kézikönyv szerint az U4 egy erősítő IC a hozzá mindig szükséges alkatrészekkel. Ugyanazt csinálja, mint a te hangosbemondód, csak jóval hangosabban, és nem függ annyira attól, milyen tranzisztorok vannak benne.',
+        n: 'A modul egy integrált teljesítményerősítő a külső alkatrészeivel (csatoló- és szűrőkondenzátorok). A modellünkben a bemenet változását 20-szorosára erősíti, a kimenet belül kondenzátoron át csatolt, és a kitérése a tápfeszültség feléig terjed. A kézikönyv szerint a FIL láb szűrt tápot ad, hogy a mikrofon tápja ne zúgjon; a modellünkben ez egy 100 Ω-os ellenállás a (+) felé. A valódi modul pontos belső rajzát nem ismerjük.',
+      },
+    },
+    variants: [],
+    intro: {
+      k: 'Ez a sárga doboz egy erősítő. Beszélj bele a mikrofonba, és nagyon hangosan szól!',
+      m: 'Az U4 erősítő IC a 300-as dobozban van. Ugyanazt csinálja, mint a hangosbemondód, csak sokkal hangosabban. Bekötjük, kipróbáljuk, aztán kinyitjuk.',
+      n: 'Az U4 lábai: (+) és (−) a táp, INP a bemenet, OUT a kimenet, FIL a szűrt táp. A mikrofont az R2 a FIL-ről táplálja; a hangszóró az OUT és a (−) között van. Az IC itt elforgatva áll a rácson.',
+    },
+    guess: {
+      q: { k: 'Hangosabb lesz, mint a hangosbemondód?', m: 'Hangosabban vagy halkabban szól, mint a két tranzisztoros hangosbemondód?', n: 'Hányszor nagyobb lesz a hangszóró áramának változása, mint a hangosbemondónál?' },
+      opts: [['Hangosabb', 'sound'], ['Ugyanolyan', 'same'], ['Halkabb', 'dim']], right: 0,
+      after: { k: 'Igen! Sokkal hangosabb.', m: 'Sokkal hangosabb: az IC-ben több és erősebb tranzisztor dolgozik.', n: 'A szimulációban ugyanarra a mikrofonváltozásra kb. 180 mA-es változás jön a 15 mA helyett, vagyis kb. tizenkétszer akkora.' },
+    },
+    hint: {
+      k: 'Kapcsold be a hangot és a mikrofont, és mondj valamit! Aztán nyisd ki az IC-t.',
+      m: 'Kapcsold be az S1-et, a hangot és a tablet mikrofonját. Hasonlítsd össze a hangosbemondóval. Fejhallgatóval jobb, különben sípolhat.',
+      n: 'Nézd meg a hangszóró áramát, és hasonlítsd össze a hangosbemondóéval. Hangos hangnál itt is torzul a jel: hol van a határ?',
+    },
+    why: {
+      k: 'Az U4-ben egy erősítő van, mint amit te építettél két tranzisztorból. Csak sokkal erősebb. Most már tudod, mi van a dobozban.',
+      m: 'Az erősítő IC-ket rádiókban, hangszórókban, telefonokban használják. Egy erősítőt megépíteni sok alkatrész, az IC-ben ez mind egy tokban van. Te már tudod, hogyan működik: a kicsi változást egy nagy áram követi.',
+      n: 'Az IC-s erősítő előnye: nagyobb erősítés, kisebb torzítás, és a működése nem függ az egyes tranzisztorok β-jától, mert a belsejében erős negatív visszacsatolás van. A hangosbemondódban az R5 ugyanezt csinálta kicsiben. Ez egy viselkedési modell; a valódi U4 erősítése és hangereje ettől eltérhet.',
+    },
+  },
+  {
+    id: 'u3', chapter: 'G', title: 'Kinyitjuk: U3 űrháború', tag: 'Nyolc űrhang egy dobozban',
+    layout: LAY.ic_u3, sim: { dt: 0.002, scale: 1 }, controls: ['S1', { press: 'S2', label: 'Következő hang (S2)' }, 'sound'], audio: { type: 'ic', ic: 'U3' },
+    inside: {
+      title: 'Mi van az U3-ban?',
+      blocks: ['Hangot adó rezgőkör, aminek a hangmagassága állítható', 'Lassú rezgőkör, ami hangolja a gyorsat', 'Számláló: gombnyomásra a következő hangot választja'],
+      built: ['siren', 'flash', 'flipflop'],
+      text: {
+        k: 'Az U3-ban rezgőkörök vannak, mint a szirénádban és a villogódban. Egy kis számláló pedig megjegyzi, melyik hangnál tartasz.',
+        m: 'A hangot egy rezgőkör adja, mint a szirénádban. A hangmagasságát egy lassabb rezgőkör hangolja, ettől lesz „lézeres” vagy „ufós”. A gombnyomásokat egy számláló jegyzi meg. A számláló emlékező lámpákból (flip-flopokból) áll.',
+        n: 'Az U3 egy hanggeneráló IC a kiegészítő alkatrészeivel. A működése: egy hangolható oszcillátor, egy lassú modulálóoszcillátor és egy háromfokozatú számláló (3 flip-flop: 2³ = 8 állapot). A pontos hangjait nem ismerjük; a modellünk nyolc saját űrhangot ad.',
+      },
+    },
+    variants: [],
+    intro: {
+      k: 'Ez a zöld doboz űrhangokat ad. Minden gombnyomásra másik hangot!',
+      m: 'Az U3 űrháború IC a 300-as dobozban van. Nyolcféle hangot tud. A nyomógomb az IN1 lábat a (−)-ra köti, és ettől a következő hangra lép.',
+      n: 'Az U3 lábai: (+), (−), OUT (a hangszóró a (+) és az OUT között), IN1 és IN2 vezérlőbemenet. A kézikönyv szerint a bemeneteket a (−)-ra kötve lehet végiglépkedni a nyolc hangon.',
+    },
+    guess: {
+      q: { k: 'Ha megnyomod a gombot, mi lesz?', m: 'Mi történik, ha megnyomod az S2-t?', n: 'Hány gombnyomás után kerülsz vissza az első hanghoz?' },
+      opts: [['Másik hang szól', 'sound'], ['Elhallgat', 'off'], ['Ugyanaz szól', 'same']], right: 0,
+      after: { k: 'Igen! Minden nyomásra új hang jön.', m: 'Minden gombnyomásra a következő hang jön, nyolc után kezdi elölről.', n: 'Nyolc: a három flip-flopos számláló 8 állapot után körbeér.' },
+    },
+    hint: {
+      k: 'Kapcsold be a hangot, és nyomogasd a gombot!',
+      m: 'Kapcsold be az S1-et és a hangot. Nyomogasd az S2-t, és számold meg, hány hangja van.',
+      n: 'Számold meg a hangokat, és figyeld az U3 állapotát a mérőknél. Melyik hang emlékeztet a szirénádra?',
+    },
+    why: {
+      k: 'Az űrhangokat rezgőkörök csinálják, mint a szirénádban. A doboz megjegyzi, hányszor nyomtad meg a gombot, és mindig a következő hangot adja.',
+      m: 'Két rezgőkör dolgozik együtt: egy gyors, ami a hangot adja, és egy lassú, ami folyton változtatja a gyors hangmagasságát. A szirénánál a lassú rész a kondenzátor töltődése volt. A számláló emlékező lámpákból áll, mint a flip-flopod, csak hármat kötnek egymás után.',
+      n: 'Három flip-flop egymás után kötve 0-tól 7-ig számol (bináris számláló): minden gombnyomás az első flip-flopot billenti át, és ha az visszaáll, a következőt. A hangot választó áramkör ebből a 3 bitből választja ki, melyik hangot kapcsolja be. Az U2 riasztóban ezt a három bitet te adtad meg kívülről (IN1, IN2, IN3).',
+    },
+  },
+  {
+    id: 'u22', chapter: 'G', title: 'Kinyitjuk: U22 fényorgona', tag: 'Hangra színt vált',
+    layout: LAY.ic_u22, sim: { dt: 0.002, scale: 1 }, controls: ['S1', { mic: 'X1' }],
+    inside: {
+      title: 'Mi van az U22-ben?',
+      blocks: ['Hangérzékelő: a mikrofon jeléből kapcsoló lesz (mint a hangra villogó LED-nél)', 'Számláló: megjegyzi, hányadik színnél tartasz', 'Piros, zöld és kék LED egy tokban'],
+      built: ['clap', 'flipflop'],
+      text: {
+        k: 'Az U22-ben egy hangkapcsoló van, mint a hangra villogó lámpádban, és három kis lámpa: egy piros, egy zöld és egy kék.',
+        m: 'A Light kézikönyve szerint az U22 ellenállásokból, kondenzátorokból, tranzisztorokból, egy háromszínű LED-ből és IC-kből áll. A hangot ugyanúgy veszi észre, mint a te hangra villogó LED-ed. Minden hangnál egy számláló lép egyet, és a számláló dönti el, melyik színek égjenek.',
+        n: 'A bemeneten egy komparátor (Schmitt-trigger) van: ha az INP feszültsége a tápfeszültség kb. 55%-a fölé megy, egyet lép a számláló, és csak akkor léphet újra, ha a feszültség 45% alá esett. A számláló kimenetei kapcsolják a piros, zöld és kék LED-et. A modellünk hét színt léptet sorban; a valódi IC színsorrendje ettől eltérhet. A kézikönyv szerint az R, G, B lábakkal a színek közvetlenül is vezérelhetők.',
+      },
+    },
+    variants: [],
+    intro: {
+      k: 'Fújj bele a mikrofonba, és a lámpa minden fújásra más színű lesz!',
+      m: 'Az U22 fényorgona a Light dobozban van. A kézikönyv minden kapcsolásában két elemmel (6 V) szerepel, ezért mi is két elemmel kötjük. Minden hangra, fújásra vagy tapsra másik színre vált.',
+      n: 'Az U22 lábai: R, G, B színvezérlés, (+) és (−) a táp (itt két elem sorban, 6 V), INP a bemenet, FB visszacsatolás. A mikrofon az R3-mal feszültségosztót alkot az INP-n, mint a hangra villogó LED-nél.',
+    },
+    guess: {
+      q: { k: 'Ha belefújsz, mi lesz a lámpával?', m: 'Mi történik a fényorgonával, ha belefújsz a mikrofonba?', n: 'Mi történik, ha folyamatosan fújod a mikrofont, és nem engeded el?' },
+      opts: [['Másik színű lesz', 'blink'], ['Kialszik', 'off'], ['Semmi', 'same']], right: 0,
+      after: { k: 'Igen! Minden fújásra új szín.', m: 'Minden hangnál egyet lép, és másik színt kapcsol be.', n: 'Csak egyet lép: a számláló csak akkor léphet újra, ha a bemenet közben visszaesett.' },
+    },
+    hint: {
+      k: 'Kapcsold be, és nyomd a „Fújj bele” gombot többször egymás után!',
+      m: 'Kapcsold be az S1-et, és fújj bele többször. Kapcsold be a tablet mikrofonját, és tapsolj vagy énekelj.',
+      n: 'Számold meg, hány szín van, és melyik színek keverékek (sárga = piros + zöld, türkiz = zöld + kék, lila = piros + kék, fehér = mind a három).',
+    },
+    why: {
+      k: 'A dobozban egy hangkapcsoló, egy számláló és három kis lámpa van. A hangra a számláló egyet lép, és egy másik lámpát kapcsol be. Ha egyszerre több lámpa ég, a színük összekeveredik.',
+      m: 'A hangra villogó LED-ed a hangot kapcsolásra fordította le. Az U22 ugyanezt csinálja, de nem csak villan, hanem számol is: megjegyzi, hányadik hangnál tartasz, mint az emlékező lámpád. A három szín keveréséből újabb színek lesznek: piros és zöld együtt sárgának látszik.',
+      n: 'A színkeverés az additív színkeverés: a szemünkben háromféle színérzékelő van (piros, zöld, kék), ezért a három LED fényének keverékéből sok színt látunk. A tévé és a tablet képernyője is így működik, piros, zöld és kék pontokból.',
+    },
+  },
+  {
+    id: 'u24', chapter: 'G', title: 'Kinyitjuk: U24 infravevő', tag: 'Érzi a távirányító láthatatlan fényét',
+    layout: LAY.ic_u24, sim: { dt: 0.002, scale: 1 }, controls: ['S1', { remote: 'U24' }],
+    inside: {
+      title: 'Mi van az U24-ben?',
+      blocks: ['Fényérzékelő, ami csak az infravörös fényt látja (mint egy fototranzisztor)', 'Erősítő és szűrő: csak a gyorsan villogó fényt engedi át', 'Kimeneti tranzisztor: ez kapcsolja a LED-et'],
+      built: ['lightlink', 'night'],
+      text: {
+        k: 'Az U24-ben egy fényt érző szem van, mint a fototranzisztor, és egy kapcsoló. A szem csak a távirányító láthatatlan fényét veszi észre.',
+        m: 'A távirányító infravörös fényt villogtat, amit a szemünk nem lát. Az U24 érzékelője ezt fogja fel, mint a fénytávírónál a fototranzisztor. Egy szűrő csak a gyors villogást engedi tovább, ezért a lámpák állandó fénye nem zavarja.',
+        n: 'Az infravevő modulok belsejében egy infravörös fotodióda, egy erősítő, egy kb. 38 kHz-re hangolt sávszűrő és egy egyenirányító (demodulátor) van; a kimenet egy tranzisztor, ami adás alatt a (−) felé kapcsol. A távirányító a kódot 38 kHz-es villanássorozatokban küldi. A fénytávíród ugyanezt csinálta látható fénnyel és szűrő nélkül.',
+      },
+    },
+    variants: [],
+    intro: {
+      k: 'A távirányító láthatatlan fénnyel üzen. Ez a kis sárga doboz meglátja, és felkapcsolja a lámpát!',
+      m: 'Az U24 infravevő a Light dobozban van. Ha egy tévé-távirányítót ráfogsz, és megnyomod bármelyik gombját, a LED villogni kezd.',
+      n: 'Az U24 lábai: (+), (−) és a kimenet. A kimenet adás közben a (−)-ra kapcsol, ezért a LED a (+) és a kimenet közé kerül. A kézikönyv szerint itt nem kell elé ellenállás.',
+    },
+    guess: {
+      q: { k: 'Ha megnyomod a távirányító gombját, mi lesz?', m: 'Mit csinál a LED, ha a távirányítóval rávilágítasz az U24-re?', n: 'Miért villog a LED, és miért nem ég folyamatosan?' },
+      opts: [['Villog a lámpa', 'blink'], ['Semmi, hiszen nem látszik a fény', 'off'], ['Megszólal', 'sound']], right: 0,
+      after: { k: 'Igen! A doboz látja, amit mi nem.', m: 'A LED villog: a távirányító jelét a fénye villogása hordozza.', n: 'Mert a távirányító a kódot villanássorozatként küldi, és a kimenet ezt követi.' },
+    },
+    hint: {
+      k: 'Kapcsold be, aztán nyomd és tartsd a „Távirányító gombja” gombot! A valódi készletnél egy tévé-távirányító kell.',
+      m: 'Kapcsold be az S1-et, aztán nyomd a távirányító gombot. A valódi készletnél fogd rá az U24-re egy tévé-távirányítót, és nyomj meg rajta bármit.',
+      n: 'Tipp: a tablet vagy telefon kamerája sokszor látja az infravörös fényt. Nézd a kamerán át a távirányító végét, miközben nyomod a gombját!',
+    },
+    why: {
+      k: 'A távirányító lámpája olyan fényt ad, amit a szemünk nem lát. Az U24 látja, és bekapcsolja a LED-et. Ugyanaz, mint a fénytávíród, csak láthatatlan fénnyel.',
+      m: 'Az infravörös fény a piros fényen túl van, a szemünk már nem látja, de a fényérzékelők igen. A távirányító így szól a tévéhez úgy, hogy közben nem villog a szobában semmi. Az U24 a fénytávíró vevőjének egy ügyesebb változata: nem zavarja meg a lámpák és a nap fénye.',
+      n: 'A sávszűrő miatt a vevő csak a 38 kHz körül villogó fényre reagál, az állandó fényre (nap, lámpa) nem. Ezért nem kapcsol be a szoba világításától, amit a fénytávíród fototranzisztora megtenne. A modellünkben a távirányító jelét egy egyszerű villogás helyettesíti.',
+    },
+  },
+  {
+    id: 'd8', chapter: 'G', title: 'Kinyitjuk: a színes LED (D8)', tag: 'Egy LED, amiben villogó van',
+    layout: LAY.ic_d8, sim: { dt: 0.002, scale: 1 }, controls: ['S1'],
+    inside: {
+      title: 'Mi van a D8-ban?',
+      blocks: ['Piros, zöld és kék LED egy tokban', 'Egy parányi vezérlő IC: ez váltogatja a színeket (mint egy villogó)', 'Áramkorlátozó ellenállás'],
+      built: ['flash'],
+      text: {
+        k: 'Ebben a LED-ben három kis lámpa van, és egy pici villogó, ami felváltva kapcsolja őket.',
+        m: 'A Light kézikönyve szerint a színes LED-ben piros, zöld és kék LED van, és egy kis áramkör, ami vezérli őket. Olyan, mint a te villogód, csak nem két lámpát kapcsolgat, hanem hármat, és többféle sorrendben.',
+        n: 'A színes LED-ek tokjában a három LED-chip mellett egy apró vezérlő IC is van, ami egy saját ütemadóval (oszcillátorral) lépteti a színeket. Az áramot a beépített ellenállás korlátozza. A modellünkben a színek sorrendje és üteme saját közelítés.',
+      },
+    },
+    variants: [],
+    intro: {
+      k: 'Ez egy különleges lámpa: magától változtatja a színét!',
+      m: 'A D8 színes LED a Light és a My Home dobozban van. Úgy néz ki, mint egy sima LED, de bekapcsolva magától váltogatja a színét.',
+      n: 'A D8 két lábú, mint egy LED, és ugyanúgy van iránya (+). A My Home LED-jeibe áramkorlátozó ellenállás van építve, ezért elé nem kell ellenállás.',
+    },
+    guess: {
+      q: { k: 'Bekapcsolod. Milyen színű lesz?', m: 'Mit csinál a D8, ha bekapcsolod?', n: 'Hány alkatrész lehet egy ilyen LED-ben?' },
+      opts: [['Váltogatja a színét', 'blink'], ['Mindig piros', 'on'], ['Nem világít', 'off']], right: 0,
+      after: { k: 'Igen! Mindenféle színe van.', m: 'Magától váltogatja a színét: van benne egy kis vezérlő.', n: 'Legalább öt: három LED, egy vezérlő IC és egy ellenállás.' },
+    },
+    hint: {
+      k: 'Kapcsold be, és figyeld a színeket!',
+      m: 'Kapcsold be az S1-et, és nézd, milyen színeket mutat. Melyik szín keverék?',
+      n: 'Figyeld a LED áramát: változik-e, amikor színt vált?',
+    },
+    why: {
+      k: 'A LED-ben három kis lámpa van: piros, zöld és kék. Egy pici villogó felváltva kapcsolja őket. Ha kettő egyszerre ég, a színük összekeveredik.',
+      m: 'Nem csak a nagy dobozokban vannak IC-k: egy LED-be is befér egy. A villogód két tranzisztorral két lámpát kapcsolgatott. A D8-ban ezt egy parányi IC csinálja három lámpával.',
+      n: 'A D8 árama a színtől függően változik, mert egyszerre egy, kettő vagy három LED-chip ég. A modellünk a D8-at egyetlen LED-ként számolja, beépített ellenállással; a színváltás csak a rajzon látszik.',
+    },
+  },
+  {
+    id: 'u32', chapter: 'G', title: 'Kinyitjuk: U32 dallam IC', tag: 'Zene, hangszóróval együtt',
+    layout: LAY.ic_u32, sim: { dt: 0.002, scale: 1, meter: { M6: '50mA' } }, controls: ['S1', { meter: 'M6' }, 'sound'], audio: { type: 'ic', ic: 'U32', builtin: true },
+    inside: {
+      title: 'Mi van az U32-ben?',
+      blocks: ['Hangot adó rezgőkör (mint a hangszeredben)', 'Memória a dallam hangjaival', 'Beépített kis hangszóró'],
+      built: ['organ', 'flipflop'],
+      text: {
+        k: 'Az U32-ben egy kis hangszer van, ami megjegyezte a dallamot, és egy pici hangszóró is.',
+        m: 'A My Home kézikönyve szerint az U32 egy memóriába írt dallamot játszik le, és a beépített hangszórója szólaltatja meg. A hangot ugyanúgy egy rezgőkör adja, mint a te hangszeredben, csak a hangokat nem te választod, hanem a memória.',
+        n: 'A dallam IC-k belsejében egy oszcillátor, egy osztó (ez adja a hangmagasságokat), egy számláló és egy kis memória (ROM) van, ami sorban megmondja, melyik hang jön és meddig szól. A dallamot nem ismerjük; a modellünk egy saját rövid dallamot játszik.',
+      },
+    },
+    variants: [],
+    intro: {
+      k: 'Ez a kis doboz zenél, és még hangszóró sem kell hozzá!',
+      m: 'Az U32 dallam IC a My Home dobozban van. Két lába van, mint egy lámpának, és bekapcsolva dallamot játszik. A mérőműszer megmutatja, mennyi áramot vesz fel.',
+      n: 'Az U32 két lábú, a (+) jel felül. A mérőműszer (50 mA-es állásban) sorban van vele; minden hangnál megváltozik a felvett áram.',
+    },
+    guess: {
+      q: { k: 'Mit csinál a mérő mutatója zene közben?', m: 'Mit csinál a mérőműszer, amíg a dallam szól?', n: 'Miért változik a mérő kitérése zene közben?' },
+      opts: [['Ugrál', 'blink'], ['Áll', 'same'], ['Nulla', 'off']], right: 0,
+      after: { k: 'Igen! Minden hangnál mozdul.', m: 'Ugrál: amikor szól egy hang, több áram kell, a szünetekben kevesebb.', n: 'Mert a beépített hangszóró árama hangonként be- és kikapcsol.' },
+    },
+    hint: {
+      k: 'Kapcsold be a hangot és az S1-et, és figyeld a mérő mutatóját!',
+      m: 'Kapcsold be az S1-et és a hangot. Figyeld a mérőt a hangok és a szünetek alatt.',
+      n: 'Olvasd le a mérőt hang közben és szünetben. Mennyi áram jut a hangszóróra?',
+    },
+    why: {
+      k: 'Az U32-ben egy kis hangszer van, ami megjegyezte a dallamot. Ha áramot kap, eljátssza. A hangszóró is benne van, ezért nem kell külön.',
+      m: 'A hangszereden te választottad a hangot a gombbal és a tekerővel. Az U32-ben a memória mondja meg, melyik hang jön. Az U1 zene IC ugyanezt tudja, csak annak külső hangszóró kell.',
+      n: 'A mérő átlagos áramot mutat: hang közben a hangszóró áramának átlaga, szünetben csak a vezérlő kicsi árama. A modellünkben ez kb. 12 mA, illetve 1,5 mA. A valódi U32 számai ettől eltérhetnek.',
+    },
+  },
 
 ];
 
@@ -2049,7 +2481,7 @@ const CHAPTERS = [
   { id: 'F', title: 'Fény és hang továbbítása', short: 'Továbbítás' },
   { id: 'G', title: 'A fekete dobozok kinyitása', short: 'Fekete dobozok' },
 ];
-const ORDER = ['first', 'conduct', 'series', 'dimmer', 'generator', 'capbat', 'motorspeed', 'night', 'touch', 'water', 'shadow', 'delay', 'flipflop', 'and', 'or', 'not', 'flash', 'metronome', 'sound', 'organ', 'siren', 'clap', 'lightlink', 'u23', 'u2', 'u1'];
+const ORDER = ['first', 'conduct', 'series', 'dimmer', 'generator', 'capbat', 'motorspeed', 'night', 'touch', 'water', 'shadow', 'delay', 'flipflop', 'and', 'or', 'not', 'flash', 'metronome', 'sound', 'organ', 'siren', 'clap', 'amp', 'lightlink', 'u23', 'd8', 'u2', 'u3', 'u1', 'u32', 'u4', 'u22', 'u24'];
 EXPS.sort((x, y) => ORDER.indexOf(x.id) - ORDER.indexOf(y.id));
 
 // Egy változat alkalmazása: vagy átalakítja az elrendezést, vagy egy másik elrendezésre cseréli.
@@ -2196,8 +2628,13 @@ const COLORS = {
   npn: '#D8443B', pnp: '#3FA453', photo: '#2A2F36', ledred: '#E0453F', ledgreen: '#38B26A',
   pot: '#3FA453', meter: '#2B3138', motor: '#AEB6BF', obj: '#7A8796', mic: '#6B737C',
 };
-const IC_COLOR = { U1: '#4E86E8', U2: '#D8443B', U23: '#D8443B' };
-const IC_INNER = { music: 'hangszer + memória', alarm: 'sziréna + választó', strobe: 'villogó' };
+const IC_COLOR = { U1: '#4E86E8', U2: '#D8443B', U23: '#D8443B', U3: '#3FA453', U4: '#E9C535', U22: '#22262B', U24: '#F2C230', U32: '#F0D84A' };
+const IC_INK = { U4: '#3B2A00', U24: '#3B2A00', U32: '#3B2A00' };
+const IC_COLORNAME = { U1: 'a kék', U2: 'a piros', U23: 'a piros', U3: 'a zöld', U4: 'a sárga', U22: 'a fekete', U24: 'a sárga', U32: 'a sárga' };
+const IC_INNER = { music: 'hangszer + memória', alarm: 'sziréna + választó', strobe: 'villogó', war: 'rezgőkörök + számláló', amp: 'erősítő', organ: 'hangkapcsoló + számláló + 3 LED', ir: 'fényszem + szűrő', melody: 'dallam + hangszóró' };
+// a színes LED (D8) színsora a rajzon (saját közelítés)
+const RGB_SEQ = ['#FF4A3D', '#47F07A', '#4D8DFF', '#FFE14A', '#4DF2EC', '#F25CF0', '#FFFFFF'];
+const rgbCss = (c) => '#' + c.map((x) => (x ? 'ff' : '33')).join('');
 const JUMPER_COLOR = { red: '#D13B33', black: '#22262B', blue: '#2F6FD6' };
 const MATERIALS = {
   materials: [['semmi (levegő)', 1e12], ['alufólia', 0.1], ['ceruzabél', 300], ['sós víz', 2000], ['csapvíz', 20000], ['a kezed', 3e5], ['papír', 1e12], ['műanyag', 1e12]],
@@ -2206,7 +2643,7 @@ const MATERIALS = {
 
 function partColor(def) {
   if (def.kind === 'ic') return IC_COLOR[def.short] || '#666';
-  if (def.kind === 'led') return def.color === 'green' ? COLORS.ledgreen : COLORS.ledred;
+  if (def.kind === 'led') return def.color === 'green' ? COLORS.ledgreen : def.color === 'rgb' ? '#2B2F36' : COLORS.ledred;
   return COLORS[def.kind] || '#888';
 }
 
@@ -2266,6 +2703,22 @@ function drawPart(parent, pl, level, contacts, opts) {
   }
 
   const col = partColor(def);
+  if (def.kind === 'ic' && def.ic === 'ir') {
+    // az infravevő háromszög alakú modul (mint a tranzisztorok)
+    const d = `M${pts[0][0]},${pts[0][1]} L${pts[1][0]},${pts[1][1]} L${pts[2][0]},${pts[2][1]} Z`;
+    svgEl('path', { d, fill: col, stroke: 'rgba(0,0,0,.28)', 'stroke-width': 34, 'stroke-linejoin': 'round' }, g);
+    svgEl('path', { d, fill: col, stroke: col, 'stroke-width': 30, 'stroke-linejoin': 'round' }, g);
+    const cx = (pts[0][0] + pts[1][0] + pts[2][0]) / 3, cy = (pts[0][1] + pts[1][1] + pts[2][1]) / 3;
+    const t = svgEl('text', { x: cx, y: cy + 2, 'text-anchor': 'middle', 'font-size': 15, 'font-weight': 800, fill: IC_INK[def.short], 'font-family': 'var(--font-display)' }, g); t.textContent = def.short;
+    svgEl('rect', { x: cx - 4, y: cy + 6, width: 8, height: 8, rx: 2, fill: '#2A2F36' }, g);   // az érzékelő ablaka
+    out.icAct = svgEl('circle', { cx: cx, cy: cy - 16, r: 5, fill: 'var(--spark)', opacity: 0 }, g);
+    geo.snaps.forEach((q, i) => {
+      svgEl('circle', { cx: pts[i][0], cy: pts[i][1], r: 8, fill: '#D9DEE4', stroke: '#5C6670', 'stroke-width': 1.5 }, g);
+      const l = svgEl('text', { x: pts[i][0], y: pts[i][1] + 3.5, 'text-anchor': 'middle', 'font-size': 9, 'font-weight': 800, fill: '#333' }, g);
+      l.textContent = q.term === 'P' ? '+' : q.term === 'N' ? '−' : 'ki';
+    });
+    return out;
+  }
   if (def.kind === 'ic') {
     const xs = pts.map((q) => q[0]), ys = pts.map((q) => q[1]);
     const x0 = Math.min(...xs) - 24, x1 = Math.max(...xs) + 24, y0 = Math.min(...ys) - 24, y1 = Math.max(...ys) + 24;
@@ -2273,8 +2726,9 @@ function drawPart(parent, pl, level, contacts, opts) {
     svgEl('rect', { x: x0, y: y0, width: x1 - x0, height: y1 - y0, rx: 12, fill: col, 'fill-opacity': open ? 0.18 : 1, stroke: open ? col : 'rgba(0,0,0,.3)', 'stroke-width': open ? 3 : 2, 'stroke-dasharray': open ? '8 5' : '' }, g);
     const cx = (x0 + x1) / 2;
     if (!open) {
-      const t = svgEl('text', { x: cx, y: (y0 + y1) / 2 + 2, 'text-anchor': 'middle', 'font-size': 24, 'font-weight': 800, fill: '#fff', 'font-family': 'var(--font-display)' }, g); t.textContent = def.short;
-      const t2 = svgEl('text', { x: cx, y: (y0 + y1) / 2 + 20, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 700, fill: 'rgba(255,255,255,.9)' }, g); t2.textContent = def.name.toUpperCase();
+      const ink = IC_INK[def.short] || '#fff';
+      const t = svgEl('text', { x: cx, y: (y0 + y1) / 2 + 2, 'text-anchor': 'middle', 'font-size': 24, 'font-weight': 800, fill: ink, 'font-family': 'var(--font-display)' }, g); t.textContent = def.short;
+      const t2 = svgEl('text', { x: cx, y: (y0 + y1) / 2 + 20, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 700, fill: ink, opacity: 0.9 }, g); t2.textContent = def.name.toUpperCase();
     } else {
       // kinyitva: a belső építőkövek vázlata (két tranzisztor és egy kondenzátor) és a felirat
       const my = (y0 + y1) / 2 - 4;
@@ -2284,10 +2738,17 @@ function drawPart(parent, pl, level, contacts, opts) {
     }
     const act = svgEl('circle', { cx: x1 - 12, cy: y0 + 12, r: 5, fill: 'var(--spark)', opacity: 0 }, g);
     out.icAct = act;
+    if (def.ic === 'organ') {
+      // a fényorgona háromszínű LED-je a modul közepén
+      const ly = (y0 + y1) / 2 - 26;
+      out.icGlow = svgEl('circle', { cx, cy: ly, r: 26, fill: '#fff', opacity: 0, style: 'mix-blend-mode:screen' }, g);
+      out.icRGB = svgEl('circle', { cx, cy: ly, r: 9, fill: '#555', stroke: 'rgba(255,255,255,.5)', 'stroke-width': 1.5 }, g);
+    }
     geo.snaps.forEach((q, i) => {
       svgEl('circle', { cx: pts[i][0], cy: pts[i][1], r: 8, fill: '#D9DEE4', stroke: '#5C6670', 'stroke-width': 1.5 }, g);
       const l = svgEl('text', { x: pts[i][0], y: pts[i][1] + (q.r === geo.snaps[0].r ? -12 : 21), 'text-anchor': 'middle', 'font-size': 9, 'font-weight': 800, fill: open ? 'var(--ink)' : '#fff' }, g);
       l.textContent = q.term === 'P' ? '+' : q.term === 'N' ? '−' : q.term;
+      if (!open && IC_INK[def.short]) l.setAttribute('fill', IC_INK[def.short]);
     });
     return out;
   }
@@ -2361,7 +2822,7 @@ function drawPart(parent, pl, level, contacts, opts) {
         const pl2 = svgEl('text', { x: -len / 2 + 2, y: -6, 'text-anchor': 'middle', 'font-size': 15, 'font-weight': 800, fill: '#fff' }, body); pl2.textContent = '+';
         const glow = svgEl('circle', { cx: 0, cy: 0, r: 30, fill: def.color === 'green' ? '#7CFFAE' : '#FF8A70', opacity: 0, style: 'mix-blend-mode:screen' }, body);
         const lens = svgEl('circle', { cx: 0, cy: 0, r: 8, fill: def.color === 'green' ? '#C8FFD9' : '#FFD2C8', opacity: 0 }, body);
-        out.glows.push({ el: glow, lens, type: 'led' });
+        out.glows.push({ el: glow, lens, type: 'led', rgb: def.color === 'rgb' });
         const t = label(def.short, 17, 11); t.setAttribute('font-size', 11);
         break;
       }
@@ -2617,7 +3078,8 @@ function frame(ts) {
       if (!it) continue;
       const c = live ? S.sim.cur[it.id] : 0;
       for (const gl of it.glows) {
-        if (gl.type === 'led') { const a = Math.abs(c || 0); const b = c > 0 ? Math.min(1, Math.sqrt(a / 0.01)) : 0; /* 10 mA: teljes fény, 0,3 mA: épp pislákol */ gl.el.setAttribute('opacity', (b * 0.85).toFixed(2)); gl.lens.setAttribute('opacity', b.toFixed(2)); }
+        if (gl.type === 'led') { const a = Math.abs(c || 0); const b = c > 0 ? Math.min(1, Math.sqrt(a / 0.01)) : 0; /* 10 mA: teljes fény, 0,3 mA: épp pislákol */
+          if (gl.rgb) { const col = RGB_SEQ[Math.floor((live ? S.sim.time : 0) / 0.8) % RGB_SEQ.length]; gl.el.setAttribute('fill', col); gl.lens.setAttribute('fill', col); } gl.el.setAttribute('opacity', (b * 0.85).toFixed(2)); gl.lens.setAttribute('opacity', b.toFixed(2)); }
         else if (gl.type === 'lamp') { const b = Math.min(1, Math.abs(c || 0) / 0.15); gl.el.setAttribute('opacity', (b * 0.9).toFixed(2)); }
         else if (gl.type === 'spk') { const b = Math.min(1, Math.abs(c || 0) / 0.02); gl.el.setAttribute('opacity', (b * 0.9).toFixed(2)); gl.el.setAttribute('r', 18 + b * 8); }
         else if (gl.type === 'mic') { const p = live ? S.sim.mic[it.id] || 0 : 0; gl.el.setAttribute('opacity', (p * 0.9).toFixed(2)); gl.el.setAttribute('r', 16 + p * 9); }
@@ -2628,6 +3090,7 @@ function frame(ts) {
       if (it.fan) { const w = live ? S.sim.motor[it.id].w : 0; it.fan.a += Math.sign(w) * Math.min(Math.abs(w), 300) * 0.06 * dtR * 57.3; it.fan.el.setAttribute('transform', `rotate(${(it.fan.a % 360).toFixed(1)})`); it.fan.el.style.opacity = Math.abs(w) > 150 ? 0.55 : 1; }
       if (it.fiber) { const lk = live && S.sim.links[0]; const b = lk && S.sim.fiberOn ? Math.min(1, Math.max(0, S.sim.cur[lk.led] || 0) / 0.01) : 0; it.fiber.core.setAttribute('opacity', (b * 0.95).toFixed(2)); }
       if (it.icAct) { const st = live && S.sim.ic[it.id]; it.icAct.setAttribute('opacity', st && st.active ? (st.on ? 1 : 0.35) : 0); }
+      if (it.icRGB) { const st = live && S.sim.ic[it.id]; const on = st && st.active && st.rgb.some((x) => x); it.icRGB.setAttribute('fill', on ? rgbCss(st.rgb) : '#555'); it.icGlow.setAttribute('fill', on ? rgbCss(st.rgb) : '#fff'); it.icGlow.setAttribute('opacity', on ? 0.8 : 0); }
       if (it.objLabel) { const nm = S.ctl.objName[it.id] || '?'; if (it.objLabel.textContent !== nm) it.objLabel.textContent = nm; }
       if (it.capBar) { const vC = live ? S.sim.capV[it.id] || 0 : 0; it.capBar.el.setAttribute('width', (Math.min(1, Math.abs(vC) / 3) * it.capBar.w).toFixed(1)); }
       if (it.isSwitch) {
@@ -2694,7 +3157,27 @@ function interp(tbl, x) {
   for (let i = 1; i < tbl.length; i++) if (x <= tbl[i][0]) { const [x0, y0] = tbl[i - 1], [x1, y1] = tbl[i]; if (!y0 || !y1) return x - x0 < x1 - x ? y0 : y1; return y0 + (y1 - y0) * (x - x0) / (x1 - x0); }
   return tbl[tbl.length - 1][1];
 }
+// Erősítő: a szimulátorból az átviteli görbe (mikrofon-ellenállás → hangszóróáram), a kondenzátorokat
+// hangfrekvencián rövidzárnak véve (befagyasztott feszültséggel). A tablet mikrofonjának jele ezen a görbén megy át.
+async function buildTransfer(cfg) {
+  const lay = currentLayout(); const key = 'micamp' + JSON.stringify(lay);
+  S.tables = S.tables || {}; if (S.tables[key]) return S.tables[key];
+  const sim = new E.Sim(lay, { pot: S.ctl.pot }); for (const k in sim.switches) if (/^S1/.test(k)) sim.switches[k] = true;
+  const p0 = 0.05; sim.mic[cfg.mic] = p0;
+  for (let i = 0; i < 1000; i++) { sim.step(0.002); if (i % 200 === 0) await tick0(); }
+  sim.freezeCaps = true;
+  const N = 65, I = [];
+  for (let k = 0; k < N; k++) { sim.mic[cfg.mic] = p0 + 0.05 * (-1 + 2 * k / (N - 1)); for (let j = 0; j < 4; j++) sim.step(1e-5); I.push(sim.cur[cfg.probe] || 0); }
+  const i0 = I[(N - 1) / 2];
+  const full = cfg.full || 0.1;   // ekkora áramváltozás (A) a teljes hangerő
+  const tbl = I.map((v) => Math.max(-1, Math.min(1, (v - i0) / full)));
+  S.tables[key] = tbl; return tbl;
+}
 function stopAudio() {
+  if (S.audioNode && S.audioNode.type === 'micamp') {
+    const n = S.audioNode; try { n.noise.stop(); } catch (e) { /* már leállt */ }
+    try { if (n.src) n.src.disconnect(); n.gate.disconnect(); } catch (e) { /* nincs */ }
+  }
   if (S.audio && S.audio.src) { try { S.audio.src.stop(); } catch (e) { /* már leállt */ } S.audio.src = null; }
   if (S.audioNode && S.audioNode.osc) { try { S.audioNode.osc.stop(); } catch (e) { /* már leállt */ } }
   S.audioNode = null;
@@ -2721,6 +3204,25 @@ async function setSound(on) {
     const osc = ac.createOscillator(); osc.type = 'square';
     const g = ac.createGain(); g.gain.value = 0; osc.connect(g).connect(ac.destination); osc.start();
     S.audioNode = { type: 'ic', osc, gain: g };
+  } else if (cfg.type === 'micamp') {
+    S.audioBusy = true; renderControls();
+    const tbl = await buildTransfer(cfg); S.audioBusy = false;
+    if (!S.soundOn) { renderControls(); return; }
+    const curve = new Float32Array(1025);
+    for (let i = 0; i < curve.length; i++) { const u = i / (curve.length - 1) * (tbl.length - 1); const k = Math.min(tbl.length - 2, Math.floor(u)); curve[i] = tbl[k] + (tbl[k + 1] - tbl[k]) * (u - k); }
+    const pre = ac.createGain(); pre.gain.value = 3;
+    const sh = ac.createWaveShaper(); sh.curve = curve; sh.oversample = '2x';
+    const hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 80;
+    const gate = ac.createGain(); gate.gain.value = 0;
+    const comp = ac.createDynamicsCompressor();
+    pre.connect(sh).connect(hp).connect(gate).connect(comp).connect(ac.destination);
+    let src = null; if (S.micStream) { src = ac.createMediaStreamSource(S.micStream); src.connect(pre); }
+    // a „Fújj bele” gombhoz: tompított zaj (fújás hangja)
+    const nb = ac.createBuffer(1, ac.sampleRate, ac.sampleRate); const ch = nb.getChannelData(0); let lp = 0;
+    for (let i = 0; i < ch.length; i++) { lp += 0.15 * ((Math.random() * 2 - 1) - lp); ch[i] = lp * 2.5; }
+    const noise = ac.createBufferSource(); noise.buffer = nb; noise.loop = true; const ng = ac.createGain(); ng.gain.value = 0;
+    noise.connect(ng).connect(pre); noise.start();
+    S.audioNode = { type: 'micamp', src, noise, ng, gate };
   } else if (cfg.type === 'clicks') {
     S.audioNode = { type: 'clicks' }; S.lastI = null;
   } else {
@@ -2744,14 +3246,16 @@ function playClick() {
 }
 // mikrofon: a „Fújj bele” gomb vagy a tablet mikrofonjának hangereje nyomja a virtuális szénmikrofont
 async function setMicInput(on) {
-  if (!on) { if (S.micStream) S.micStream.getTracks().forEach((t) => t.stop()); S.micStream = null; S.micAn = null; renderControls(); return; }
+  if (!on) { if (S.micStream) S.micStream.getTracks().forEach((t) => t.stop()); S.micStream = null; S.micAn = null; if (S.soundOn && audioCfg().type === 'micamp') setSound(true); else renderControls(); return; }
   const ac = ensureAC(); if (!ac || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { S.micErr = 'Ez a böngésző nem engedi a mikrofont.'; renderControls(); return; }
   try {
-    const st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    // az erősítős kísérleteknél visszhangszűrés: a tablet hangszórója ne gerjedjen be a mikrofonon át
+    const echo = audioCfg().type === 'micamp';
+    const st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: echo, noiseSuppression: false, autoGainControl: false } });
     const src = ac.createMediaStreamSource(st); const an = ac.createAnalyser(); an.fftSize = 1024; src.connect(an);
     S.micStream = st; S.micAn = an; S.micBuf = new Float32Array(an.fftSize); S.micErr = null;
   } catch (e) { S.micErr = 'A mikrofont nem engedélyezted, vagy nem érhető el. A „Fújj bele” gomb így is működik.'; }
-  renderControls();
+  if (S.soundOn && audioCfg().type === 'micamp') setSound(true); else renderControls();
 }
 function micFrame(dtR) {
   const sim = S.sim; if (!sim) return;
@@ -2779,8 +3283,14 @@ function audioFrame(dtR) {
     sim.capV[cfg.cap] = S.vc;
   }
   const n = S.audioNode; if (!n || !S.soundOn) return;
+  if (n.type === 'micamp') {
+    const tt = S.ac.currentTime; const on = Object.keys(sim.switches).filter((k) => /^S1/.test(k)).every((k) => sim.switches[k]);
+    n.gate.gain.setTargetAtTime(on ? 0.8 : 0, tt, 0.02);
+    n.ng.gain.setTargetAtTime(S.micBlow ? 0.35 : 0, tt, 0.03);
+    return;
+  }
   if (n.type === 'ic') {
-    const st = sim.ic[cfg.ic]; const spk = Math.abs(sim.cur.SP || 0) > 0.001;
+    const st = sim.ic[cfg.ic]; const spk = cfg.builtin || Math.abs(sim.cur.SP || 0) > 0.001;
     const tt = S.ac.currentTime;
     if (st && st.f > 0) n.osc.frequency.setTargetAtTime(st.f, tt, 0.004);
     n.gain.gain.setTargetAtTime(st && st.on && spk ? 0.1 : 0, tt, 0.006);
@@ -2869,6 +3379,14 @@ function renderControls() {
       S.micBar = lvl.querySelector('b');
       box.append(b, m, lvl);
       if (S.micErr) { const n = document.createElement('p'); n.className = 'note'; n.style.margin = '0'; n.textContent = S.micErr; box.append(n); }
+    } else if (typeof c === 'object' && c.remote) {
+      const b = document.createElement('button'); b.className = 'ctrl hold';
+      b.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7" r="2" fill="currentColor"/><path d="M10 12h4M10 15h4M10 18h4" stroke="currentColor" stroke-width="1.6"/></svg> Távirányító gombja';
+      const set = (v) => { if (S.sim && S.sim.ic[c.remote]) S.sim.ic[c.remote].remote = v; };
+      const down = (e) => { e.preventDefault(); set(true); b.classList.add('down'); };
+      const up = () => { set(false); b.classList.remove('down'); };
+      b.addEventListener('pointerdown', down); b.addEventListener('pointerup', up); b.addEventListener('pointerleave', up); b.addEventListener('pointercancel', up);
+      box.append(b);
     } else if (typeof c === 'object' && c.press) {
       const b = document.createElement('button'); b.className = 'ctrl hold';
       b.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="12" cy="12" r="3.5" fill="currentColor"/></svg> <span></span>';
@@ -3044,8 +3562,9 @@ function stepText(pl, level, layout) {
   }
   if (def.kind === 'ic') {
     const nm = (q) => (q.term === 'P' ? '(+)' : q.term === 'N' ? '(−)' : q.term);
-    const top = geo.snaps.slice(0, 3).map((q) => nm(q) + ' ' + art(pn(q))).join(', '), bot = geo.snaps.slice(3).map((q) => nm(q) + ' ' + art(pn(q))).join(', ');
-    return `Tedd le ${def.short === 'U1' ? 'a kék' : 'a piros'} ${def.name} modult (${def.short}) ${lv}, a felirattal olvashatóan. A felső lábai: ${top}; az alsók: ${bot}.`;
+    const legs = geo.snaps.map((q) => nm(q) + ': ' + pn(q)).join(', ');
+    const rot = pl.dir === 'u' ? ', balra fordítva (a felirat alulról felfelé olvasható)' : pl.dir === 'd' ? ', jobbra fordítva (a felirat felülről lefelé olvasható)' : pl.dir === 'l' ? ', fejjel lefelé' : ', a felirattal olvashatóan';
+    return `Tedd le ${IC_COLORNAME[def.short] || 'a'} ${def.name} modult (${def.short}) ${lv}${rot}. A lábai: ${legs}.`;
   }
   if (def.kind === 'pot') {
     const a = geo.snaps.find((s2) => s2.term === 'a'), b = geo.snaps.find((s2) => s2.term === 'b'), w = geo.snaps.find((s2) => s2.term === 'w');

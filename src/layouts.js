@@ -378,4 +378,105 @@ L.ic_u2 = icFrame.concat([
 // U1 zene: ugyanaz a keret; a (+) láb középen van, ugyanúgy a felső sínre kötve.
 L.ic_u1 = L.ic_u2.map((p) => (p.p === 'U2' ? { ...p, p: 'U1' } : p)).concat([{ p: 'S2', at: 'A3', dir: 'd' }]);  // S2: újraindítás (TRG)
 
+// ---- 4. fázis: mikrofon-erősítő és a többi IC ----
+
+// Mikrofon-erősítő (hangosbemondó): a mikrofon jele a C3-on át egy Darlington-párra (Q2a + Q2b) jut;
+// a munkapontot az R5 állítja be a kimenetről visszacsatolva, így a tranzisztorok erősítésétől alig függ.
+L.amp = [
+  { p: 'S1', at: 'A9', dir: 'd' },
+  { p: 'B1', at: 'E9', dir: 'd' },
+  { p: 'R2', at: 'A4', dir: 'l' },
+  { p: 'X1', at: 'G2', dir: 'r' },
+  { p: 'C3', at: 'C2', dir: 'r' },
+  { p: 'R5', at: 'B6', dir: 'l' },
+  { p: 'Q2', at: 'C5', dir: 'd', id: 'Q2a' },
+  { p: 'Q2', at: 'E6', dir: 'd', id: 'Q2b' },
+  { p: 'SP', at: 'A8', dir: 'd' },
+  { p: 'R1', at: 'D8', dir: 'l' },
+  { p: 'W6', at: 'A4', dir: 'r', id: 'Wp' },
+  { p: 'W3', at: 'C9', dir: 'd', id: 'Ws' },
+  { p: 'W6', at: 'G4', dir: 'r', id: 'Wn' },
+  { p: 'W7', at: 'A2', dir: 'd', id: 'Wm' },
+  { p: 'W3', at: 'B4', dir: 'd', id: 'Wb' },
+  { p: 'W4', at: 'B6', dir: 'd', id: 'Wo' },
+  { p: 'W2', at: 'E5', dir: 'd', id: 'We' },
+  { p: 'W2', at: 'C8', dir: 'd', id: 'Wx' },
+  { p: 'J1', at: 'B6', to: 'C5' },
+];
+
+// IC-keret: (+) sín az A sorban, (−) sín az F sorban, kapcsoló és elem a 8. oszlopban
+const icFrame2 = [
+  { p: 'W6', at: 'A3', dir: 'r', id: 'Wp' },
+  { p: 'W6', at: 'F3', dir: 'r', id: 'Wn' },
+  { p: 'W2', at: 'C8', dir: 'd', id: 'Ws' },
+];
+const icBat = [{ p: 'S1', at: 'A8', dir: 'd' }, { p: 'B1', at: 'D8', dir: 'd' }];
+
+// U4 erősítő IC (elforgatva): a mikrofont az R2 a szűrt tápról (FIL) táplálja, a hangszóró az OUT és a (−) között.
+// Itt a (−) sín van alul hosszabban, a 2. oszlopig.
+L.ic_u4 = [
+  { p: 'W6', at: 'A3', dir: 'r', id: 'Wp' },
+  { p: 'W7', at: 'F2', dir: 'r', id: 'Wn' },
+  { p: 'W2', at: 'C8', dir: 'd', id: 'Ws' },
+  { p: 'W3', at: 'B2', dir: 'd', id: 'Wi' },
+  { p: 'U4', at: 'B4', dir: 'u' },
+  { p: 'W2', at: 'A5', dir: 'd', id: 'Lp' },
+  { p: 'W3', at: 'D4', dir: 'd', id: 'Ln' },
+  { p: 'SP', at: 'D5', dir: 'd' },
+  { p: 'R2', at: 'B4', dir: 'l' },
+  { p: 'W3', at: 'C2', dir: 'r', id: 'Lin' },
+  { p: 'X1', at: 'D2', dir: 'd' },
+].concat(icBat);
+
+// U3 űrháború IC: hangszóró az OUT és a (+) között, az S2 az IN1-et a (−)-ra köti (következő hang).
+L.ic_u3 = icFrame2.concat([
+  { p: 'U3', at: 'C4' },
+  { p: 'W3', at: 'A4', dir: 'd', id: 'Lp' },
+  { p: 'SP', at: 'C6', dir: 'u' },
+  { p: 'W3', at: 'D5', dir: 'd', id: 'Ln' },
+  { p: 'S2', at: 'D4', dir: 'd' },
+], icBat);
+
+// U24 infravevő: a LED a (+) és a kimenet között (a modul kimenete belül korlátozza az áramot).
+L.ic_u24 = icFrame2.concat([
+  { p: 'U24', at: 'B4' },
+  { p: 'W2', at: 'A4', dir: 'd', id: 'Lp' },
+  { p: 'W3', at: 'D4', dir: 'd', id: 'Ln' },
+  { p: 'D1', at: 'A5', dir: 'd' },
+], icBat);
+
+// D8 színes LED: egyedül, a két sín között (az áramkorlátozó ellenállás a LED-be van építve).
+L.ic_d8 = icFrame2.concat([
+  { p: 'D8', at: 'B5', dir: 'd' },
+  { p: 'W2', at: 'A5', dir: 'd', id: 'Lp' },
+  { p: 'W3', at: 'D5', dir: 'd', id: 'Ln' },
+], icBat);
+
+// U32 dallam IC (beépített hangszóróval), előtte a mérőműszer (50 mA).
+L.ic_u32 = icFrame2.concat([
+  { p: 'M6', at: 'B4', dir: 'd' },
+  { p: 'U32', at: 'E4' },
+  { p: 'W2', at: 'A4', dir: 'd', id: 'Lp' },
+  { p: 'W2', at: 'D4', dir: 'd', id: 'Lm' },
+  { p: 'W2', at: 'E6', dir: 'd', id: 'Ln' },
+], icBat);
+
+// U22 fényorgona két elemmel (6 V): mikrofon a bemeneten, R3 a (+)-ról; két átkötő kábel.
+L.ic_u22 = [
+  { p: 'W5', at: 'A3', dir: 'r', id: 'Wp' },
+  { p: 'W6', at: 'G3', dir: 'r', id: 'Wn' },
+  { p: 'W1', at: 'C6', id: 'Wr' },
+  { p: 'U22', at: 'C3' },
+  { p: 'B1', at: 'A9', dir: 'd', id: 'B1a' },
+  { p: 'B1', at: 'E9', dir: 'd', id: 'B1b' },
+  { p: 'W3', at: 'E3', dir: 'd', id: 'Ln' },
+  { p: 'X1', at: 'E5', dir: 'd' },
+  { p: 'R3', at: 'A6', dir: 'd' },
+  { p: 'W3', at: 'C9', dir: 'd', id: 'Lb' },
+  { p: 'W2', at: 'G8', dir: 'r', id: 'Lg' },
+  { p: 'S1', at: 'A7', dir: 'r' },
+  { p: 'J1', at: 'D5', to: 'A5' },
+  { p: 'J2', at: 'C6', to: 'E5' },
+];
+
 module.exports = L;

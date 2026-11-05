@@ -722,6 +722,246 @@ const EXPS = [
       n: 'A modellünk egy saját, rövid dallamot játszik (a valódi U1 dallamát nem ismerjük), kb. 20 s-ig; a HLD a (+)-on folyamatos lejátszást ad, a TRG felfutó éle újraindít. Egy 20 hangos dallam néhány száz bitnyi memóriát igényel, ez több száz flip-flop lenne: ezért éri meg integrált áramkörbe zárni.',
     },
   },
+  // ===================== F) Mikrofon-erősítő =====================
+  {
+    id: 'amp', chapter: 'F', title: 'Hangosbemondó', tag: 'A mikrofon hangja a hangszóróból szól',
+    layout: LAY.amp, sim: { dt: 0.002, scale: 1 }, controls: ['S1', { mic: 'X1', echo: true }, 'sound'],
+    audio: { type: 'micamp', probe: 'SP', mic: 'X1', full: 0.04 },
+    intro: {
+      k: 'Beszélj bele a mikrofonba, és a hangszóróból a saját hangod szól! Ez egy kis hangosbemondó.',
+      m: 'A mikrofon (X1) a hang hatására egy picit megváltoztatja az ellenállását. Ez a változás nagyon kicsi, ezért két tranzisztor (Q2a és Q2b) felerősíti, és a hangszóró már hallhatóan megszólal.',
+      n: 'Kétfokozatú erősítő: a mikrofon az R2-vel feszültségosztót alkot, a váltakozó jel a C3-on át egy Darlington-pár bázisára jut. A munkapontot az R5 állítja be a kimenetről visszacsatolva, ezért a tranzisztorok β-jától alig függ. A hangszóró az R1-gyel sorban a kollektorkörben van.',
+    },
+    guess: {
+      q: { k: 'Ha beszélsz a mikrofonba, mi lesz?', m: 'Mi történik a hangszóróval, ha a mikrofonba beszélsz?', n: 'Mekkora lesz a hangszóró áramának változása a mikrofon ellenállásának változásához képest?' },
+      opts: [['Megszólal a hangszóró', 'sound'], ['Kigyullad egy lámpa', 'on'], ['Semmi', 'same']], right: 0,
+      after: { k: 'Igen! A hangszóróból a te hangod jön.', m: 'A tranzisztorok felerősítik a mikrofon kicsi változását, és a hangszóró a te hangodat szólaltatja meg.', n: 'A szimulációban a mikrofon ±90 Ω-os változása kb. 15 mA-es (csúcstól csúcsig) áramváltozást ad a hangszóróban, 14 mA-es nyugalmi áram mellett.' },
+    },
+    variants: [],
+    hint: {
+      k: 'Kapcsold be, aztán kapcsold be a hangot és a tablet mikrofonját, és mondj valamit! Vagy nyomd a „Fújj bele” gombot.',
+      m: 'Kapcsold be az S1-et, a hangot és a tablet mikrofonját. Beszélj halkan, aztán hangosan. A legjobb fejhallgatóval: ha a tablet hangszórója visszaszól a mikrofonba, sípolni kezd (ez a gerjedés, a valódi hangosításnál is előfordul).',
+      n: 'Figyeld a hangszóró áramát csendben és hangos beszédnél. Hangos hangnál a jel torzul: a kimenet nem tud a tápfeszültségnél nagyobbat és nullánál kisebbet adni.',
+    },
+    why: {
+      k: 'A mikrofonba érő hang egy picit megnyomja a mikrofont. Ez nagyon kicsi változás, a hangszóró ettől még nem szólna. A tranzisztorok olyanok, mint egy nagyító: a kicsi változásból nagyot csinálnak. Így szól a hangszóró a te hangoddal.',
+      m: 'Az erősítés azt jelenti, hogy egy kicsi változás vezérel egy nagyot. A mikrofon ellenállása a hangtól csak kicsit változik, de a tranzisztorok ezt sokszorosára nagyítják, és ez már meg tudja mozgatni a hangszóró membránját. A C3 kondenzátor csak a változást engedi át, az állandó feszültséget nem, ezért a tranzisztorok munkapontja nem csúszik el. A valódi készleten halkabb lesz, mint egy igazi hangosbemondó: ehhez kellene az U4 erősítő IC (a következő fejezetben).',
+      n: 'A Darlington-pár áramerősítése kb. β², így a kicsi bázisáram-változásból nagy kollektoráram-változás lesz. Az R5 negatív visszacsatolás: ha a kimenet feszültsége nő, több bázisáram folyik, a tranzisztorok jobban nyitnak, és a kimenetet visszahúzzák. Így a nyugalmi áram β = 80 és 300 között is kb. 14–15 mA marad. A hangot a tablet úgy állítja elő, hogy a szimulátorból kiszámolja az erősítő átviteli görbéjét (mikrofon-ellenállás → hangszóróáram), és ezen vezeti át a tablet mikrofonjának jelét; a túlvezérlés torzítása is ebből jön.',
+    },
+  },
+
+  // ===================== G) a többi fekete doboz =====================
+  {
+    id: 'u4', chapter: 'G', title: 'Kinyitjuk: U4 erősítő', tag: 'Hangosbemondó egy dobozban',
+    layout: LAY.ic_u4, sim: { dt: 0.002, scale: 1 }, controls: ['S1', { mic: 'X1', echo: true }, 'sound'],
+    audio: { type: 'micamp', probe: 'SP', mic: 'X1', full: 0.15 },
+    inside: {
+      title: 'Mi van az U4-ben?',
+      blocks: ['Erősítő tranzisztorok (mint a hangosbemondóban)', 'Csatolókondenzátorok: csak a változást engedik át', 'Szűrt táp (FIL) a mikrofonnak'],
+      built: ['amp'],
+      text: {
+        k: 'Az U4-ben is egy erősítő van, mint a hangosbemondódban. Csak erősebb, és kisebb helyen elfér.',
+        m: 'A 300-as kézikönyv szerint az U4 egy erősítő IC a hozzá mindig szükséges alkatrészekkel. Ugyanazt csinálja, mint a te hangosbemondód, csak jóval hangosabban, és nem függ annyira attól, milyen tranzisztorok vannak benne.',
+        n: 'A modul egy integrált teljesítményerősítő a külső alkatrészeivel (csatoló- és szűrőkondenzátorok). A modellünkben a bemenet változását 20-szorosára erősíti, a kimenet belül kondenzátoron át csatolt, és a kitérése a tápfeszültség feléig terjed. A kézikönyv szerint a FIL láb szűrt tápot ad, hogy a mikrofon tápja ne zúgjon; a modellünkben ez egy 100 Ω-os ellenállás a (+) felé. A valódi modul pontos belső rajzát nem ismerjük.',
+      },
+    },
+    variants: [],
+    intro: {
+      k: 'Ez a sárga doboz egy erősítő. Beszélj bele a mikrofonba, és nagyon hangosan szól!',
+      m: 'Az U4 erősítő IC a 300-as dobozban van. Ugyanazt csinálja, mint a hangosbemondód, csak sokkal hangosabban. Bekötjük, kipróbáljuk, aztán kinyitjuk.',
+      n: 'Az U4 lábai: (+) és (−) a táp, INP a bemenet, OUT a kimenet, FIL a szűrt táp. A mikrofont az R2 a FIL-ről táplálja; a hangszóró az OUT és a (−) között van. Az IC itt elforgatva áll a rácson.',
+    },
+    guess: {
+      q: { k: 'Hangosabb lesz, mint a hangosbemondód?', m: 'Hangosabban vagy halkabban szól, mint a két tranzisztoros hangosbemondód?', n: 'Hányszor nagyobb lesz a hangszóró áramának változása, mint a hangosbemondónál?' },
+      opts: [['Hangosabb', 'sound'], ['Ugyanolyan', 'same'], ['Halkabb', 'dim']], right: 0,
+      after: { k: 'Igen! Sokkal hangosabb.', m: 'Sokkal hangosabb: az IC-ben több és erősebb tranzisztor dolgozik.', n: 'A szimulációban ugyanarra a mikrofonváltozásra kb. 180 mA-es változás jön a 15 mA helyett, vagyis kb. tizenkétszer akkora.' },
+    },
+    hint: {
+      k: 'Kapcsold be a hangot és a mikrofont, és mondj valamit! Aztán nyisd ki az IC-t.',
+      m: 'Kapcsold be az S1-et, a hangot és a tablet mikrofonját. Hasonlítsd össze a hangosbemondóval. Fejhallgatóval jobb, különben sípolhat.',
+      n: 'Nézd meg a hangszóró áramát, és hasonlítsd össze a hangosbemondóéval. Hangos hangnál itt is torzul a jel: hol van a határ?',
+    },
+    why: {
+      k: 'Az U4-ben egy erősítő van, mint amit te építettél két tranzisztorból. Csak sokkal erősebb. Most már tudod, mi van a dobozban.',
+      m: 'Az erősítő IC-ket rádiókban, hangszórókban, telefonokban használják. Egy erősítőt megépíteni sok alkatrész, az IC-ben ez mind egy tokban van. Te már tudod, hogyan működik: a kicsi változást egy nagy áram követi.',
+      n: 'Az IC-s erősítő előnye: nagyobb erősítés, kisebb torzítás, és a működése nem függ az egyes tranzisztorok β-jától, mert a belsejében erős negatív visszacsatolás van. A hangosbemondódban az R5 ugyanezt csinálta kicsiben. Ez egy viselkedési modell; a valódi U4 erősítése és hangereje ettől eltérhet.',
+    },
+  },
+  {
+    id: 'u3', chapter: 'G', title: 'Kinyitjuk: U3 űrháború', tag: 'Nyolc űrhang egy dobozban',
+    layout: LAY.ic_u3, sim: { dt: 0.002, scale: 1 }, controls: ['S1', { press: 'S2', label: 'Következő hang (S2)' }, 'sound'], audio: { type: 'ic', ic: 'U3' },
+    inside: {
+      title: 'Mi van az U3-ban?',
+      blocks: ['Hangot adó rezgőkör, aminek a hangmagassága állítható', 'Lassú rezgőkör, ami hangolja a gyorsat', 'Számláló: gombnyomásra a következő hangot választja'],
+      built: ['siren', 'flash', 'flipflop'],
+      text: {
+        k: 'Az U3-ban rezgőkörök vannak, mint a szirénádban és a villogódban. Egy kis számláló pedig megjegyzi, melyik hangnál tartasz.',
+        m: 'A hangot egy rezgőkör adja, mint a szirénádban. A hangmagasságát egy lassabb rezgőkör hangolja, ettől lesz „lézeres” vagy „ufós”. A gombnyomásokat egy számláló jegyzi meg. A számláló emlékező lámpákból (flip-flopokból) áll.',
+        n: 'Az U3 egy hanggeneráló IC a kiegészítő alkatrészeivel. A működése: egy hangolható oszcillátor, egy lassú modulálóoszcillátor és egy háromfokozatú számláló (3 flip-flop: 2³ = 8 állapot). A pontos hangjait nem ismerjük; a modellünk nyolc saját űrhangot ad.',
+      },
+    },
+    variants: [],
+    intro: {
+      k: 'Ez a zöld doboz űrhangokat ad. Minden gombnyomásra másik hangot!',
+      m: 'Az U3 űrháború IC a 300-as dobozban van. Nyolcféle hangot tud. A nyomógomb az IN1 lábat a (−)-ra köti, és ettől a következő hangra lép.',
+      n: 'Az U3 lábai: (+), (−), OUT (a hangszóró a (+) és az OUT között), IN1 és IN2 vezérlőbemenet. A kézikönyv szerint a bemeneteket a (−)-ra kötve lehet végiglépkedni a nyolc hangon.',
+    },
+    guess: {
+      q: { k: 'Ha megnyomod a gombot, mi lesz?', m: 'Mi történik, ha megnyomod az S2-t?', n: 'Hány gombnyomás után kerülsz vissza az első hanghoz?' },
+      opts: [['Másik hang szól', 'sound'], ['Elhallgat', 'off'], ['Ugyanaz szól', 'same']], right: 0,
+      after: { k: 'Igen! Minden nyomásra új hang jön.', m: 'Minden gombnyomásra a következő hang jön, nyolc után kezdi elölről.', n: 'Nyolc: a három flip-flopos számláló 8 állapot után körbeér.' },
+    },
+    hint: {
+      k: 'Kapcsold be a hangot, és nyomogasd a gombot!',
+      m: 'Kapcsold be az S1-et és a hangot. Nyomogasd az S2-t, és számold meg, hány hangja van.',
+      n: 'Számold meg a hangokat, és figyeld az U3 állapotát a mérőknél. Melyik hang emlékeztet a szirénádra?',
+    },
+    why: {
+      k: 'Az űrhangokat rezgőkörök csinálják, mint a szirénádban. A doboz megjegyzi, hányszor nyomtad meg a gombot, és mindig a következő hangot adja.',
+      m: 'Két rezgőkör dolgozik együtt: egy gyors, ami a hangot adja, és egy lassú, ami folyton változtatja a gyors hangmagasságát. A szirénánál a lassú rész a kondenzátor töltődése volt. A számláló emlékező lámpákból áll, mint a flip-flopod, csak hármat kötnek egymás után.',
+      n: 'Három flip-flop egymás után kötve 0-tól 7-ig számol (bináris számláló): minden gombnyomás az első flip-flopot billenti át, és ha az visszaáll, a következőt. A hangot választó áramkör ebből a 3 bitből választja ki, melyik hangot kapcsolja be. Az U2 riasztóban ezt a három bitet te adtad meg kívülről (IN1, IN2, IN3).',
+    },
+  },
+  {
+    id: 'u22', chapter: 'G', title: 'Kinyitjuk: U22 fényorgona', tag: 'Hangra színt vált',
+    layout: LAY.ic_u22, sim: { dt: 0.002, scale: 1 }, controls: ['S1', { mic: 'X1' }],
+    inside: {
+      title: 'Mi van az U22-ben?',
+      blocks: ['Hangérzékelő: a mikrofon jeléből kapcsoló lesz (mint a hangra villogó LED-nél)', 'Számláló: megjegyzi, hányadik színnél tartasz', 'Piros, zöld és kék LED egy tokban'],
+      built: ['clap', 'flipflop'],
+      text: {
+        k: 'Az U22-ben egy hangkapcsoló van, mint a hangra villogó lámpádban, és három kis lámpa: egy piros, egy zöld és egy kék.',
+        m: 'A Light kézikönyve szerint az U22 ellenállásokból, kondenzátorokból, tranzisztorokból, egy háromszínű LED-ből és IC-kből áll. A hangot ugyanúgy veszi észre, mint a te hangra villogó LED-ed. Minden hangnál egy számláló lép egyet, és a számláló dönti el, melyik színek égjenek.',
+        n: 'A bemeneten egy komparátor (Schmitt-trigger) van: ha az INP feszültsége a tápfeszültség kb. 55%-a fölé megy, egyet lép a számláló, és csak akkor léphet újra, ha a feszültség 45% alá esett. A számláló kimenetei kapcsolják a piros, zöld és kék LED-et. A modellünk hét színt léptet sorban; a valódi IC színsorrendje ettől eltérhet. A kézikönyv szerint az R, G, B lábakkal a színek közvetlenül is vezérelhetők.',
+      },
+    },
+    variants: [],
+    intro: {
+      k: 'Fújj bele a mikrofonba, és a lámpa minden fújásra más színű lesz!',
+      m: 'Az U22 fényorgona a Light dobozban van. A kézikönyv minden kapcsolásában két elemmel (6 V) szerepel, ezért mi is két elemmel kötjük. Minden hangra, fújásra vagy tapsra másik színre vált.',
+      n: 'Az U22 lábai: R, G, B színvezérlés, (+) és (−) a táp (itt két elem sorban, 6 V), INP a bemenet, FB visszacsatolás. A mikrofon az R3-mal feszültségosztót alkot az INP-n, mint a hangra villogó LED-nél.',
+    },
+    guess: {
+      q: { k: 'Ha belefújsz, mi lesz a lámpával?', m: 'Mi történik a fényorgonával, ha belefújsz a mikrofonba?', n: 'Mi történik, ha folyamatosan fújod a mikrofont, és nem engeded el?' },
+      opts: [['Másik színű lesz', 'blink'], ['Kialszik', 'off'], ['Semmi', 'same']], right: 0,
+      after: { k: 'Igen! Minden fújásra új szín.', m: 'Minden hangnál egyet lép, és másik színt kapcsol be.', n: 'Csak egyet lép: a számláló csak akkor léphet újra, ha a bemenet közben visszaesett.' },
+    },
+    hint: {
+      k: 'Kapcsold be, és nyomd a „Fújj bele” gombot többször egymás után!',
+      m: 'Kapcsold be az S1-et, és fújj bele többször. Kapcsold be a tablet mikrofonját, és tapsolj vagy énekelj.',
+      n: 'Számold meg, hány szín van, és melyik színek keverékek (sárga = piros + zöld, türkiz = zöld + kék, lila = piros + kék, fehér = mind a három).',
+    },
+    why: {
+      k: 'A dobozban egy hangkapcsoló, egy számláló és három kis lámpa van. A hangra a számláló egyet lép, és egy másik lámpát kapcsol be. Ha egyszerre több lámpa ég, a színük összekeveredik.',
+      m: 'A hangra villogó LED-ed a hangot kapcsolásra fordította le. Az U22 ugyanezt csinálja, de nem csak villan, hanem számol is: megjegyzi, hányadik hangnál tartasz, mint az emlékező lámpád. A három szín keveréséből újabb színek lesznek: piros és zöld együtt sárgának látszik.',
+      n: 'A színkeverés az additív színkeverés: a szemünkben háromféle színérzékelő van (piros, zöld, kék), ezért a három LED fényének keverékéből sok színt látunk. A tévé és a tablet képernyője is így működik, piros, zöld és kék pontokból.',
+    },
+  },
+  {
+    id: 'u24', chapter: 'G', title: 'Kinyitjuk: U24 infravevő', tag: 'Érzi a távirányító láthatatlan fényét',
+    layout: LAY.ic_u24, sim: { dt: 0.002, scale: 1 }, controls: ['S1', { remote: 'U24' }],
+    inside: {
+      title: 'Mi van az U24-ben?',
+      blocks: ['Fényérzékelő, ami csak az infravörös fényt látja (mint egy fototranzisztor)', 'Erősítő és szűrő: csak a gyorsan villogó fényt engedi át', 'Kimeneti tranzisztor: ez kapcsolja a LED-et'],
+      built: ['lightlink', 'night'],
+      text: {
+        k: 'Az U24-ben egy fényt érző szem van, mint a fototranzisztor, és egy kapcsoló. A szem csak a távirányító láthatatlan fényét veszi észre.',
+        m: 'A távirányító infravörös fényt villogtat, amit a szemünk nem lát. Az U24 érzékelője ezt fogja fel, mint a fénytávírónál a fototranzisztor. Egy szűrő csak a gyors villogást engedi tovább, ezért a lámpák állandó fénye nem zavarja.',
+        n: 'Az infravevő modulok belsejében egy infravörös fotodióda, egy erősítő, egy kb. 38 kHz-re hangolt sávszűrő és egy egyenirányító (demodulátor) van; a kimenet egy tranzisztor, ami adás alatt a (−) felé kapcsol. A távirányító a kódot 38 kHz-es villanássorozatokban küldi. A fénytávíród ugyanezt csinálta látható fénnyel és szűrő nélkül.',
+      },
+    },
+    variants: [],
+    intro: {
+      k: 'A távirányító láthatatlan fénnyel üzen. Ez a kis sárga doboz meglátja, és felkapcsolja a lámpát!',
+      m: 'Az U24 infravevő a Light dobozban van. Ha egy tévé-távirányítót ráfogsz, és megnyomod bármelyik gombját, a LED villogni kezd.',
+      n: 'Az U24 lábai: (+), (−) és a kimenet. A kimenet adás közben a (−)-ra kapcsol, ezért a LED a (+) és a kimenet közé kerül. A kézikönyv szerint itt nem kell elé ellenállás.',
+    },
+    guess: {
+      q: { k: 'Ha megnyomod a távirányító gombját, mi lesz?', m: 'Mit csinál a LED, ha a távirányítóval rávilágítasz az U24-re?', n: 'Miért villog a LED, és miért nem ég folyamatosan?' },
+      opts: [['Villog a lámpa', 'blink'], ['Semmi, hiszen nem látszik a fény', 'off'], ['Megszólal', 'sound']], right: 0,
+      after: { k: 'Igen! A doboz látja, amit mi nem.', m: 'A LED villog: a távirányító jelét a fénye villogása hordozza.', n: 'Mert a távirányító a kódot villanássorozatként küldi, és a kimenet ezt követi.' },
+    },
+    hint: {
+      k: 'Kapcsold be, aztán nyomd és tartsd a „Távirányító gombja” gombot! A valódi készletnél egy tévé-távirányító kell.',
+      m: 'Kapcsold be az S1-et, aztán nyomd a távirányító gombot. A valódi készletnél fogd rá az U24-re egy tévé-távirányítót, és nyomj meg rajta bármit.',
+      n: 'Tipp: a tablet vagy telefon kamerája sokszor látja az infravörös fényt. Nézd a kamerán át a távirányító végét, miközben nyomod a gombját!',
+    },
+    why: {
+      k: 'A távirányító lámpája olyan fényt ad, amit a szemünk nem lát. Az U24 látja, és bekapcsolja a LED-et. Ugyanaz, mint a fénytávíród, csak láthatatlan fénnyel.',
+      m: 'Az infravörös fény a piros fényen túl van, a szemünk már nem látja, de a fényérzékelők igen. A távirányító így szól a tévéhez úgy, hogy közben nem villog a szobában semmi. Az U24 a fénytávíró vevőjének egy ügyesebb változata: nem zavarja meg a lámpák és a nap fénye.',
+      n: 'A sávszűrő miatt a vevő csak a 38 kHz körül villogó fényre reagál, az állandó fényre (nap, lámpa) nem. Ezért nem kapcsol be a szoba világításától, amit a fénytávíród fototranzisztora megtenne. A modellünkben a távirányító jelét egy egyszerű villogás helyettesíti.',
+    },
+  },
+  {
+    id: 'd8', chapter: 'G', title: 'Kinyitjuk: a színes LED (D8)', tag: 'Egy LED, amiben villogó van',
+    layout: LAY.ic_d8, sim: { dt: 0.002, scale: 1 }, controls: ['S1'],
+    inside: {
+      title: 'Mi van a D8-ban?',
+      blocks: ['Piros, zöld és kék LED egy tokban', 'Egy parányi vezérlő IC: ez váltogatja a színeket (mint egy villogó)', 'Áramkorlátozó ellenállás'],
+      built: ['flash'],
+      text: {
+        k: 'Ebben a LED-ben három kis lámpa van, és egy pici villogó, ami felváltva kapcsolja őket.',
+        m: 'A Light kézikönyve szerint a színes LED-ben piros, zöld és kék LED van, és egy kis áramkör, ami vezérli őket. Olyan, mint a te villogód, csak nem két lámpát kapcsolgat, hanem hármat, és többféle sorrendben.',
+        n: 'A színes LED-ek tokjában a három LED-chip mellett egy apró vezérlő IC is van, ami egy saját ütemadóval (oszcillátorral) lépteti a színeket. Az áramot a beépített ellenállás korlátozza. A modellünkben a színek sorrendje és üteme saját közelítés.',
+      },
+    },
+    variants: [],
+    intro: {
+      k: 'Ez egy különleges lámpa: magától változtatja a színét!',
+      m: 'A D8 színes LED a Light és a My Home dobozban van. Úgy néz ki, mint egy sima LED, de bekapcsolva magától váltogatja a színét.',
+      n: 'A D8 két lábú, mint egy LED, és ugyanúgy van iránya (+). A My Home LED-jeibe áramkorlátozó ellenállás van építve, ezért elé nem kell ellenállás.',
+    },
+    guess: {
+      q: { k: 'Bekapcsolod. Milyen színű lesz?', m: 'Mit csinál a D8, ha bekapcsolod?', n: 'Hány alkatrész lehet egy ilyen LED-ben?' },
+      opts: [['Váltogatja a színét', 'blink'], ['Mindig piros', 'on'], ['Nem világít', 'off']], right: 0,
+      after: { k: 'Igen! Mindenféle színe van.', m: 'Magától váltogatja a színét: van benne egy kis vezérlő.', n: 'Legalább öt: három LED, egy vezérlő IC és egy ellenállás.' },
+    },
+    hint: {
+      k: 'Kapcsold be, és figyeld a színeket!',
+      m: 'Kapcsold be az S1-et, és nézd, milyen színeket mutat. Melyik szín keverék?',
+      n: 'Figyeld a LED áramát: változik-e, amikor színt vált?',
+    },
+    why: {
+      k: 'A LED-ben három kis lámpa van: piros, zöld és kék. Egy pici villogó felváltva kapcsolja őket. Ha kettő egyszerre ég, a színük összekeveredik.',
+      m: 'Nem csak a nagy dobozokban vannak IC-k: egy LED-be is befér egy. A villogód két tranzisztorral két lámpát kapcsolgatott. A D8-ban ezt egy parányi IC csinálja három lámpával.',
+      n: 'A D8 árama a színtől függően változik, mert egyszerre egy, kettő vagy három LED-chip ég. A modellünk a D8-at egyetlen LED-ként számolja, beépített ellenállással; a színváltás csak a rajzon látszik.',
+    },
+  },
+  {
+    id: 'u32', chapter: 'G', title: 'Kinyitjuk: U32 dallam IC', tag: 'Zene, hangszóróval együtt',
+    layout: LAY.ic_u32, sim: { dt: 0.002, scale: 1, meter: { M6: '50mA' } }, controls: ['S1', { meter: 'M6' }, 'sound'], audio: { type: 'ic', ic: 'U32', builtin: true },
+    inside: {
+      title: 'Mi van az U32-ben?',
+      blocks: ['Hangot adó rezgőkör (mint a hangszeredben)', 'Memória a dallam hangjaival', 'Beépített kis hangszóró'],
+      built: ['organ', 'flipflop'],
+      text: {
+        k: 'Az U32-ben egy kis hangszer van, ami megjegyezte a dallamot, és egy pici hangszóró is.',
+        m: 'A My Home kézikönyve szerint az U32 egy memóriába írt dallamot játszik le, és a beépített hangszórója szólaltatja meg. A hangot ugyanúgy egy rezgőkör adja, mint a te hangszeredben, csak a hangokat nem te választod, hanem a memória.',
+        n: 'A dallam IC-k belsejében egy oszcillátor, egy osztó (ez adja a hangmagasságokat), egy számláló és egy kis memória (ROM) van, ami sorban megmondja, melyik hang jön és meddig szól. A dallamot nem ismerjük; a modellünk egy saját rövid dallamot játszik.',
+      },
+    },
+    variants: [],
+    intro: {
+      k: 'Ez a kis doboz zenél, és még hangszóró sem kell hozzá!',
+      m: 'Az U32 dallam IC a My Home dobozban van. Két lába van, mint egy lámpának, és bekapcsolva dallamot játszik. A mérőműszer megmutatja, mennyi áramot vesz fel.',
+      n: 'Az U32 két lábú, a (+) jel felül. A mérőműszer (50 mA-es állásban) sorban van vele; minden hangnál megváltozik a felvett áram.',
+    },
+    guess: {
+      q: { k: 'Mit csinál a mérő mutatója zene közben?', m: 'Mit csinál a mérőműszer, amíg a dallam szól?', n: 'Miért változik a mérő kitérése zene közben?' },
+      opts: [['Ugrál', 'blink'], ['Áll', 'same'], ['Nulla', 'off']], right: 0,
+      after: { k: 'Igen! Minden hangnál mozdul.', m: 'Ugrál: amikor szól egy hang, több áram kell, a szünetekben kevesebb.', n: 'Mert a beépített hangszóró árama hangonként be- és kikapcsol.' },
+    },
+    hint: {
+      k: 'Kapcsold be a hangot és az S1-et, és figyeld a mérő mutatóját!',
+      m: 'Kapcsold be az S1-et és a hangot. Figyeld a mérőt a hangok és a szünetek alatt.',
+      n: 'Olvasd le a mérőt hang közben és szünetben. Mennyi áram jut a hangszóróra?',
+    },
+    why: {
+      k: 'Az U32-ben egy kis hangszer van, ami megjegyezte a dallamot. Ha áramot kap, eljátssza. A hangszóró is benne van, ezért nem kell külön.',
+      m: 'A hangszereden te választottad a hangot a gombbal és a tekerővel. Az U32-ben a memória mondja meg, melyik hang jön. Az U1 zene IC ugyanezt tudja, csak annak külső hangszóró kell.',
+      n: 'A mérő átlagos áramot mutat: hang közben a hangszóró áramának átlaga, szünetben csak a vezérlő kicsi árama. A modellünkben ez kb. 12 mA, illetve 1,5 mA. A valódi U32 számai ettől eltérhetnek.',
+    },
+  },
 
 ];
 
@@ -735,7 +975,7 @@ const CHAPTERS = [
   { id: 'F', title: 'Fény és hang továbbítása', short: 'Továbbítás' },
   { id: 'G', title: 'A fekete dobozok kinyitása', short: 'Fekete dobozok' },
 ];
-const ORDER = ['first', 'conduct', 'series', 'dimmer', 'generator', 'capbat', 'motorspeed', 'night', 'touch', 'water', 'shadow', 'delay', 'flipflop', 'and', 'or', 'not', 'flash', 'metronome', 'sound', 'organ', 'siren', 'clap', 'lightlink', 'u23', 'u2', 'u1'];
+const ORDER = ['first', 'conduct', 'series', 'dimmer', 'generator', 'capbat', 'motorspeed', 'night', 'touch', 'water', 'shadow', 'delay', 'flipflop', 'and', 'or', 'not', 'flash', 'metronome', 'sound', 'organ', 'siren', 'clap', 'amp', 'lightlink', 'u23', 'd8', 'u2', 'u3', 'u1', 'u32', 'u4', 'u22', 'u24'];
 EXPS.sort((x, y) => ORDER.indexOf(x.id) - ORDER.indexOf(y.id));
 
 // Egy változat alkalmazása: vagy átalakítja az elrendezést, vagy egy másik elrendezésre cseréli.

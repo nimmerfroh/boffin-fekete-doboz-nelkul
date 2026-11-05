@@ -53,6 +53,14 @@
     U1: { kind: 'ic', ic: 'music', pins: ['TRG', 'P', 'HLD', 'N', 'OUT'], name: 'Zene IC', short: 'U1' },
     U2: { kind: 'ic', ic: 'alarm', pins: ['IN1', 'IN2', 'IN3', 'N', 'OUT'], name: 'Riasztó IC', short: 'U2' },
     U23: { kind: 'ic', ic: 'strobe', pins: ['CTL', 'P', 'NC', 'N', 'OUT'], name: 'Stroboszkóp IC', short: 'U23' },
+    // pos: a lábak helye a modul bal felső sarkához képest [sor, oszlop]; body: a snap nélküli, takart pontok
+    U3: { kind: 'ic', ic: 'war', pins: ['P', 'OUT', 'IN1', 'N', 'IN2'], pos: [[0, 0], [0, 2], [1, 0], [1, 1], [1, 2]], body: [[0, 1]], name: 'Űrháború IC', short: 'U3' },
+    U4: { kind: 'ic', ic: 'amp', pins: ['N', 'INP', 'FIL', 'OUT', 'P'], name: 'Erősítő IC', short: 'U4' },
+    U22: { kind: 'ic', ic: 'organ', pins: ['R', 'G', 'B', 'P', 'N', 'FB', 'INP'], pos: [[0, 0], [0, 1], [0, 2], [1, 2], [2, 0], [2, 1], [2, 2]], body: [[1, 0], [1, 1]], name: 'Fényorgona', short: 'U22' },
+    U24: { kind: 'ic', ic: 'ir', pins: ['P', 'OUT', 'N'], pos: [[0, 0], [1, 1], [2, 0]], body: [[1, 0]], name: 'Infravevő', short: 'U24' },
+    U32: { kind: 'ic', ic: 'melody', pins: ['P', 'N'], pos: [[0, 0], [0, 2]], body: [[0, 1]], name: 'Dallam IC', short: 'U32' },
+    // színes LED: piros, zöld és kék LED egy tokban, egy kis vezérlőáramkörrel, beépített áramkorlátozó ellenállással
+    D8: { kind: 'led', color: 'rgb', Is: 2.3e-20, n: 2, Rs: 100, name: 'Színes LED', short: 'D8' },
     FC: { kind: 'fiber', name: 'Üvegszálas kábel (két tartóval)', short: 'FC' },
   };
 
@@ -67,9 +75,9 @@
 
   // Melyik dobozban hány darab van (a hivatalos alkatrészlisták alapján).
   const KITS = {
-    '300': { name: 'Boffin I 300', parts: { J1: 1, J2: 1, W1: 6, W2: 9, W3: 4, W4: 2, W5: 1, W6: 1, W7: 1, B1: 2, S1: 1, S2: 1, R1: 1, R2: 1, R3: 1, R4: 1, R5: 1, RV: 1, D1: 1, D2: 1, C1: 1, C2: 1, C3: 1, C4: 1, C5: 1, Q1: 1, Q2: 1, Q4: 1, L1: 1, L2: 1, SP: 1, M1: 1, X1: 1, U1: 1, U2: 1 } },
-    light: { name: 'Boffin II Light', parts: { J1: 1, J2: 1, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, B1: 2, S1: 1, S2: 1, R1: 1, R3: 1, R5: 1, RV: 1, D1: 1, C2: 1, C4: 1, Q1: 1, Q2: 1, Q4: 1, SP: 1, M1: 1, X1: 1, FC: 1, U23: 1 } },
-    home: { name: 'Boffin II My Home', parts: { J1: 1, J2: 1, J4: 2, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, S1: 1, S2: 1, R3: 1, C5: 1, Q2: 1, Q4: 1, M4: 1, M6: 1 } },
+    '300': { name: 'Boffin I 300', parts: { J1: 1, J2: 1, W1: 6, W2: 9, W3: 4, W4: 2, W5: 1, W6: 1, W7: 1, B1: 2, S1: 1, S2: 1, R1: 1, R2: 1, R3: 1, R4: 1, R5: 1, RV: 1, D1: 1, D2: 1, C1: 1, C2: 1, C3: 1, C4: 1, C5: 1, Q1: 1, Q2: 1, Q4: 1, L1: 1, L2: 1, SP: 1, M1: 1, X1: 1, U1: 1, U2: 1, U3: 1, U4: 1 } },
+    light: { name: 'Boffin II Light', parts: { J1: 1, J2: 1, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, B1: 2, S1: 1, S2: 1, R1: 1, R3: 1, R5: 1, RV: 1, D1: 1, C2: 1, C4: 1, Q1: 1, Q2: 1, Q4: 1, SP: 1, M1: 1, X1: 1, FC: 1, U23: 1, U22: 1, U24: 1, D8: 1 } },
+    home: { name: 'Boffin II My Home', parts: { J1: 1, J2: 1, J4: 2, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, S1: 1, S2: 1, R3: 1, C5: 1, Q2: 1, Q4: 1, M4: 1, M6: 1, U32: 1, D8: 1 } },
   };
 
   function postKey(r, c) { return r + ',' + c; }
@@ -98,9 +106,12 @@
       for (let i = 0; i < def.n; i++) snaps.push({ r: r0 + dr * i, c: c0 + dc * i, term: 'w' + i });
     } else if (def.kind === 'ic') {
       // 3 × 2-es modul: felső sor 3 lába, alsó sor két szélső lába; a középső alsó pont a test
-      const pos = [[0, 0], [0, 1], [0, 2], [1, 0], [1, 2]];
-      def.pins.forEach((t, i) => snaps.push({ r: r0 + pos[i][0], c: c0 + pos[i][1], term: t }));
-      body.push({ r: r0 + 1, c: c0 + 1 });
+      // a modul elforgatható: 'r' = alaphelyzet, 'd' = 90°-kal jobbra, 'l' = 180°, 'u' = 90°-kal balra
+      const pos0 = def.pos || [[0, 0], [0, 1], [0, 2], [1, 0], [1, 2]], body0 = def.body || [[1, 1]];
+      const all = pos0.concat(body0); const mr = Math.max(...all.map((q) => q[0])), mc = Math.max(...all.map((q) => q[1]));
+      const rot = ([r, c]) => (pl.dir === 'd' ? [c, mr - r] : pl.dir === 'l' ? [mr - r, mc - c] : pl.dir === 'u' ? [mc - c, r] : [r, c]);
+      def.pins.forEach((t, i) => { const [r, c] = rot(pos0[i]); snaps.push({ r: r0 + r, c: c0 + c, term: t }); });
+      for (const q of body0) { const [r, c] = rot(q); body.push({ r: r0 + r, c: c0 + c }); }
     } else if (def.kind === 'pot') {
       // két vége 2 egységre, a csúszka középen, a haladási irányhoz képest balra (lefelé haladva jobbra)
       const pr = -dc, pc = dr;
@@ -275,7 +286,7 @@
       if (e.def.kind === 'meter') this.meter[e.id] = (opts.meter && opts.meter[e.id]) || '50mA';
       if (e.def.kind === 'motor') this.motor[e.id] = { w: 0, hand: 0 };
       if (e.def.kind === 'mic') this.mic[e.id] = 0;
-      if (e.def.kind === 'ic') this.ic[e.id] = { phase: 0, t: 0, f: 0, on: false, active: false, gOut: 1e-9, play: 0, note: 0, prevTrg: false, mode: 0 };
+      if (e.def.kind === 'ic') this.ic[e.id] = { phase: 0, t: 0, f: 0, on: false, active: false, gOut: 1e-9, play: 0, note: 0, prevTrg: false, mode: 0, vt: 0, avg: null, inHi: false, count: 0, rgb: [0, 0, 0], fbV: 0, remote: false, gP: 1e-9, lo1: false, lo2: false };
       if (e.def.kind === 'obj') this.obj[e.id] = (opts.obj && opts.obj[e.id] != null) ? opts.obj[e.id] : 1e12;
     }
   }
@@ -288,11 +299,36 @@
     return ((h % 2001) / 1000 - 1) * 0.01;
   }
   // IC-modulok belső terhelései (láb → (−)) és a viselkedési modell
+  // [láb, ellenállás, másik láb (alapból a (−))]
   const IC_LOADS = {
     strobe: [['P', 30000], ['CTL', 10000]],
     alarm: [['IN1', 20000], ['IN2', 20000], ['IN3', 20000]],
     music: [['P', 30000], ['HLD', 100000], ['TRG', 100000]],
+    war: [['P', 30000], ['IN1', 100000, 'P'], ['IN2', 100000, 'P']],   // a bemenetek belül a (+)-ra húzva
+    amp: [['P', 600], ['FIL', 100, 'P'], ['INP', 50000]],              // FIL: szűrt táp a (+)-ról
+    organ: [['P', 1500], ['R', 1e6], ['G', 1e6], ['B', 1e6], ['INP', 1e6]],
+    ir: [['P', 3000]],
+    melody: [],
   };
+  // saját dallam a dallam IC (U32) modelljéhez
+  const TUNE2 = [[392, .25], [392, .25], [440, .5], [392, .5], [523, .5], [494, 1], [392, .25], [392, .25], [440, .5], [392, .5], [587, .5], [523, 1], [0, .5]];
+  const TUNE2_LEN = TUNE2.reduce((a, n) => a + n[1], 0);
+  // a fényorgona színsora: [piros, zöld, kék]
+  const ORGAN_COLORS = [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [0, 1, 1], [1, 0, 1], [1, 1, 1]];
+  // az űrháború IC nyolc hangja (saját közelítés)
+  function warTone(mode, t) {
+    const fr = (x) => x - Math.floor(x);
+    switch (mode) {
+      case 0: return 2200 - 1800 * fr(t * 6);                         // lézer: gyors lefelé söprés
+      case 1: return fr(t * 12) < 0.5 ? 700 : 0;                       // gépágyú
+      case 2: return 600 + 400 * Math.sin(2 * Math.PI * 7 * t);        // ufó: remegő hang
+      case 3: return 300 + 1500 * fr(t * 1.5);                         // rakéta: lassan emelkedik
+      case 4: return fr(t * 4) < 0.5 ? 1500 - 2000 * fr(t * 8) : 0;    // két lövés egymás után
+      case 5: return 180 + 120 * fr(t * 25);                           // motorzúgás
+      case 6: return fr(t * 3) < 0.5 ? 1200 : 900;                     // vészjelzés
+      default: return 400 + 2400 * Math.abs(Math.sin(2 * Math.PI * 0.8 * t)); // csillagkapu
+    }
+  }
   // saját dallam a zene IC modelljéhez (a valódi U1 dallamát nem ismerjük): [frekvencia Hz, hossz s]
   const TUNE = [[523, .3], [659, .3], [784, .3], [659, .3], [698, .3], [880, .6], [784, .3], [698, .3], [659, .3], [587, .3], [523, .6], [0, .2],
     [587, .3], [698, .3], [880, .3], [698, .3], [659, .3], [784, .6], [698, .3], [659, .3], [587, .3], [494, .3], [523, .6], [0, .4]];
@@ -340,12 +376,61 @@
       st.on = st.active && st.f > 0 && x < TUNE[k][1] * 0.85;
       st.gOut = st.on ? 0.5 / 6 : 1e-9;
     }
+    else if (d.ic === 'war') {
+      st.active = v('P') > 2;
+      const lo1 = v('IN1') < 0.8, lo2 = v('IN2') < 0.8;   // a bemenetet a (−)-ra kötve lép a következő hangra
+      if (st.active && ((lo1 && !st.lo1) || (lo2 && !st.lo2))) { st.mode = (st.mode + 1) % 8; st.t = 0; }
+      st.lo1 = lo1; st.lo2 = lo2;
+      st.f = st.active ? warTone(st.mode, st.t) : 0;
+      st.on = st.active && st.f > 0;
+      st.gOut = st.on ? 0.5 / 6 : 1e-9;
+    } else if (d.ic === 'amp') {
+      // teljesítményerősítő: a bemenet változását (a lassú átlagához képest) 20-szorosára erősíti;
+      // a kimenet belül kondenzátoron át csatolt, a kitérés a tápfeszültség felénél korlátos
+      const vp = v('P'); st.active = vp > 2;
+      const vin = v('INP'); if (st.avg == null) st.avg = vin;
+      if (!this.freezeCaps) st.avg += (vin - st.avg) * Math.min(1, dt / 0.02);
+      const vmax = Math.max(0.05, vp / 2 - 0.3);
+      st.vt = st.active ? vmax * Math.tanh(20 * (vin - st.avg) / vmax) : 0;
+    } else if (d.ic === 'organ') {
+      const vp = v('P'); st.active = vp > 2.5;
+      const vi = v('INP');
+      const hi = st.inHi ? vi > 0.45 * vp : vi > 0.55 * vp;   // Schmitt-trigger a bemeneten
+      if (st.active && hi && !st.inHi) st.count = (st.count + 1) % ORGAN_COLORS.length;
+      st.inHi = hi; st.fbV = st.active && !hi ? vp : 0;     // FB: a bemenet fordítottja
+      const force = ['R', 'G', 'B'].map((k) => (v(k) > 1.2 ? 1 : 0));
+      st.rgb = !st.active ? [0, 0, 0] : force.some((x) => x) ? force : ORGAN_COLORS[st.count];
+      st.on = st.active;
+    } else if (d.ic === 'ir') {
+      st.active = v('P') > 2.5;
+      // a távirányító kódolt villanássorozatot küld; a vevő kimenete ennek ütemében a (−)-ra kapcsol
+      const ph = (st.t * 20) % 1;
+      st.on = st.active && st.remote && ph < 0.7;
+      st.gOut = st.on ? 1 / 100 : 1e-9;
+    } else if (d.ic === 'melody') {
+      st.active = v('P') > 2;
+      let x = st.t % TUNE2_LEN, k = 0; while (k < TUNE2.length - 1 && x >= TUNE2[k][1]) { x -= TUNE2[k][1]; k++; }
+      st.note = k; st.f = st.active ? TUNE2[k][0] : 0;
+      st.on = st.active && st.f > 0 && x < TUNE2[k][1] * 0.85;
+      st.gP = st.active ? (st.on ? 1 / 250 : 1 / 2000) : 1e-9;   // a beépített hangszóró árama hangonként
+    }
     // lábáramok (a kijelzéshez): a csomópontból az IC-be folyó áram
     const cur = {}; let sumN = 0;
-    for (const [pin, R] of IC_LOADS[d.ic]) { const i = t[pin] >= 0 ? v(pin) / R : 0; cur[pin] = i; sumN += i; }
-    const io = t.OUT >= 0 ? v('OUT') * st.gOut : 0; cur.OUT = io; cur.N = -(sumN + io);
+    const vpin = (pin) => (t[pin] >= 0 ? this.nodeV(t[pin]) : 0);
+    for (const [pin, R, to] of IC_LOADS[d.ic]) {
+      const o = to || 'N'; if (t[pin] < 0 || t[o] < 0) continue;
+      const i = (vpin(pin) - vpin(o)) / R; cur[pin] = (cur[pin] || 0) + i; if (o === 'N') sumN += i; else cur[o] = (cur[o] || 0) - i;
+    }
+    let io = 0;
+    if (d.ic === 'amp') io = t.OUT >= 0 ? (v('OUT') - st.vt) / AMP_ROUT : 0;
+    else if (t.OUT >= 0) io = v('OUT') * st.gOut;
+    cur.OUT = io;
+    if (d.ic === 'organ' && t.FB >= 0) { cur.FB = (v('FB') - st.fbV) / 47000; sumN += cur.FB; }
+    if (d.ic === 'melody' && t.P >= 0) { cur.P = v('P') * st.gP; sumN += cur.P; }
+    cur.N = -(sumN + io);
     this.cur[e.id] = cur;
   };
+  const AMP_ROUT = 0.5;
   function potR(d, p) { p = Math.max(0, Math.min(1, p)); return { ra: Math.max(1, d.R * p), rb: Math.max(1, d.R * (1 - p)) }; }
 
   // A motor tengelyének mozgása (explicit Euler, a lépés végén). Kézi pörgetésnél a sebességet a kéz adja.
@@ -430,8 +515,14 @@
       }
       if (d.kind === 'ic') {
         const st = this.ic[e.id];
-        for (const [pin, R] of IC_LOADS[d.ic]) if (t[pin] >= 0 && t.N >= 0) stampG(I(t[pin]), I(t.N), 1 / R);
-        if (t.OUT >= 0 && t.N >= 0) stampG(I(t.OUT), I(t.N), st.gOut);
+        for (const [pin, R, to] of IC_LOADS[d.ic]) { const o = to || 'N'; if (t[pin] >= 0 && t[o] >= 0) stampG(I(t[pin]), I(t[o]), 1 / R); }
+        if (t.N < 0) continue;
+        if (d.ic === 'amp') {
+          // a kimenet feszültségforrás kis belső ellenállással (az előző lépés bemenetéből számolva)
+          if (t.OUT >= 0) { const g = 1 / AMP_ROUT; stampG(I(t.OUT), I(t.N), g); stampI(I(t.OUT), I(t.N), -st.vt * g); }
+        } else if (t.OUT >= 0) stampG(I(t.OUT), I(t.N), st.gOut);
+        if (d.ic === 'organ' && t.FB >= 0) { const g = 1 / 47000; stampG(I(t.FB), I(t.N), g); stampI(I(t.FB), I(t.N), -st.fbV * g); }
+        if (d.ic === 'melody' && t.P >= 0) stampG(I(t.P), I(t.N), st.gP);
         continue;
       }
       if (d.kind === 'pot') {
@@ -556,7 +647,7 @@
         case 'motor': i = (u - MOTOR.Ke * this.motor[e.id].w) / MOTOR.Rm; this._motorStep(e.id, i, dt); break;
         case 'sw': i = u * (this.switches[e.id] ? 20 : 1e-10); break;
         case 'bat': i = (u - d.V) / d.Rint; break;
-        case 'cap': i = d.C / dt * (u - this.capV[e.id]); this.capV[e.id] = u; break;
+        case 'cap': i = d.C / dt * (u - this.capV[e.id]); if (!this.freezeCaps) this.capV[e.id] = u; break;
         case 'led': i = d.Is * (safeExp(u / (d.n * VT)) - 1); break;
         case 'photo': { const Iph = 1e-7 + 4e-3 * Math.pow(Math.max(0, Math.min(1, this.photoLight(e.id))), 1.6); i = (u >= 0 ? Iph * (1 - Math.exp(-u / 0.12)) : Iph * u / 0.12) + 1e-9 * u; break; }
       }

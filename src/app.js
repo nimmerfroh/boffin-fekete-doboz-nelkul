@@ -132,8 +132,13 @@ const COLORS = {
   npn: '#D8443B', pnp: '#3FA453', photo: '#2A2F36', ledred: '#E0453F', ledgreen: '#38B26A',
   pot: '#3FA453', meter: '#2B3138', motor: '#AEB6BF', obj: '#7A8796', mic: '#6B737C',
 };
-const IC_COLOR = { U1: '#4E86E8', U2: '#D8443B', U23: '#D8443B' };
-const IC_INNER = { music: 'hangszer + memória', alarm: 'sziréna + választó', strobe: 'villogó' };
+const IC_COLOR = { U1: '#4E86E8', U2: '#D8443B', U23: '#D8443B', U3: '#3FA453', U4: '#E9C535', U22: '#22262B', U24: '#F2C230', U32: '#F0D84A' };
+const IC_INK = { U4: '#3B2A00', U24: '#3B2A00', U32: '#3B2A00' };
+const IC_COLORNAME = { U1: 'a kék', U2: 'a piros', U23: 'a piros', U3: 'a zöld', U4: 'a sárga', U22: 'a fekete', U24: 'a sárga', U32: 'a sárga' };
+const IC_INNER = { music: 'hangszer + memória', alarm: 'sziréna + választó', strobe: 'villogó', war: 'rezgőkörök + számláló', amp: 'erősítő', organ: 'hangkapcsoló + számláló + 3 LED', ir: 'fényszem + szűrő', melody: 'dallam + hangszóró' };
+// a színes LED (D8) színsora a rajzon (saját közelítés)
+const RGB_SEQ = ['#FF4A3D', '#47F07A', '#4D8DFF', '#FFE14A', '#4DF2EC', '#F25CF0', '#FFFFFF'];
+const rgbCss = (c) => '#' + c.map((x) => (x ? 'ff' : '33')).join('');
 const JUMPER_COLOR = { red: '#D13B33', black: '#22262B', blue: '#2F6FD6' };
 const MATERIALS = {
   materials: [['semmi (levegő)', 1e12], ['alufólia', 0.1], ['ceruzabél', 300], ['sós víz', 2000], ['csapvíz', 20000], ['a kezed', 3e5], ['papír', 1e12], ['műanyag', 1e12]],
@@ -142,7 +147,7 @@ const MATERIALS = {
 
 function partColor(def) {
   if (def.kind === 'ic') return IC_COLOR[def.short] || '#666';
-  if (def.kind === 'led') return def.color === 'green' ? COLORS.ledgreen : COLORS.ledred;
+  if (def.kind === 'led') return def.color === 'green' ? COLORS.ledgreen : def.color === 'rgb' ? '#2B2F36' : COLORS.ledred;
   return COLORS[def.kind] || '#888';
 }
 
@@ -202,6 +207,22 @@ function drawPart(parent, pl, level, contacts, opts) {
   }
 
   const col = partColor(def);
+  if (def.kind === 'ic' && def.ic === 'ir') {
+    // az infravevő háromszög alakú modul (mint a tranzisztorok)
+    const d = `M${pts[0][0]},${pts[0][1]} L${pts[1][0]},${pts[1][1]} L${pts[2][0]},${pts[2][1]} Z`;
+    svgEl('path', { d, fill: col, stroke: 'rgba(0,0,0,.28)', 'stroke-width': 34, 'stroke-linejoin': 'round' }, g);
+    svgEl('path', { d, fill: col, stroke: col, 'stroke-width': 30, 'stroke-linejoin': 'round' }, g);
+    const cx = (pts[0][0] + pts[1][0] + pts[2][0]) / 3, cy = (pts[0][1] + pts[1][1] + pts[2][1]) / 3;
+    const t = svgEl('text', { x: cx, y: cy + 2, 'text-anchor': 'middle', 'font-size': 15, 'font-weight': 800, fill: IC_INK[def.short], 'font-family': 'var(--font-display)' }, g); t.textContent = def.short;
+    svgEl('rect', { x: cx - 4, y: cy + 6, width: 8, height: 8, rx: 2, fill: '#2A2F36' }, g);   // az érzékelő ablaka
+    out.icAct = svgEl('circle', { cx: cx, cy: cy - 16, r: 5, fill: 'var(--spark)', opacity: 0 }, g);
+    geo.snaps.forEach((q, i) => {
+      svgEl('circle', { cx: pts[i][0], cy: pts[i][1], r: 8, fill: '#D9DEE4', stroke: '#5C6670', 'stroke-width': 1.5 }, g);
+      const l = svgEl('text', { x: pts[i][0], y: pts[i][1] + 3.5, 'text-anchor': 'middle', 'font-size': 9, 'font-weight': 800, fill: '#333' }, g);
+      l.textContent = q.term === 'P' ? '+' : q.term === 'N' ? '−' : 'ki';
+    });
+    return out;
+  }
   if (def.kind === 'ic') {
     const xs = pts.map((q) => q[0]), ys = pts.map((q) => q[1]);
     const x0 = Math.min(...xs) - 24, x1 = Math.max(...xs) + 24, y0 = Math.min(...ys) - 24, y1 = Math.max(...ys) + 24;
@@ -209,8 +230,9 @@ function drawPart(parent, pl, level, contacts, opts) {
     svgEl('rect', { x: x0, y: y0, width: x1 - x0, height: y1 - y0, rx: 12, fill: col, 'fill-opacity': open ? 0.18 : 1, stroke: open ? col : 'rgba(0,0,0,.3)', 'stroke-width': open ? 3 : 2, 'stroke-dasharray': open ? '8 5' : '' }, g);
     const cx = (x0 + x1) / 2;
     if (!open) {
-      const t = svgEl('text', { x: cx, y: (y0 + y1) / 2 + 2, 'text-anchor': 'middle', 'font-size': 24, 'font-weight': 800, fill: '#fff', 'font-family': 'var(--font-display)' }, g); t.textContent = def.short;
-      const t2 = svgEl('text', { x: cx, y: (y0 + y1) / 2 + 20, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 700, fill: 'rgba(255,255,255,.9)' }, g); t2.textContent = def.name.toUpperCase();
+      const ink = IC_INK[def.short] || '#fff';
+      const t = svgEl('text', { x: cx, y: (y0 + y1) / 2 + 2, 'text-anchor': 'middle', 'font-size': 24, 'font-weight': 800, fill: ink, 'font-family': 'var(--font-display)' }, g); t.textContent = def.short;
+      const t2 = svgEl('text', { x: cx, y: (y0 + y1) / 2 + 20, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 700, fill: ink, opacity: 0.9 }, g); t2.textContent = def.name.toUpperCase();
     } else {
       // kinyitva: a belső építőkövek vázlata (két tranzisztor és egy kondenzátor) és a felirat
       const my = (y0 + y1) / 2 - 4;
@@ -220,10 +242,17 @@ function drawPart(parent, pl, level, contacts, opts) {
     }
     const act = svgEl('circle', { cx: x1 - 12, cy: y0 + 12, r: 5, fill: 'var(--spark)', opacity: 0 }, g);
     out.icAct = act;
+    if (def.ic === 'organ') {
+      // a fényorgona háromszínű LED-je a modul közepén
+      const ly = (y0 + y1) / 2 - 26;
+      out.icGlow = svgEl('circle', { cx, cy: ly, r: 26, fill: '#fff', opacity: 0, style: 'mix-blend-mode:screen' }, g);
+      out.icRGB = svgEl('circle', { cx, cy: ly, r: 9, fill: '#555', stroke: 'rgba(255,255,255,.5)', 'stroke-width': 1.5 }, g);
+    }
     geo.snaps.forEach((q, i) => {
       svgEl('circle', { cx: pts[i][0], cy: pts[i][1], r: 8, fill: '#D9DEE4', stroke: '#5C6670', 'stroke-width': 1.5 }, g);
       const l = svgEl('text', { x: pts[i][0], y: pts[i][1] + (q.r === geo.snaps[0].r ? -12 : 21), 'text-anchor': 'middle', 'font-size': 9, 'font-weight': 800, fill: open ? 'var(--ink)' : '#fff' }, g);
       l.textContent = q.term === 'P' ? '+' : q.term === 'N' ? '−' : q.term;
+      if (!open && IC_INK[def.short]) l.setAttribute('fill', IC_INK[def.short]);
     });
     return out;
   }
@@ -297,7 +326,7 @@ function drawPart(parent, pl, level, contacts, opts) {
         const pl2 = svgEl('text', { x: -len / 2 + 2, y: -6, 'text-anchor': 'middle', 'font-size': 15, 'font-weight': 800, fill: '#fff' }, body); pl2.textContent = '+';
         const glow = svgEl('circle', { cx: 0, cy: 0, r: 30, fill: def.color === 'green' ? '#7CFFAE' : '#FF8A70', opacity: 0, style: 'mix-blend-mode:screen' }, body);
         const lens = svgEl('circle', { cx: 0, cy: 0, r: 8, fill: def.color === 'green' ? '#C8FFD9' : '#FFD2C8', opacity: 0 }, body);
-        out.glows.push({ el: glow, lens, type: 'led' });
+        out.glows.push({ el: glow, lens, type: 'led', rgb: def.color === 'rgb' });
         const t = label(def.short, 17, 11); t.setAttribute('font-size', 11);
         break;
       }
@@ -553,7 +582,8 @@ function frame(ts) {
       if (!it) continue;
       const c = live ? S.sim.cur[it.id] : 0;
       for (const gl of it.glows) {
-        if (gl.type === 'led') { const a = Math.abs(c || 0); const b = c > 0 ? Math.min(1, Math.sqrt(a / 0.01)) : 0; /* 10 mA: teljes fény, 0,3 mA: épp pislákol */ gl.el.setAttribute('opacity', (b * 0.85).toFixed(2)); gl.lens.setAttribute('opacity', b.toFixed(2)); }
+        if (gl.type === 'led') { const a = Math.abs(c || 0); const b = c > 0 ? Math.min(1, Math.sqrt(a / 0.01)) : 0; /* 10 mA: teljes fény, 0,3 mA: épp pislákol */
+          if (gl.rgb) { const col = RGB_SEQ[Math.floor((live ? S.sim.time : 0) / 0.8) % RGB_SEQ.length]; gl.el.setAttribute('fill', col); gl.lens.setAttribute('fill', col); } gl.el.setAttribute('opacity', (b * 0.85).toFixed(2)); gl.lens.setAttribute('opacity', b.toFixed(2)); }
         else if (gl.type === 'lamp') { const b = Math.min(1, Math.abs(c || 0) / 0.15); gl.el.setAttribute('opacity', (b * 0.9).toFixed(2)); }
         else if (gl.type === 'spk') { const b = Math.min(1, Math.abs(c || 0) / 0.02); gl.el.setAttribute('opacity', (b * 0.9).toFixed(2)); gl.el.setAttribute('r', 18 + b * 8); }
         else if (gl.type === 'mic') { const p = live ? S.sim.mic[it.id] || 0 : 0; gl.el.setAttribute('opacity', (p * 0.9).toFixed(2)); gl.el.setAttribute('r', 16 + p * 9); }
@@ -564,6 +594,7 @@ function frame(ts) {
       if (it.fan) { const w = live ? S.sim.motor[it.id].w : 0; it.fan.a += Math.sign(w) * Math.min(Math.abs(w), 300) * 0.06 * dtR * 57.3; it.fan.el.setAttribute('transform', `rotate(${(it.fan.a % 360).toFixed(1)})`); it.fan.el.style.opacity = Math.abs(w) > 150 ? 0.55 : 1; }
       if (it.fiber) { const lk = live && S.sim.links[0]; const b = lk && S.sim.fiberOn ? Math.min(1, Math.max(0, S.sim.cur[lk.led] || 0) / 0.01) : 0; it.fiber.core.setAttribute('opacity', (b * 0.95).toFixed(2)); }
       if (it.icAct) { const st = live && S.sim.ic[it.id]; it.icAct.setAttribute('opacity', st && st.active ? (st.on ? 1 : 0.35) : 0); }
+      if (it.icRGB) { const st = live && S.sim.ic[it.id]; const on = st && st.active && st.rgb.some((x) => x); it.icRGB.setAttribute('fill', on ? rgbCss(st.rgb) : '#555'); it.icGlow.setAttribute('fill', on ? rgbCss(st.rgb) : '#fff'); it.icGlow.setAttribute('opacity', on ? 0.8 : 0); }
       if (it.objLabel) { const nm = S.ctl.objName[it.id] || '?'; if (it.objLabel.textContent !== nm) it.objLabel.textContent = nm; }
       if (it.capBar) { const vC = live ? S.sim.capV[it.id] || 0 : 0; it.capBar.el.setAttribute('width', (Math.min(1, Math.abs(vC) / 3) * it.capBar.w).toFixed(1)); }
       if (it.isSwitch) {
@@ -630,7 +661,27 @@ function interp(tbl, x) {
   for (let i = 1; i < tbl.length; i++) if (x <= tbl[i][0]) { const [x0, y0] = tbl[i - 1], [x1, y1] = tbl[i]; if (!y0 || !y1) return x - x0 < x1 - x ? y0 : y1; return y0 + (y1 - y0) * (x - x0) / (x1 - x0); }
   return tbl[tbl.length - 1][1];
 }
+// Erősítő: a szimulátorból az átviteli görbe (mikrofon-ellenállás → hangszóróáram), a kondenzátorokat
+// hangfrekvencián rövidzárnak véve (befagyasztott feszültséggel). A tablet mikrofonjának jele ezen a görbén megy át.
+async function buildTransfer(cfg) {
+  const lay = currentLayout(); const key = 'micamp' + JSON.stringify(lay);
+  S.tables = S.tables || {}; if (S.tables[key]) return S.tables[key];
+  const sim = new E.Sim(lay, { pot: S.ctl.pot }); for (const k in sim.switches) if (/^S1/.test(k)) sim.switches[k] = true;
+  const p0 = 0.05; sim.mic[cfg.mic] = p0;
+  for (let i = 0; i < 1000; i++) { sim.step(0.002); if (i % 200 === 0) await tick0(); }
+  sim.freezeCaps = true;
+  const N = 65, I = [];
+  for (let k = 0; k < N; k++) { sim.mic[cfg.mic] = p0 + 0.05 * (-1 + 2 * k / (N - 1)); for (let j = 0; j < 4; j++) sim.step(1e-5); I.push(sim.cur[cfg.probe] || 0); }
+  const i0 = I[(N - 1) / 2];
+  const full = cfg.full || 0.1;   // ekkora áramváltozás (A) a teljes hangerő
+  const tbl = I.map((v) => Math.max(-1, Math.min(1, (v - i0) / full)));
+  S.tables[key] = tbl; return tbl;
+}
 function stopAudio() {
+  if (S.audioNode && S.audioNode.type === 'micamp') {
+    const n = S.audioNode; try { n.noise.stop(); } catch (e) { /* már leállt */ }
+    try { if (n.src) n.src.disconnect(); n.gate.disconnect(); } catch (e) { /* nincs */ }
+  }
   if (S.audio && S.audio.src) { try { S.audio.src.stop(); } catch (e) { /* már leállt */ } S.audio.src = null; }
   if (S.audioNode && S.audioNode.osc) { try { S.audioNode.osc.stop(); } catch (e) { /* már leállt */ } }
   S.audioNode = null;
@@ -657,6 +708,25 @@ async function setSound(on) {
     const osc = ac.createOscillator(); osc.type = 'square';
     const g = ac.createGain(); g.gain.value = 0; osc.connect(g).connect(ac.destination); osc.start();
     S.audioNode = { type: 'ic', osc, gain: g };
+  } else if (cfg.type === 'micamp') {
+    S.audioBusy = true; renderControls();
+    const tbl = await buildTransfer(cfg); S.audioBusy = false;
+    if (!S.soundOn) { renderControls(); return; }
+    const curve = new Float32Array(1025);
+    for (let i = 0; i < curve.length; i++) { const u = i / (curve.length - 1) * (tbl.length - 1); const k = Math.min(tbl.length - 2, Math.floor(u)); curve[i] = tbl[k] + (tbl[k + 1] - tbl[k]) * (u - k); }
+    const pre = ac.createGain(); pre.gain.value = 3;
+    const sh = ac.createWaveShaper(); sh.curve = curve; sh.oversample = '2x';
+    const hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 80;
+    const gate = ac.createGain(); gate.gain.value = 0;
+    const comp = ac.createDynamicsCompressor();
+    pre.connect(sh).connect(hp).connect(gate).connect(comp).connect(ac.destination);
+    let src = null; if (S.micStream) { src = ac.createMediaStreamSource(S.micStream); src.connect(pre); }
+    // a „Fújj bele” gombhoz: tompított zaj (fújás hangja)
+    const nb = ac.createBuffer(1, ac.sampleRate, ac.sampleRate); const ch = nb.getChannelData(0); let lp = 0;
+    for (let i = 0; i < ch.length; i++) { lp += 0.15 * ((Math.random() * 2 - 1) - lp); ch[i] = lp * 2.5; }
+    const noise = ac.createBufferSource(); noise.buffer = nb; noise.loop = true; const ng = ac.createGain(); ng.gain.value = 0;
+    noise.connect(ng).connect(pre); noise.start();
+    S.audioNode = { type: 'micamp', src, noise, ng, gate };
   } else if (cfg.type === 'clicks') {
     S.audioNode = { type: 'clicks' }; S.lastI = null;
   } else {
@@ -680,14 +750,16 @@ function playClick() {
 }
 // mikrofon: a „Fújj bele” gomb vagy a tablet mikrofonjának hangereje nyomja a virtuális szénmikrofont
 async function setMicInput(on) {
-  if (!on) { if (S.micStream) S.micStream.getTracks().forEach((t) => t.stop()); S.micStream = null; S.micAn = null; renderControls(); return; }
+  if (!on) { if (S.micStream) S.micStream.getTracks().forEach((t) => t.stop()); S.micStream = null; S.micAn = null; if (S.soundOn && audioCfg().type === 'micamp') setSound(true); else renderControls(); return; }
   const ac = ensureAC(); if (!ac || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { S.micErr = 'Ez a böngésző nem engedi a mikrofont.'; renderControls(); return; }
   try {
-    const st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    // az erősítős kísérleteknél visszhangszűrés: a tablet hangszórója ne gerjedjen be a mikrofonon át
+    const echo = audioCfg().type === 'micamp';
+    const st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: echo, noiseSuppression: false, autoGainControl: false } });
     const src = ac.createMediaStreamSource(st); const an = ac.createAnalyser(); an.fftSize = 1024; src.connect(an);
     S.micStream = st; S.micAn = an; S.micBuf = new Float32Array(an.fftSize); S.micErr = null;
   } catch (e) { S.micErr = 'A mikrofont nem engedélyezted, vagy nem érhető el. A „Fújj bele” gomb így is működik.'; }
-  renderControls();
+  if (S.soundOn && audioCfg().type === 'micamp') setSound(true); else renderControls();
 }
 function micFrame(dtR) {
   const sim = S.sim; if (!sim) return;
@@ -715,8 +787,14 @@ function audioFrame(dtR) {
     sim.capV[cfg.cap] = S.vc;
   }
   const n = S.audioNode; if (!n || !S.soundOn) return;
+  if (n.type === 'micamp') {
+    const tt = S.ac.currentTime; const on = Object.keys(sim.switches).filter((k) => /^S1/.test(k)).every((k) => sim.switches[k]);
+    n.gate.gain.setTargetAtTime(on ? 0.8 : 0, tt, 0.02);
+    n.ng.gain.setTargetAtTime(S.micBlow ? 0.35 : 0, tt, 0.03);
+    return;
+  }
   if (n.type === 'ic') {
-    const st = sim.ic[cfg.ic]; const spk = Math.abs(sim.cur.SP || 0) > 0.001;
+    const st = sim.ic[cfg.ic]; const spk = cfg.builtin || Math.abs(sim.cur.SP || 0) > 0.001;
     const tt = S.ac.currentTime;
     if (st && st.f > 0) n.osc.frequency.setTargetAtTime(st.f, tt, 0.004);
     n.gain.gain.setTargetAtTime(st && st.on && spk ? 0.1 : 0, tt, 0.006);
@@ -805,6 +883,14 @@ function renderControls() {
       S.micBar = lvl.querySelector('b');
       box.append(b, m, lvl);
       if (S.micErr) { const n = document.createElement('p'); n.className = 'note'; n.style.margin = '0'; n.textContent = S.micErr; box.append(n); }
+    } else if (typeof c === 'object' && c.remote) {
+      const b = document.createElement('button'); b.className = 'ctrl hold';
+      b.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7" r="2" fill="currentColor"/><path d="M10 12h4M10 15h4M10 18h4" stroke="currentColor" stroke-width="1.6"/></svg> Távirányító gombja';
+      const set = (v) => { if (S.sim && S.sim.ic[c.remote]) S.sim.ic[c.remote].remote = v; };
+      const down = (e) => { e.preventDefault(); set(true); b.classList.add('down'); };
+      const up = () => { set(false); b.classList.remove('down'); };
+      b.addEventListener('pointerdown', down); b.addEventListener('pointerup', up); b.addEventListener('pointerleave', up); b.addEventListener('pointercancel', up);
+      box.append(b);
     } else if (typeof c === 'object' && c.press) {
       const b = document.createElement('button'); b.className = 'ctrl hold';
       b.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="12" cy="12" r="3.5" fill="currentColor"/></svg> <span></span>';
@@ -980,8 +1066,9 @@ function stepText(pl, level, layout) {
   }
   if (def.kind === 'ic') {
     const nm = (q) => (q.term === 'P' ? '(+)' : q.term === 'N' ? '(−)' : q.term);
-    const top = geo.snaps.slice(0, 3).map((q) => nm(q) + ' ' + art(pn(q))).join(', '), bot = geo.snaps.slice(3).map((q) => nm(q) + ' ' + art(pn(q))).join(', ');
-    return `Tedd le ${def.short === 'U1' ? 'a kék' : 'a piros'} ${def.name} modult (${def.short}) ${lv}, a felirattal olvashatóan. A felső lábai: ${top}; az alsók: ${bot}.`;
+    const legs = geo.snaps.map((q) => nm(q) + ': ' + pn(q)).join(', ');
+    const rot = pl.dir === 'u' ? ', balra fordítva (a felirat alulról felfelé olvasható)' : pl.dir === 'd' ? ', jobbra fordítva (a felirat felülről lefelé olvasható)' : pl.dir === 'l' ? ', fejjel lefelé' : ', a felirattal olvashatóan';
+    return `Tedd le ${IC_COLORNAME[def.short] || 'a'} ${def.name} modult (${def.short}) ${lv}${rot}. A lábai: ${legs}.`;
   }
   if (def.kind === 'pot') {
     const a = geo.snaps.find((s2) => s2.term === 'a'), b = geo.snaps.find((s2) => s2.term === 'b'), w = geo.snaps.find((s2) => s2.term === 'w');
