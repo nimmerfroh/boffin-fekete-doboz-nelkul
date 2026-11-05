@@ -1,0 +1,447 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Fekete doboz nélkül – Copyright (C) 2026 Nimmerfroh Károly
+// Boffin-szerű rács, építési ellenőrzés és áramkör-szimulátor (MNA + Newton).
+// Böngészőben és Node-ban is fut.
+(function (root) {
+  'use strict';
+  const ROWS = 'ABCDEFG';
+  const DIRS = { r: [0, 1], l: [0, -1], d: [1, 0], u: [-1, 0] };
+
+  // ---- Alkatrész-könyvtár -------------------------------------------------
+  // kind: wire | bat | res | sw | led | cap | npn | pnp | photo | lamp | spk
+  // len: a két szélső snap távolsága (rácsegységben); wire esetén a snapek száma.
+  const PARTS = {
+    W1: { kind: 'wire', n: 1, name: '1-es vezeték', short: '1' },
+    W2: { kind: 'wire', n: 2, name: '2-es vezeték', short: '2' },
+    W3: { kind: 'wire', n: 3, name: '3-as vezeték', short: '3' },
+    W4: { kind: 'wire', n: 4, name: '4-es vezeték', short: '4' },
+    W5: { kind: 'wire', n: 5, name: '5-ös vezeték', short: '5' },
+    W6: { kind: 'wire', n: 6, name: '6-os vezeték', short: '6' },
+    W7: { kind: 'wire', n: 7, name: '7-es vezeték', short: '7' },
+    B1: { kind: 'bat', V: 3.0, Rint: 0.4, name: 'Elemtartó (2×AA)', short: 'B1' },
+    S1: { kind: 'sw', mode: 'slide', name: 'Tolókapcsoló', short: 'S1' },
+    S2: { kind: 'sw', mode: 'press', name: 'Nyomógomb', short: 'S2' },
+    R1: { kind: 'res', R: 100, name: '100 Ω ellenállás', short: 'R1' },
+    R2: { kind: 'res', R: 1000, name: '1 kΩ ellenállás', short: 'R2' },
+    R3: { kind: 'res', R: 5100, name: '5,1 kΩ ellenállás', short: 'R3' },
+    R4: { kind: 'res', R: 10000, name: '10 kΩ ellenállás', short: 'R4' },
+    R5: { kind: 'res', R: 100000, name: '100 kΩ ellenállás', short: 'R5' },
+    D1: { kind: 'led', color: 'red', Is: 7.6e-18, n: 2, Rs: 5, name: 'Piros LED', short: 'D1' },
+    D2: { kind: 'led', color: 'green', Is: 2.3e-20, n: 2, Rs: 5, name: 'Zöld LED', short: 'D2' },
+    C1: { kind: 'cap', C: 0.02e-6, name: '0,02 µF kondenzátor', short: 'C1' },
+    C2: { kind: 'cap', C: 0.1e-6, name: '0,1 µF kondenzátor', short: 'C2' },
+    C3: { kind: 'cap', C: 10e-6, name: '10 µF kondenzátor', short: 'C3' },
+    C4: { kind: 'cap', C: 100e-6, name: '100 µF kondenzátor', short: 'C4' },
+    C5: { kind: 'cap', C: 470e-6, name: '470 µF kondenzátor', short: 'C5' },
+    Q1: { kind: 'pnp', name: 'PNP tranzisztor', short: 'Q1' },
+    Q2: { kind: 'npn', name: 'NPN tranzisztor', short: 'Q2' },
+    Q4: { kind: 'photo', name: 'Fototranzisztor', short: 'Q4' },
+    L1: { kind: 'lamp', R: 16, name: 'Izzó (2,5 V)', short: 'L1' },
+    SP: { kind: 'spk', R: 8, name: 'Hangszóró', short: 'SP' },
+    J1: { kind: 'jumper', name: 'Átkötő kábel (fekete)', short: 'J', color: 'black' },
+    J2: { kind: 'jumper', name: 'Átkötő kábel (piros)', short: 'J', color: 'red' },
+  };
+
+  // Melyik dobozban hány darab van (a hivatalos alkatrészlisták alapján).
+  const KITS = {
+    '300': { name: 'Boffin I 300', parts: { J1: 1, J2: 1, W1: 6, W2: 9, W3: 4, W4: 2, W5: 1, W6: 1, W7: 1, B1: 2, S1: 1, S2: 1, R1: 1, R2: 1, R3: 1, R4: 1, R5: 1, D1: 1, D2: 1, C1: 1, C2: 1, C3: 1, C4: 1, C5: 1, Q1: 1, Q2: 1, Q4: 1, L1: 1, SP: 1 } },
+    light: { name: 'Boffin II Light', parts: { J1: 1, J2: 1, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, B1: 2, S1: 1, S2: 1, R1: 1, R3: 1, R5: 1, D1: 1, C2: 1, C4: 1, Q1: 1, Q2: 1, Q4: 1, SP: 1 } },
+    home: { name: 'Boffin II My Home', parts: { W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, S1: 1, S2: 1, R3: 1, C5: 1, Q2: 1, Q4: 1 } },
+  };
+
+  function postKey(r, c) { return r + ',' + c; }
+  function postName(r, c) { return ROWS[r] + c; }
+  function parsePost(s) { return [ROWS.indexOf(s[0]), parseInt(s.slice(1), 10)]; }
+
+  // Egy elhelyezés geometriája: snapek (terminálok) és a test által takart pontok.
+  function geometry(pl) {
+    const def = PARTS[pl.p];
+    const [r0, c0] = parsePost(pl.at);
+    const [dr, dc] = DIRS[pl.dir || 'r'];
+    const snaps = []; // {r,c,term}
+    const body = [];  // takart, snap nélküli pontok
+    if (def.kind === 'jumper') {
+      const [r1, c1] = parsePost(pl.to);
+      snaps.push({ r: r0, c: c0, term: 'a' }); snaps.push({ r: r1, c: c1, term: 'b' });
+      return { snaps, body, jumper: true };
+    }
+    if (def.kind === 'wire') {
+      for (let i = 0; i < def.n; i++) snaps.push({ r: r0 + dr * i, c: c0 + dc * i, term: 'w' + i });
+    } else if (def.kind === 'npn' || def.kind === 'pnp') {
+      // a két szélső snap (NPN: kollektor, emitter; PNP: emitter, kollektor) 2 egységre,
+      // a bázis középen, a haladási irányhoz képest jobbra fordítva (pl. lefelé -> balra).
+      const pr = dc, pc = -dr;
+      const t1 = def.kind === 'npn' ? 'C' : 'E', t2 = def.kind === 'npn' ? 'E' : 'C';
+      snaps.push({ r: r0, c: c0, term: t1 });
+      snaps.push({ r: r0 + 2 * dr, c: c0 + 2 * dc, term: t2 });
+      snaps.push({ r: r0 + dr + pr, c: c0 + dc + pc, term: 'B' });
+      body.push({ r: r0 + dr, c: c0 + dc });
+    } else {
+      snaps.push({ r: r0, c: c0, term: 'a' });
+      snaps.push({ r: r0 + 2 * dr, c: c0 + 2 * dc, term: 'b' });
+      body.push({ r: r0 + dr, c: c0 + dc });
+      if (def.kind === 'bat') {
+        // az elemtartó doboza a haladási irány bal oldalára (lefelé haladva jobbra) kilóg
+        const pr = -dc, pc = dr;
+        for (let i = 0; i <= 2; i++) body.push({ r: r0 + dr * i + pr, c: c0 + dc * i + pc, side: true });
+      }
+    }
+    return { snaps, body };
+  }
+
+  // Építési ellenőrzés: szintek, alátámasztás, ütközések. Visszaad: {levels, errors, posts}
+  function checkBuild(layout) {
+    const height = new Map();   // post -> hány snap van egymáson
+    const covered = new Map();  // post -> [{idx, level}] test által takart
+    const errors = [];
+    const levels = [];
+    const contacts = []; // pl idx -> lista {r,c,term,connected}
+    layout.forEach((pl, idx) => {
+      const g = geometry(pl);
+      const id = pl.id || pl.p;
+      if (g.jumper) {
+        const cs = g.snaps.map((s) => {
+          const h = height.get(postKey(s.r, s.c)) || 0;
+          if (!h) errors.push(`${id}: a(z) ${postName(s.r, s.c)} ponton nincs mire csíptetni`);
+          return { ...s, connected: h > 0, top: h };
+        });
+        levels.push(0); contacts.push(cs); return;
+      }
+      for (const s of g.snaps.concat(g.body)) {
+        if (s.r < 0 || s.r > 6 || s.c < 1 || s.c > 10) errors.push(`${id}: lelóg a rácsról (${s.r},${s.c})`);
+      }
+      let top = 0;
+      for (const s of g.snaps) top = Math.max(top, height.get(postKey(s.r, s.c)) || 0);
+      const level = top + 1;
+      levels.push(level);
+      const cs = [];
+      let supported = 0;
+      for (const s of g.snaps) {
+        const h = height.get(postKey(s.r, s.c)) || 0;
+        const cov = covered.get(postKey(s.r, s.c));
+        if (cov && cov.length) errors.push(`${id}: a(z) ${postName(s.r, s.c)} pontot egy másik alkatrész teste takarja`);
+        if (h === top) { supported++; cs.push({ ...s, connected: true }); }
+        else if (h === 0) { cs.push({ ...s, connected: false }); }
+        else errors.push(`${id}: a(z) ${postName(s.r, s.c)} ponton ${h} magas a torony, de az alkatrész ${level}. szinten van`);
+      }
+      const needAll = PARTS[pl.p].kind !== 'wire';
+      if (needAll && supported !== g.snaps.length) errors.push(`${id}: nem minden lába támaszkodik (${level}. szint)`);
+      if (!needAll && (cs[0].connected === false || cs[cs.length - 1].connected === false)) errors.push(`${id}: a vezeték vége lóg`);
+      for (const b of g.body) {
+        const k = postKey(b.r, b.c);
+        const h = height.get(k) || 0;
+        if (h >= level - 1 && h > 0) errors.push(`${id}: a teste ütközik a(z) ${postName(b.r, b.c)} ponton lévő snappel`);
+        const cov = covered.get(k) || [];
+        for (const o of cov) if (o.level === level) errors.push(`${id}: a teste ütközik ${o.id} testével (${postName(b.r, b.c)})`);
+        cov.push({ idx, level, id });
+        covered.set(k, cov);
+      }
+      for (const s of cs) if (s.connected) height.set(postKey(s.r, s.c), level);
+      contacts.push(cs);
+    });
+    return { levels, errors, contacts };
+  }
+
+  // ---- Kapcsolási rajz (nettók) ---------------------------------------------
+  function buildNetlist(layout) {
+    const chk = checkBuild(layout);
+    const parent = new Map();
+    const find = (k) => { while (parent.get(k) !== k) { parent.set(k, parent.get(parent.get(k))); k = parent.get(k); } return k; };
+    const add = (k) => { if (!parent.has(k)) parent.set(k, k); };
+    const union = (a, b) => { add(a); add(b); const ra = find(a), rb = find(b); if (ra !== rb) parent.set(ra, rb); };
+    layout.forEach((pl, i) => {
+      const cs = chk.contacts[i].filter((s) => s.connected);
+      cs.forEach((s) => add(postKey(s.r, s.c)));
+      if (PARTS[pl.p].kind === 'wire' || PARTS[pl.p].kind === 'jumper') for (let j = 1; j < cs.length; j++) union(postKey(cs[0].r, cs[0].c), postKey(cs[j].r, cs[j].c));
+    });
+    const netOf = new Map(); let nn = 0;
+    for (const k of parent.keys()) { const r = find(k); if (!netOf.has(r)) netOf.set(r, nn++); }
+    const postNet = (r, c) => netOf.get(find(postKey(r, c)));
+    const elements = [];
+    layout.forEach((pl, i) => {
+      const def = PARTS[pl.p];
+      if (def.kind === 'wire' || def.kind === 'jumper') return;
+      const t = {};
+      for (const s of chk.contacts[i]) t[s.term] = s.connected ? postNet(s.r, s.c) : -1;
+      elements.push({ idx: i, id: pl.id || pl.p, p: pl.p, def, t, pl });
+    });
+    return { chk, nets: nn, postNet, elements };
+  }
+
+  // ---- Szimulátor (SPICE-szerű: társított modellek, pn-átmenet korlátozás, lépésfelezés) ----
+  const VT = 0.025851;
+  const BJT = { Is: 1e-14, bf: 150, br: 2 };
+  root.__BJT = BJT;
+  function pnjlim(vnew, vold, vt, vcrit) {
+    if (vnew > vcrit && Math.abs(vnew - vold) > 2 * vt) {
+      if (vold > 0) { const arg = 1 + (vnew - vold) / vt; return arg > 0 ? vold + vt * Math.log(arg) : vcrit; }
+      return vt * Math.log(Math.max(vnew / vt, 1e-30));
+    }
+    return vnew;
+  }
+  const safeExp = (x) => Math.exp(Math.min(x, 80));
+
+  function Sim(layout, opts) {
+    opts = opts || {};
+    const nl0 = opts.netlist || buildNetlist(layout);
+    const elements = []; let nets = nl0.nets;
+    for (const e of nl0.elements) {
+      if (e.def.kind === 'led' && e.t.a >= 0 && e.t.b >= 0) {
+        const mid = nets++;
+        elements.push({ ...e, t: { a: e.t.a, b: mid } });
+        elements.push({ idx: -1, id: e.id + '#rs', p: 'RS', def: { kind: 'res', R: e.def.Rs }, t: { a: mid, b: e.t.b }, internal: true });
+      } else elements.push(e);
+    }
+    this.nl = { ...nl0, nets, elements };
+    this.layout = layout;
+    const bat = elements.find((e) => e.def.kind === 'bat' && e.t.b >= 0);
+    this.ground = bat ? bat.t.b : 0;
+    const map = new Array(nets).fill(-1); let n = 0;
+    for (let k = 0; k < nets; k++) if (k !== this.ground) map[k] = n++;
+    this.map = map; this.n = n;
+    this.v = new Float64Array(n);
+    this.vnew = new Float64Array(n);
+    this.G = new Float64Array(n * n);
+    this.rhs = new Float64Array(n);
+    this.time = 0;
+    this.light = opts.light != null ? opts.light : 0.8;
+    this.switches = {}; this.capV = {}; this.cur = {}; this.jx = {};
+    for (const e of elements) {
+      if (e.def.kind === 'sw') this.switches[e.id] = false;
+      if (e.def.kind === 'cap') this.capV[e.id] = (opts.capInit && opts.capInit[e.id]) || 0;
+      if (e.def.kind === 'npn' || e.def.kind === 'pnp') this.jx[e.id] = { vbe: 0, vbc: 0 };
+      if (e.def.kind === 'led') this.jx[e.id] = { vd: 0 };
+    }
+  }
+
+  Sim.prototype.nodeV = function (net) {
+    if (net < 0) return NaN;
+    return net === this.ground ? 0 : this.v[this.map[net]];
+  };
+  Sim.prototype._i = function (net) { return net === this.ground || net < 0 ? -1 : this.map[net]; };
+
+  // Egy iteráció: linearizált egyenletrendszer felépítése a v munkapontban.
+  // jxs: a pn-átmenetek előző iterációs feszültségei (ezt frissíti); visszaadja, volt-e korlátozás.
+  Sim.prototype._load = function (v, dt, capV) {
+    const n = this.n, G = this.G, R = this.rhs; G.fill(0); R.fill(0);
+    const vv = (net) => (net === this.ground || net < 0 ? 0 : v[this.map[net]]);
+    const I = (net) => this._i(net);
+    const stampG = (a, b, g) => {
+      if (a >= 0) G[a * n + a] += g; if (b >= 0) G[b * n + b] += g;
+      if (a >= 0 && b >= 0) { G[a * n + b] -= g; G[b * n + a] -= g; }
+    };
+    const stampI = (a, b, ieq) => { // ieq: a-ból b felé az elemen át folyó állandó áramrész
+      if (a >= 0) R[a] -= ieq; if (b >= 0) R[b] += ieq;
+    };
+    let limited = false;
+    for (const e of this.nl.elements) {
+      const d = e.def, t = e.t;
+      if (d.kind === 'npn' || d.kind === 'pnp') {
+        if (t.B < 0 || t.C < 0 || t.E < 0) continue;
+        const s = d.kind === 'npn' ? 1 : -1;
+        const B = I(t.B), C = I(t.C), E = I(t.E);
+        const Vb = vv(t.B), Vc = vv(t.C), Ve = vv(t.E);
+        const j = this.jx[e.id];
+        const vcrit = VT * Math.log(VT / (Math.SQRT2 * BJT.Is));
+        let vbe = s * (Vb - Ve), vbc = s * (Vb - Vc);
+        const vbe2 = pnjlim(vbe, j.vbe, VT, vcrit), vbc2 = pnjlim(vbc, j.vbc, VT, vcrit);
+        if (vbe2 !== vbe || vbc2 !== vbc) limited = true;
+        vbe = vbe2; vbc = vbc2; j.vbe = vbe; j.vbc = vbc;
+        const ef = safeExp(vbe / VT), er = safeExp(vbc / VT);
+        const If = BJT.Is * (ef - 1), Ir = BJT.Is * (er - 1);
+        const gf = BJT.Is * ef / VT + 1e-12, gr = BJT.Is * er / VT + 1e-12;
+        const Ic = If - Ir - Ir / BJT.br, Ib = If / BJT.bf + Ir / BJT.br;
+        const a_c = gf, b_c = -gr * (1 + 1 / BJT.br);   // dIc/dvbe, dIc/dvbc
+        const a_b = gf / BJT.bf, b_b = gr / BJT.br;      // dIb/dvbe, dIb/dvbc
+        // kifolyó áram egy csomópontból: s*I0 + a*(Vb-Ve - s*vbe) + b*(Vb-Vc - s*vbc)
+        const row = (r, I0, a, b) => {
+          if (r < 0) return;
+          if (B >= 0) G[r * n + B] += a + b;
+          if (E >= 0) G[r * n + E] -= a;
+          if (C >= 0) G[r * n + C] -= b;
+          R[r] -= s * I0 - a * s * vbe - b * s * vbc;
+        };
+        row(C, Ic, a_c, b_c);
+        row(B, Ib, a_b, b_b);
+        row(E, -(Ic + Ib), -(a_c + a_b), -(b_c + b_b));
+        continue;
+      }
+      if (t.a < 0 || t.b < 0) continue;
+      const a = I(t.a), b = I(t.b);
+      const u = vv(t.a) - vv(t.b);
+      switch (d.kind) {
+        case 'res': case 'lamp': case 'spk': stampG(a, b, 1 / d.R); break;
+        case 'sw': stampG(a, b, this.switches[e.id] ? 20 : 1e-10); break;
+        case 'bat': { const g = 1 / d.Rint; stampG(a, b, g); stampI(a, b, -d.V * g); break; }
+        case 'cap': { const g = d.C / dt; stampG(a, b, g); stampI(a, b, -g * capV[e.id]); break; }
+        case 'led': {
+          const nvt = d.n * VT; const j = this.jx[e.id];
+          const vcrit = nvt * Math.log(nvt / (Math.SQRT2 * d.Is));
+          let vd = pnjlim(u, j.vd, nvt, vcrit); if (vd !== u) limited = true; j.vd = vd;
+          const ex = safeExp(vd / nvt); const id = d.Is * (ex - 1); const g = d.Is * ex / nvt + 1e-12;
+          stampG(a, b, g); stampI(a, b, id - g * vd); break;
+        }
+        case 'photo': {
+          const Iph = 1e-7 + 4e-3 * Math.pow(Math.max(0, Math.min(1, this.light)), 1.6);
+          let i, g;
+          if (u >= 0) { const ex = Math.exp(-u / 0.12); i = Iph * (1 - ex); g = Iph * ex / 0.12; }
+          else { i = 0; g = 0; }
+          g += 1e-9; i += 1e-9 * u;
+          stampG(a, b, g); stampI(a, b, i - g * u); break;
+        }
+      }
+    }
+    for (let k = 0; k < n; k++) G[k * n + k] += 1e-9;
+    return limited;
+  };
+
+  Sim.prototype._solveInto = function (x) { // G x = rhs
+    const n = this.n, A = this.G;
+    for (let i = 0; i < n; i++) x[i] = this.rhs[i];
+    for (let k = 0; k < n; k++) {
+      let piv = k, mx = Math.abs(A[k * n + k]);
+      for (let i = k + 1; i < n; i++) { const a = Math.abs(A[i * n + k]); if (a > mx) { mx = a; piv = i; } }
+      if (mx < 1e-30) A[k * n + k] = 1e-30;
+      if (piv !== k) {
+        for (let j = 0; j < n; j++) { const t = A[k * n + j]; A[k * n + j] = A[piv * n + j]; A[piv * n + j] = t; }
+        const t = x[k]; x[k] = x[piv]; x[piv] = t;
+      }
+      const akk = A[k * n + k];
+      for (let i = k + 1; i < n; i++) {
+        const m = A[i * n + k] / akk; if (m === 0) continue;
+        for (let j = k; j < n; j++) A[i * n + j] -= m * A[k * n + j];
+        x[i] -= m * x[k];
+      }
+    }
+    for (let i = n - 1; i >= 0; i--) { let s = x[i]; for (let j = i + 1; j < n; j++) s -= A[i * n + j] * x[j]; x[i] = s / A[i * n + i]; }
+  };
+
+  Sim.prototype._newton = function (dt) {
+    const v = this.v, x = this.vnew;
+    for (let it = 0; it < 80; it++) {
+      const limited = this._load(v, dt, this.capV);
+      this._solveInto(x);
+      let conv = !limited;
+      for (let k = 0; k < this.n; k++) {
+        if (!isFinite(x[k])) return false;
+        if (Math.abs(x[k] - v[k]) > 1e-6 + 1e-4 * Math.abs(x[k])) conv = false;
+        v[k] = x[k];
+      }
+      if (conv && it > 0) return true;
+    }
+    return false;
+  };
+
+  Sim.prototype._commit = function (dt) {
+    for (const e of this.nl.elements) {
+      const d = e.def, t = e.t;
+      if (d.kind === 'npn' || d.kind === 'pnp') {
+        if (t.B < 0 || t.C < 0 || t.E < 0) { this.cur[e.id] = { C: 0, B: 0, E: 0 }; continue; }
+        const s = d.kind === 'npn' ? 1 : -1;
+        const vbe = s * (this.nodeV(t.B) - this.nodeV(t.E)), vbc = s * (this.nodeV(t.B) - this.nodeV(t.C));
+        const If = BJT.Is * (safeExp(vbe / VT) - 1), Ir = BJT.Is * (safeExp(vbc / VT) - 1);
+        const Ic = s * (If - Ir - Ir / BJT.br), Ib = s * (If / BJT.bf + Ir / BJT.br);
+        this.cur[e.id] = { C: Ic, B: Ib, E: -(Ic + Ib) };
+        continue;
+      }
+      if (t.a < 0 || t.b < 0) { this.cur[e.id] = 0; continue; }
+      const u = this.nodeV(t.a) - this.nodeV(t.b);
+      let i = 0;
+      switch (d.kind) {
+        case 'res': case 'lamp': case 'spk': i = u / d.R; break;
+        case 'sw': i = u * (this.switches[e.id] ? 20 : 1e-10); break;
+        case 'bat': i = (u - d.V) / d.Rint; break;
+        case 'cap': i = d.C / dt * (u - this.capV[e.id]); this.capV[e.id] = u; break;
+        case 'led': i = d.Is * (safeExp(u / (d.n * VT)) - 1); break;
+        case 'photo': { const Iph = 1e-7 + 4e-3 * Math.pow(Math.max(0, Math.min(1, this.light)), 1.6); i = u >= 0 ? Iph * (1 - Math.exp(-u / 0.12)) + 1e-9 * u : 1e-9 * u; break; }
+      }
+      this.cur[e.id] = i;
+    }
+    this.time += dt;
+  };
+
+  Sim.prototype._snap = function () {
+    const jx = {}; for (const k in this.jx) jx[k] = { ...this.jx[k] };
+    return { v: Float64Array.from(this.v), jx };
+  };
+  Sim.prototype._restore = function (s) { this.v.set(s.v); for (const k in s.jx) Object.assign(this.jx[k], s.jx[k]); };
+
+  Sim.prototype.step = function (dt, depth) {
+    depth = depth || 0;
+    const snap = this._snap();
+    if (this._newton(dt)) { this._commit(dt); this.converged = true; return true; }
+    this._restore(snap);
+    if (depth >= 10) { this._newton(dt); this._commit(dt); this.converged = false; return false; }
+    const a = this.step(dt / 2, depth + 1);
+    const b = this.step(dt / 2, depth + 1);
+    return a && b;
+  };
+
+
+  // A vezetékekben folyó áram megjelenítéshez: nettónként kis ellenálláshálózat.
+  Sim.prototype.wireCurrents = function () {
+    const nl = this.nl, layout = this.layout, chk = nl.chk;
+    const inj = new Map(); // post -> a postból az alkatrészekbe kifolyó áram
+    const addInj = (r, c, i) => { const k = postKey(r, c); inj.set(k, (inj.get(k) || 0) + i); };
+    for (const e of nl.elements) {
+      if (e.internal) continue;
+      const cs = chk.contacts[e.idx];
+      const cur = this.cur[e.id];
+      for (const s of cs) {
+        if (!s.connected) continue;
+        let i = 0;
+        if (typeof cur === 'object' && cur) i = cur[s.term] || 0;
+        else if (s.term === 'a') i = cur || 0; else if (s.term === 'b') i = -(cur || 0);
+        addInj(s.r, s.c, i);
+      }
+    }
+    // csak vezeték-élek; nettónként Laplace-egyenlet
+    const edges = []; const nodes = new Map();
+    layout.forEach((pl, i) => {
+      if (PARTS[pl.p].kind !== 'wire' && PARTS[pl.p].kind !== 'jumper') return;
+      const cs = chk.contacts[i].filter((s) => s.connected);
+      for (let j = 1; j < cs.length; j++) edges.push({ wire: i, seg: j - 1, a: postKey(cs[j - 1].r, cs[j - 1].c), b: postKey(cs[j].r, cs[j].c) });
+      // a lebegő középső snapek miatt a szegmensek az összekötött snapok között vannak
+    });
+    for (const ed of edges) { if (!nodes.has(ed.a)) nodes.set(ed.a, nodes.size); if (!nodes.has(ed.b)) nodes.set(ed.b, nodes.size); }
+    const N = nodes.size; const res = new Map();
+    if (!N) return res;
+    const L = new Float64Array(N * N); const rhs = new Float64Array(N);
+    for (const ed of edges) { const a = nodes.get(ed.a), b = nodes.get(ed.b); L[a * N + a]++; L[b * N + b]++; L[a * N + b]--; L[b * N + a]--; }
+    for (const [k, i] of nodes) rhs[i] = -(inj.get(k) || 0);
+    for (let i = 0; i < N; i++) L[i * N + i] += 1e-6; // rögzítés
+    // Gauss
+    const A = L, x = rhs;
+    for (let k = 0; k < N; k++) {
+      let piv = k, mx = Math.abs(A[k * N + k]);
+      for (let i = k + 1; i < N; i++) { const a = Math.abs(A[i * N + k]); if (a > mx) { mx = a; piv = i; } }
+      if (piv !== k) { for (let j = 0; j < N; j++) { const t = A[k * N + j]; A[k * N + j] = A[piv * N + j]; A[piv * N + j] = t; } const t = x[k]; x[k] = x[piv]; x[piv] = t; }
+      for (let i = k + 1; i < N; i++) { const m = A[i * N + k] / A[k * N + k]; if (!m) continue; for (let j = k; j < N; j++) A[i * N + j] -= m * A[k * N + j]; x[i] -= m * x[k]; }
+    }
+    for (let i = N - 1; i >= 0; i--) { let s = x[i]; for (let j = i + 1; j < N; j++) s -= A[i * N + j] * x[j]; x[i] = s / A[i * N + i]; }
+    for (const ed of edges) {
+      const i = x[nodes.get(ed.a)] - x[nodes.get(ed.b)];
+      if (!res.has(ed.wire)) res.set(ed.wire, []);
+      res.get(ed.wire)[ed.seg] = i;
+    }
+    return res;
+  };
+
+  // ASCII rajz (teszteléshez)
+  function ascii(layout) {
+    const g = []; for (let r = 0; r < 7; r++) { g.push(new Array(11).fill(' . ')); }
+    const chk = checkBuild(layout);
+    layout.forEach((pl, i) => {
+      const geo = geometry(pl); const id = (pl.id || pl.p).padEnd(3).slice(0, 3);
+      if (geo.jumper) return;
+      for (const s of geo.snaps) g[s.r] && (g[s.r][s.c] = id);
+      for (const b of geo.body) if (!b.side && g[b.r]) g[b.r][b.c] = id.toLowerCase();
+    });
+    let s = '    ' + Array.from({ length: 10 }, (_, i) => String(i + 1).padStart(2).padEnd(3)).join('') + '\n';
+    for (let r = 0; r < 7; r++) s += ' ' + ROWS[r] + '  ' + g[r].slice(1).join('') + '\n';
+    return s;
+  }
+
+  const api = { PARTS, KITS, ROWS, DIRS, geometry, checkBuild, buildNetlist, Sim, ascii, postName, parsePost };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.BoffinEngine = api;
+})(typeof window !== 'undefined' ? window : globalThis);

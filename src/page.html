@@ -1,0 +1,245 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later · Fekete doboz nélkül · Copyright (C) 2026 Nimmerfroh Károly -->
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fekete doboz nélkül</title>
+<meta name="description" content="IC nélküli, interaktív áramkör-kísérletek gyerekeknek Boffin elektronikai építőkészletek alkatrészeiből: lépésenkénti építés, tippelés, élő szimuláció.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Baloo+2:wght@600;800&display=swap">
+<style>
+/* Elrendezés: fent a kísérletválasztó sáv, alatta a rács (bal) és a lépésvezető panel (jobb); tableten állva egymás alatt. */
+:root {
+  --bg: #EDF1F5;
+  --surface: #FFFFFF;
+  --surface-2: #F5F8FB;
+  --ink: #17202A;
+  --muted: #5A6673;
+  --line: #D3DBE3;
+  --accent: #2457C5;      /* a kék Boffin-vezeték színe */
+  --accent-ink: #FFFFFF;
+  --spark: #F5A400;       /* áram */
+  --good: #1B8F55;
+  --bad: #C2413A;
+  --board: #D6E1EB;
+  --board-edge: #B9C8D6;
+  --post: #8FA1B4;
+  --label: #6F8296;
+  --shadow: rgba(23, 32, 42, .18);
+  --font-display: "Baloo 2", "Trebuchet MS", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --r: 14px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10151B; --surface: #19212A; --surface-2: #1E2731; --ink: #E7EDF3; --muted: #98A5B3; --line: #2C3846;
+    --accent: #6F9BFF; --accent-ink: #0D1520; --spark: #FFC23D; --good: #45C983; --bad: #F07067;
+    --board: #1C2733; --board-edge: #2C3A49; --post: #4E6074; --label: #7D8FA3; --shadow: rgba(0, 0, 0, .45);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10151B; --surface: #19212A; --surface-2: #1E2731; --ink: #E7EDF3; --muted: #98A5B3; --line: #2C3846;
+  --accent: #6F9BFF; --accent-ink: #0D1520; --spark: #FFC23D; --good: #45C983; --bad: #F07067;
+  --board: #1C2733; --board-edge: #2C3A49; --post: #4E6074; --label: #7D8FA3; --shadow: rgba(0, 0, 0, .45);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { margin: 0; }
+[hidden] { display: none !important; }
+img { max-width: 100%; }
+html, body { background: var(--bg); }
+body {
+  color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px 32px;
+}
+.wrap { max-width: 1280px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.1; margin: 0; text-wrap: balance; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* fejléc */
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.brand svg { flex: none; }
+.brand h1 { font-size: 30px; font-weight: 800; letter-spacing: -.01em; }
+.brand p { margin: 0; color: var(--muted); font-size: 14px; }
+.tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.seg { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px; gap: 2px; }
+.seg button { border: 0; background: transparent; border-radius: 999px; padding: 8px 14px; min-height: 44px; cursor: pointer; font-weight: 700; font-size: 15px; display: inline-flex; align-items: center; gap: 6px; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.seg .age { font-family: var(--font-display); font-size: 18px; }
+.iconbtn { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; min-height: 44px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 15px; }
+.iconbtn[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+
+/* kísérletválasztó */
+.exps { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(170px, 1fr); gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+.exp { text-align: left; border: 2px solid transparent; background: var(--surface); border-radius: var(--r); padding: 10px 12px; cursor: pointer; display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: center; min-height: 64px; box-shadow: 0 1px 0 var(--line); }
+.exp .num { grid-row: span 2; width: 34px; height: 34px; border-radius: 10px; background: var(--surface-2); display: grid; place-items: center; font-family: var(--font-display); font-weight: 800; font-size: 20px; color: var(--muted); }
+.exp b { font-family: var(--font-display); font-size: 18px; font-weight: 800; line-height: 1.1; }
+.exp small { color: var(--muted); font-size: 13px; line-height: 1.2; }
+.exp[aria-current="true"] { border-color: var(--accent); }
+.exp[aria-current="true"] .num { background: var(--accent); color: var(--accent-ink); }
+.exp.done .num { background: var(--good); color: #fff; }
+
+/* fő rész */
+.main { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 900px) { .main { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--surface); border-radius: 18px; border: 1px solid var(--line); }
+.boardcard { padding: 10px; position: relative; }
+.boardhead { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; padding: 4px 6px 8px; }
+.boardhead .status { font-size: 14px; color: var(--muted); display: flex; gap: 8px; align-items: center; min-height: 28px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 3px 10px; font-size: 13px; font-weight: 700; background: var(--surface-2); color: var(--muted); }
+.pill.live { color: var(--good); }
+.pill.live::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.pill.slow { color: var(--spark); }
+.boardscroll { overflow-x: auto; }
+svg.board { display: block; width: 100%; height: auto; min-width: 520px; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.ctrls { display: flex; flex-wrap: wrap; gap: 10px; padding: 10px 6px 4px; align-items: center; }
+.ctrl { border: 2px solid var(--line); background: var(--surface-2); border-radius: 14px; min-height: 52px; padding: 6px 16px; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 700; font-size: 16px; }
+.ctrl[aria-pressed="true"] { border-color: var(--good); background: color-mix(in srgb, var(--good) 14%, var(--surface)); }
+.ctrl.hold:active, .ctrl.hold.down { border-color: var(--good); background: color-mix(in srgb, var(--good) 20%, var(--surface)); }
+.ctrl .knob { width: 38px; height: 22px; border-radius: 99px; background: var(--line); position: relative; flex: none; transition: background .15s; }
+.ctrl .knob::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--surface); transition: transform .15s; box-shadow: 0 1px 2px var(--shadow); }
+.ctrl[aria-pressed="true"] .knob { background: var(--good); }
+.ctrl[aria-pressed="true"] .knob::after { transform: translateX(16px); }
+.lightctl { display: flex; align-items: center; gap: 10px; border: 2px solid var(--line); background: var(--surface-2); border-radius: 14px; padding: 6px 14px; min-height: 52px; flex: 1 1 260px; }
+.lightctl input { flex: 1; accent-color: var(--spark); min-width: 0; height: 30px; }
+.lightctl label { font-weight: 700; font-size: 15px; }
+
+/* panel */
+.panel { padding: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.panel h2 { font-size: 28px; font-weight: 800; }
+.tag { color: var(--muted); margin-top: 2px; }
+.stages { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.stage { border: 0; background: var(--surface-2); border-radius: 12px; padding: 8px 4px; min-height: 52px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0; font-size: 13px; font-weight: 700; color: var(--muted); line-height: 1.15; text-align: center; }
+.stage span { font-family: var(--font-display); font-size: 18px; font-weight: 800; }
+.stage[aria-current="step"] { background: var(--accent); color: var(--accent-ink); }
+.stage.seen:not([aria-current="step"]) { color: var(--ink); }
+.say { display: flex; gap: 10px; align-items: flex-start; }
+.say p { margin: 0; font-size: 18px; max-width: 62ch; }
+.big .say p, body.age-k .say p { font-size: 21px; }
+.speak { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface-2); display: grid; place-items: center; cursor: pointer; }
+.speak.on { border-color: var(--accent); color: var(--accent); }
+.parts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.parts li { display: grid; grid-template-columns: 58px 1fr; gap: 10px; align-items: center; padding: 6px 8px; border-radius: 12px; background: var(--surface-2); }
+.parts li svg { width: 58px; height: 34px; }
+.parts .pn { font-weight: 700; }
+.parts .src { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.chip { font-size: 12px; font-weight: 700; border-radius: 6px; padding: 1px 7px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.chip.k300 { color: #B4372F; border-color: color-mix(in srgb, #B4372F 40%, transparent); }
+.chip.klight { color: #A06A00; border-color: color-mix(in srgb, #A06A00 40%, transparent); }
+.chip.khome { color: #2F7D4E; border-color: color-mix(in srgb, #2F7D4E 40%, transparent); }
+:root[data-theme="dark"] .chip.k300, :root:not([data-theme="light"]) .chip.k300 { }
+.navrow { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn { border: 0; border-radius: 14px; min-height: 52px; padding: 8px 20px; font-weight: 800; font-size: 17px; cursor: pointer; background: var(--surface-2); display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-display); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.btn[disabled] { opacity: .45; cursor: default; }
+.stepbox { border-radius: 14px; background: var(--surface-2); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.stepbox .cnt { font-size: 14px; color: var(--muted); font-weight: 700; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.lvl { display: inline-flex; align-items: center; gap: 6px; }
+.lvl i { width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: var(--surface); font-style: normal; display: grid; place-items: center; font-size: 13px; font-weight: 800; }
+.progress { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; }
+.progress div { height: 100%; background: var(--accent); border-radius: 99px; transition: width .2s; }
+.opts { display: grid; gap: 8px; }
+.opt { text-align: left; border: 2px solid var(--line); background: var(--surface); border-radius: 14px; padding: 10px 14px; min-height: 56px; cursor: pointer; display: flex; gap: 12px; align-items: center; font-size: 18px; font-weight: 700; }
+.opt svg { flex: none; }
+.opt.right { border-color: var(--good); background: color-mix(in srgb, var(--good) 12%, var(--surface)); }
+.opt.wrong { border-color: var(--bad); opacity: .8; }
+.feedback { border-radius: 14px; padding: 10px 14px; background: color-mix(in srgb, var(--good) 12%, var(--surface)); }
+.vars { display: flex; flex-direction: column; gap: 8px; }
+.var { border: 2px solid var(--line); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; background: var(--surface); }
+.var.on { border-color: var(--spark); }
+.var .vh { display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap; }
+.var .vh b { font-size: 17px; }
+.var p { margin: 0; color: var(--muted); font-size: 15px; }
+.mini { border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px; min-height: 44px; padding: 4px 12px; font-weight: 700; cursor: pointer; }
+.mini[aria-pressed="true"] { background: var(--spark); color: #1B1300; border-color: var(--spark); }
+.meter { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+.meter div { background: var(--surface-2); border-radius: 12px; padding: 6px 10px; }
+.meter small { display: block; color: var(--muted); font-size: 12px; font-weight: 700; }
+.meter b { font-variant-numeric: tabular-nums; font-size: 18px; }
+.eng { border-left: 4px solid var(--accent); padding: 4px 0 4px 12px; color: var(--ink); }
+.eng p { margin: 0 0 6px; }
+.note { font-size: 14px; color: var(--muted); }
+.popover { position: absolute; z-index: 5; max-width: 300px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 8px 30px var(--shadow); padding: 12px 14px; font-size: 15px; }
+.popover b { font-family: var(--font-display); font-size: 19px; display: block; }
+.popover p { margin: 4px 0 0; }
+.popover .x { position: absolute; top: 4px; right: 4px; width: 36px; height: 36px; border: 0; background: transparent; cursor: pointer; font-size: 20px; color: var(--muted); }
+/* keskeny nézetben az építési lépés a rács alatt is látszik */
+.buildbar { display: none; flex-direction: column; gap: 8px; width: 100%; }
+.buildbar p { margin: 0; font-size: 18px; font-weight: 700; }
+@media (max-width: 900px) { .buildbar { display: flex; } .wideonly { display: none; } }
+footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
+@keyframes pulse { 0%, 100% { opacity: .95; } 50% { opacity: .35; } }
+.hl { animation: pulse 1.1s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .hl { animation: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg width="46" height="46" viewBox="0 0 46 46" aria-hidden="true">
+        <rect x="3" y="3" width="40" height="40" rx="11" fill="var(--accent)"/>
+        <path d="M11 30h7l3-9 4 14 3-9h7" fill="none" stroke="var(--accent-ink)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="11" cy="30" r="2.6" fill="var(--spark)"/><circle cx="35" cy="26" r="2.6" fill="var(--spark)"/>
+      </svg>
+      <div>
+        <h1>Fekete doboz nélkül</h1>
+        <p>IC-mentes kísérletek a Boffin I 300, II Light és II My Home alkatrészeiből</p>
+      </div>
+    </div>
+    <div class="tools">
+      <div class="seg" role="group" aria-label="Ki játszik?">
+        <button data-age="k" aria-pressed="false"><span class="age">5</span> éves</button>
+        <button data-age="m" aria-pressed="true"><span class="age">7</span> éves</button>
+        <button data-age="n" aria-pressed="false"><span class="age">11</span> éves</button>
+      </div>
+      <button class="iconbtn" id="autoread" aria-pressed="false" title="Minden új szöveget felolvas">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Felolvasás
+      </button>
+    </div>
+  </header>
+
+  <nav class="exps" id="exps" aria-label="Kísérletek"></nav>
+
+  <section class="main">
+    <div class="card boardcard">
+      <div class="boardhead">
+        <h3 id="boardtitle" style="font-size:20px">A rács</h3>
+        <div class="status" id="status"></div>
+      </div>
+      <div class="boardscroll"><svg class="board" id="board" viewBox="0 0 700 500" role="img" aria-label="Az építőrács az alkatrészekkel"></svg></div>
+      <div class="ctrls" id="ctrls"></div>
+      <div id="pop" class="popover" hidden></div>
+    </div>
+    <div class="card panel" id="panel"></div>
+  </section>
+
+  <footer>
+    Az áramköröket egy beépített áramkör-szimulátor számolja: az alkatrészek rácson elfoglalt helyéből rakja össze a kapcsolást, és abból számolja az áramokat. A valódi alkatrészeknél kis eltérés lehet, például a villogás sebességében vagy a késleltetés hosszában. A LED-ek mindig ellenállással együtt szerepelnek, mert a Boffin I kézikönyve szerint LED-et sosem szabad közvetlenül az elemre kötni.
+    <br><br>
+    Nem hivatalos oldal: semmilyen kapcsolatban nem áll a Boffin készletek gyártójával vagy forgalmazójával. A Boffin név csak azt jelzi, melyik készletek alkatrészeihez készültek a kísérletek. A kísérletek, az elrendezések és a szövegek saját munka.
+    · <a href="https://github.com/nimmerfroh/boffin-fekete-doboz-nelkul" style="color:inherit">Forráskód a GitHubon</a> (GPL v3)
+  </footer>
+</div>
+
+<script>
+/*ENGINE*/
+</script>
+<script>
+/*LAYOUTS*/
+</script>
+<script>
+/*APP*/
+</script>
+</body>
+</html>
