@@ -58,6 +58,8 @@ GNU General Public License v3.0 vagy későbbi változata (GPL-3.0-or-later), l�
 
 Copyright (C) 2026 Nimmerfroh Károly
 
+**Kivétel: a pukihangok** (`hangok/puki/`) nem a GPL alá tartoznak. Ezek a Wikimedia Commonsról letöltött, átdolgozott valódi felvételek Creative Commons licenccel (CC BY 3.0, illetve CC BY-SA 3.0/4.0). A forrásokat és a szerzőket a [hangok/puki/FORRASOK.md](hangok/puki/FORRASOK.md) sorolja fel. A legtöbb darab a Yle Arkisto „Different kind of real farts” gyűjteményéből való (CC BY 3.0).
+
 ## Nem hivatalos
 
 Ez a projekt semmilyen kapcsolatban nem áll a Boffin készletek gyártójával vagy forgalmazójával. A Boffin név csak azt jelzi, melyik készletek alkatrészeihez készültek a kísérletek. A kísérletek, az elrendezések, a rajzok és a szövegek saját munka; az alkatrészlisták a gyártó nyilvános kézikönyveiből származnak.

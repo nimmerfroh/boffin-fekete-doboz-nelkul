@@ -1221,13 +1221,22 @@ function setAge(a) {
 }
 function syncAutoread() { $('#autoread').setAttribute('aria-pressed', String(S.autoread)); store.set('autoread', S.autoread); }
 document.querySelectorAll('[data-age]').forEach((b) => { b.onclick = () => setAge(b.dataset.age); });
-// Puki gomb: minden nyomásra egy új, véletlen pukihang
-$('#puki').onclick = () => {
-  const ac = ensureAC(); if (!ac || !window.Puki) return;
-  const { samples } = window.Puki.puki(ac.sampleRate);
-  const buf = ac.createBuffer(1, samples.length, ac.sampleRate); buf.getChannelData(0).set(samples);
-  const src = ac.createBufferSource(); src.buffer = buf; src.playbackRate.value = 0.9 + Math.random() * 0.25;
-  const g = ac.createGain(); g.gain.value = 0.8; src.connect(g).connect(ac.destination); src.start();
+// Puki gomb: minden nyomásra egy véletlen, valódi pukifelvétel (hangok/puki, forrás: FORRASOK.md).
+// Csak a kiválasztott fájl töltődik le; a service worker megjegyzi, így utána offline is megy.
+// A gomb kiírja a sorszámot, hogy meg lehessen mondani, melyik nem jó.
+const PUKI_N = 48;
+const pukiBuf = new Map(); let pukiLast = 0;
+function decodeAudio(ac, data) { return new Promise((ok, bad) => { const p = ac.decodeAudioData(data, ok, bad); if (p && p.catch) p.catch(bad); }); }
+$('#puki').onclick = async () => {
+  const ac = ensureAC(); if (!ac) return;
+  let n; do { n = 1 + Math.floor(Math.random() * PUKI_N); } while (n === pukiLast && PUKI_N > 1);
+  pukiLast = n; $('#pukin').textContent = '#' + n;
+  try {
+    let buf = pukiBuf.get(n);
+    if (!buf) { const r = await fetch('hangok/puki/' + String(n).padStart(2, '0') + '.mp3'); if (!r.ok) return; buf = await decodeAudio(ac, await r.arrayBuffer()); pukiBuf.set(n, buf); }
+    const src = ac.createBufferSource(); src.buffer = buf; src.playbackRate.value = 0.88 + Math.random() * 0.27;
+    const g = ac.createGain(); g.gain.value = 0.9; src.connect(g).connect(ac.destination); src.start();
+  } catch (e) { /* offline és még nincs letöltve, vagy nem sikerült dekódolni */ }
 };
 $('#autoread').onclick = () => { S.autoread = !S.autoread; store.set('autoreadSet', true); syncAutoread(); if (!S.autoread) { try { speechSynthesis.cancel(); } catch (e) { /* nincs */ } } };
 

@@ -283,14 +283,14 @@ test('késleltetett lámpa: a LED az elemből kap áramot, S1 nélkül a kisül�
   }
 });
 
-test('puki: véletlen, véges, hallható hangminták', () => {
-  const P = require('../src/puki.js');
-  const kinds = new Set();
-  for (let seed = 1; seed <= 60; seed++) {
-    const { samples, kind, dur } = P.puki(48000, seed); kinds.add(kind);
-    assert.ok(dur > 0.1 && dur < 2.5);
-    let mx = 0; for (const v of samples) { assert.ok(Number.isFinite(v)); mx = Math.max(mx, Math.abs(v)); }
-    assert.ok(mx > 0.5 && mx <= 0.71, 'hangerő ' + mx);
-  }
-  assert.equal(kinds.size, P.KINDS.length, 'minden fajta előfordul');
+test('puki: minden felvétel megvan, és a forrásuk fel van tüntetve', () => {
+  const fs = require('node:fs'); const path = require('node:path');
+  const dir = path.join(__dirname, '..', 'hangok', 'puki');
+  const files = fs.readdirSync(dir).filter((f) => /^\d\d\.mp3$/.test(f)).sort();
+  const app = fs.readFileSync(path.join(__dirname, '..', 'src', 'app.js'), 'utf8');
+  const n = +/const PUKI_N = (\d+);/.exec(app)[1];
+  assert.equal(files.length, n);
+  files.forEach((f, i) => assert.equal(f, String(i + 1).padStart(2, '0') + '.mp3'));
+  const src = fs.readFileSync(path.join(dir, 'FORRASOK.md'), 'utf8');
+  for (const f of files) { assert.ok(src.includes('| ' + f + ' |'), f + ' forrása'); assert.ok(fs.statSync(path.join(dir, f)).size > 2000); }
 });

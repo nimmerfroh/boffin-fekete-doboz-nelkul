@@ -10,9 +10,8 @@ const engine = read('./src/engine.js');
 const layouts = '(function () {\nconst module = { exports: {} };\n' + read('./src/layouts.js') + '\nwindow.BOFFIN_LAYOUTS = module.exports;\n})();';
 const experiments = read('./src/experiments.js');
 const app = read('./src/app.js');
-const puki = read('./src/puki.js');
 
-for (const [name, code] of [['PUKI', puki], ['ENGINE', engine], ['LAYOUTS', layouts], ['EXPERIMENTS', experiments], ['APP', app]]) {
+for (const [name, code] of [['ENGINE', engine], ['LAYOUTS', layouts], ['EXPERIMENTS', experiments], ['APP', app]]) {
   if (code.includes('</script')) throw new Error(`${name}: a kód nem tartalmazhat </script> szöveget`);
   const mark = `/*${name}*/`;
   if (!page.includes(mark)) throw new Error(`hiányzik a ${mark} jelölő a page.html-ből`);
@@ -21,6 +20,9 @@ for (const [name, code] of [['PUKI', puki], ['ENGINE', engine], ['LAYOUTS', layo
 writeFileSync(new URL('./index.html', import.meta.url), page);
 // service worker: a verzió az oldal tartalmából (új kiadásnál a tabletek maguktól frissülnek)
 const { createHash } = await import('node:crypto');
+const { readdirSync } = await import('node:fs');
+const pukiN = readdirSync(new URL('./hangok/puki/', import.meta.url)).filter((f) => /^\d\d\.mp3$/.test(f)).length;
+if (!page.includes(`const PUKI_N = ${pukiN};`)) throw new Error('az app.js PUKI_N értéke nem egyezik a hangok/puki fájlok számával: ' + pukiN);
 const version = createHash('sha256').update(page).digest('hex').slice(0, 12);
-writeFileSync(new URL('./sw.js', import.meta.url), read('./src/sw.template.js').replace('__VERSION__', version));
+writeFileSync(new URL('./sw.js', import.meta.url), read('./src/sw.template.js').replace('__VERSION__', version).replace('__PUKI_N__', String(pukiN)));
 console.log(`index.html kész (${(page.length / 1024).toFixed(0)} kB), sw.js verzió: ${version}`);
