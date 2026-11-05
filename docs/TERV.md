@@ -25,7 +25,7 @@ Minden kísérletre igaz:
 - ✅ Éjjeli lámpa
 - ✅ Érintőkapcsoló (két tranzisztor egymás után)
 - ✅ Vízjelző
-- Fénysorompó-riasztó (a 2. fázisban, a rezgőkörök után)
+- ✅ Árnyékriasztó (a fénysorompó egyrácsos változata: fényben néma, árnyékban szól)
 
 ### D) Idő, memória, döntés
 - ✅ Késleltetett lámpa
@@ -42,7 +42,7 @@ Minden kísérletre igaz:
 ### F) Fény és hang továbbítása
 - Fénytávíró (villogó LED → fototranzisztor → hangszóró)
 - Mikrofon-erősítő (a tablet mikrofonjával is)
-- Hangra villogó LED
+- ✅ Hangra villogó LED (fújás gomb vagy a tablet mikrofonja)
 
 ### G) A fekete dobozok kinyitása
 Menet: megépítjük egyszerű alkatrészekből → megértjük → mellé tesszük az igazi IC-t → megnézzük, mit tud pluszban. Az appban az IC „átlátszóvá válik”, és a megépített kapcsolás látszik benne. Az IC-k pontos belsejét nem ismerjük, azt építjük meg, amit csinálnak.

@@ -527,6 +527,61 @@ const EXPS = [
     },
   },
 
+  // ===================== C) Érzékelők (új) =====================
+  {
+    id: 'shadow', chapter: 'C', title: 'Árnyékriasztó', tag: 'Megszólal, ha valaki eltakarja a fényt',
+    layout: LAY.shadow, sim: { dt: 0.000005, scale: 1 / 1000 }, slow: 1000, light: 0.7, controls: ['S1', 'light', 'sound'],
+    audio: { type: 'table', probe: 'SP', param: 'light', press: [], grid: [0, 0.03, 0.06, 0.1, 0.15, 0.2, 0.3, 0.45, 0.7, 1] },
+    intro: {
+      k: 'Ez egy riasztó. Amíg fény éri a kis fekete szemet, csendben van. Ha valaki eltakarja, megszólal!',
+      m: 'A sziréna kondenzátora helyén most fototranzisztor (Q4) van. Fényben elvezeti a rezgőkör áramát, ezért csend van. Árnyékban nem vezet, és a rezgőkör megszólal.',
+      n: 'A hangos multivibrátor egyik bázisellenállása az R4 (10 kΩ) és a Q4 alkotta, fényfüggő feszültségosztóról kap tápot. Fényben a Q4 a vezérlőfeszültséget 0,7 V alá húzza, a rezgés leáll.',
+    },
+    guess: {
+      q: { k: 'Ha letakarod a kis fekete szemet, mi lesz?', m: 'Mi történik, ha árnyék vetül a fototranzisztorra?', n: 'Mi történik a vezérlőfeszültséggel és a hanggal, ha a Q4-et elsötétíted?' },
+      opts: [['Megszólal a riasztó', 'sound'], ['Semmi', 'same'], ['Kialszik a LED', 'off']], right: 0,
+      after: { k: 'Igen! Sötétben megszólal.', m: 'Árnyékban a Q4 nem vezet, így a rezgőkör áramot kap, és szólni kezd.', n: 'A vezérlőfeszültség megemelkedik, és a rezgőkör teljes sötétben kb. 700 Hz-en szól.' },
+    },
+    variants: [],
+    hint: {
+      k: 'Kapcsold be a hangot, aztán húzd a fényt a hold felé!',
+      m: 'Kapcsold be az S1-et és a hangot, aztán halványítsd a fényt. Félhomályban mélyebb a hang!',
+      n: 'Keresd meg, milyen fénynél szólal meg, és hogyan változik a hangmagasság a fénnyel.',
+    },
+    why: {
+      k: 'A kis fekete szem fényben elveszi az áramot a riasztótól. Ha árnyék jön, már nem veszi el, és a riasztó megszólal.',
+      m: 'Ez a sziréna és az éjjeli lámpa keveréke. A fototranzisztor fényben „lecsapolja” a rezgőkör áramát. Árnyékban ez megszűnik, és a rezgőkör szól. Ilyen elven működnek a boltok ajtajában a csengők, amik megszólalnak, ha belépsz a fénysugárba.',
+      n: 'A szimulációban erős fénynél a rezgés leáll, teljes sötétben kb. 700 Hz, félhomályban kb. 340 Hz: a Q4 árama folyamatosan hangolja a feszültségvezérelt oszcillátort. Ez ugyanaz a kapcsolás, mint a sziréna, csak a C5 helyett fény állítja a vezérlőfeszültséget. A hang a szimulációból kiszámolt frekvencia–fényerő táblázatból készül.',
+    },
+  },
+
+  // ===================== F) Fény és hang továbbítása =====================
+  {
+    id: 'clap', chapter: 'F', title: 'Hangra villogó LED', tag: 'Tapsra, fújásra felvillan',
+    layout: LAY.clap, sim: { dt: 0.002, scale: 1 }, controls: ['S1', { mic: 'X1' }],
+    intro: {
+      k: 'Fújj bele a mikrofonba, vagy tapsolj mellette, és a lámpa felvillan!',
+      m: 'Az éjjeli lámpa fototranzisztora helyén most mikrofon (X1) van. A hang megnyomja a mikrofont, megváltozik az ellenállása, és ettől a tranzisztor bekapcsol.',
+      n: 'A szénmikrofon (X1) ellenállása csendben kb. 1 kΩ, erős hangnyomásra kb. 10 kΩ. Az R4-gyel (10 kΩ) feszültségosztót alkot a Q2 bázisán; erős hangnál a bázisfeszültség 0,6 V fölé emelkedik.',
+    },
+    guess: {
+      q: { k: 'Ha belefújsz a mikrofonba, mi lesz a lámpával?', m: 'Mi történik a LED-del, ha belefújsz az X1-be?', n: 'Mi történik a bázisfeszültséggel, ha a mikrofon ellenállása megnő?' },
+      opts: [['Kigyullad', 'on'], ['Semmi', 'off']], right: 0,
+      after: { k: 'Igen! A fújástól felvillan.', m: 'A fújás megnyomja a mikrofon belsejét, nő az ellenállása, és ettől a tranzisztor bekapcsolja a LED-et.', n: 'Nagyobb alsó ellenállás → nagyobb bázisfeszültség → a tranzisztor nyit.' },
+    },
+    variants: [],
+    hint: {
+      k: 'Kapcsold be, aztán nyomd a „Fújj bele” gombot! Vagy kapcsold be a tablet mikrofonját, és tapsolj!',
+      m: 'Kapcsold be az S1-et. Próbáld a „Fújj bele” gombbal, vagy kapcsold be a tablet mikrofonját, és beszélj, tapsolj.',
+      n: 'Figyeld a bázisáramot hangosabb és halkabb hangnál. Hol a bekapcsolási küszöb?',
+    },
+    why: {
+      k: 'A mikrofonban apró szemcsék vannak. Ha hang éri, összenyomódnak, és ettől másképp vezeti az áramot. A tranzisztor ezt észreveszi, és felkapcsolja a lámpát.',
+      m: 'A hang a levegő rezgése. A mikrofonba érve megmozdítja a belsejét, és ettől megváltozik az ellenállása. Ez a kicsi változás a tranzisztor bázisán elég ahhoz, hogy a LED kigyulladjon. Így működnek a tapsra kapcsoló lámpák. (A tablet mikrofonja itt csak azt méri, milyen hangos a hang, és ezzel „nyomja” a virtuális mikrofont.)',
+      n: 'Feszültségosztó: U_B = 3 V · R_X1 / (R_X1 + 10 kΩ). 1 kΩ-nál kb. 0,27 V (zárva), 10 kΩ-nál 1,5 V (a tranzisztor bekapcsol, a LED-áramot az R1 korlátozza). A küszöb a szimulációban kb. 3 kΩ-nál van. A valódi szénmikrofon változása beszédnél kisebb, ezért erős hang (fújás, taps közelről) kell.',
+    },
+  },
+
 ];
 
 
@@ -539,7 +594,7 @@ const CHAPTERS = [
   { id: 'F', title: 'Fény és hang továbbítása', short: 'Továbbítás' },
   { id: 'G', title: 'A fekete dobozok kinyitása', short: 'Fekete dobozok' },
 ];
-const ORDER = ['first', 'conduct', 'series', 'dimmer', 'generator', 'capbat', 'motorspeed', 'night', 'touch', 'water', 'delay', 'flipflop', 'and', 'or', 'not', 'flash', 'metronome', 'sound', 'organ', 'siren'];
+const ORDER = ['first', 'conduct', 'series', 'dimmer', 'generator', 'capbat', 'motorspeed', 'night', 'touch', 'water', 'shadow', 'delay', 'flipflop', 'and', 'or', 'not', 'flash', 'metronome', 'sound', 'organ', 'siren', 'clap'];
 EXPS.sort((x, y) => ORDER.indexOf(x.id) - ORDER.indexOf(y.id));
 
 // Egy változat alkalmazása: vagy átalakítja az elrendezést, vagy egy másik elrendezésre cseréli.

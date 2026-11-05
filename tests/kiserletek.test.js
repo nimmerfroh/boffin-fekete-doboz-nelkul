@@ -212,3 +212,16 @@ test('E. sziréna: a hang a vezérlőfeszültséggel emelkedik, 0,7 V alatt ném
   const fs = [0.8, 1.5, 3].map(f);
   assert.ok(fs[0] > 300 && fs[1] > fs[0] && fs[2] > fs[1], `f: ${fs}`);
 });
+
+test('C. árnyékriasztó: fényben néma, sötétben szól', () => {
+  assert.equal(freqOf(lay('shadow'), { light: 0.6 }), 0);
+  const dark = freqOf(lay('shadow'), { light: 0 });
+  assert.ok(dark > 400 && dark < 1500, `sötétben ${dark} Hz`);
+});
+
+test('F. hangra villogó LED: csendben sötét, erős hangra (fújásra) kigyullad, β = 80…300', () => {
+  for (const bf of [80, 300]) withBeta(bf, () => {
+    const led = (p) => { const s = new E.Sim(lay('clap')); s.switches.S1 = true; s.mic.X1 = p; run(s, 0.02, 0.001); return s.cur.D1; };
+    assert.ok(led(0) < 1e-5, `β=${bf} csend`); assert.ok(led(1) > 0.008, `β=${bf} fújás`);
+  });
+});

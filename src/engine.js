@@ -42,6 +42,7 @@
     M6: { kind: 'meter', name: 'Mérőműszer', short: 'M6' },
     M1: { kind: 'motor', name: 'Motor', short: 'M1' },
     M4: { kind: 'motor', name: 'Átlátszó motor', short: 'M4' },
+    X1: { kind: 'mic', name: 'Mikrofon', short: 'X1' },
     TP: { kind: 'obj', virtual: true, name: 'Vizsgált tárgy', short: '?' },
     CBIG: { kind: 'cap', C: 10, virtual: true, name: 'segéd-kondenzátor', short: 'C' },
     SP: { kind: 'spk', R: 8, name: 'Hangszóró', short: 'SP' },
@@ -61,8 +62,8 @@
 
   // Melyik dobozban hány darab van (a hivatalos alkatrészlisták alapján).
   const KITS = {
-    '300': { name: 'Boffin I 300', parts: { J1: 1, J2: 1, W1: 6, W2: 9, W3: 4, W4: 2, W5: 1, W6: 1, W7: 1, B1: 2, S1: 1, S2: 1, R1: 1, R2: 1, R3: 1, R4: 1, R5: 1, RV: 1, D1: 1, D2: 1, C1: 1, C2: 1, C3: 1, C4: 1, C5: 1, Q1: 1, Q2: 1, Q4: 1, L1: 1, L2: 1, SP: 1, M1: 1 } },
-    light: { name: 'Boffin II Light', parts: { J1: 1, J2: 1, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, B1: 2, S1: 1, S2: 1, R1: 1, R3: 1, R5: 1, RV: 1, D1: 1, C2: 1, C4: 1, Q1: 1, Q2: 1, Q4: 1, SP: 1, M1: 1 } },
+    '300': { name: 'Boffin I 300', parts: { J1: 1, J2: 1, W1: 6, W2: 9, W3: 4, W4: 2, W5: 1, W6: 1, W7: 1, B1: 2, S1: 1, S2: 1, R1: 1, R2: 1, R3: 1, R4: 1, R5: 1, RV: 1, D1: 1, D2: 1, C1: 1, C2: 1, C3: 1, C4: 1, C5: 1, Q1: 1, Q2: 1, Q4: 1, L1: 1, L2: 1, SP: 1, M1: 1, X1: 1 } },
+    light: { name: 'Boffin II Light', parts: { J1: 1, J2: 1, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, B1: 2, S1: 1, S2: 1, R1: 1, R3: 1, R5: 1, RV: 1, D1: 1, C2: 1, C4: 1, Q1: 1, Q2: 1, Q4: 1, SP: 1, M1: 1, X1: 1 } },
     home: { name: 'Boffin II My Home', parts: { J1: 1, J2: 1, J4: 2, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, S1: 1, S2: 1, R3: 1, C5: 1, Q2: 1, Q4: 1, M4: 1, M6: 1 } },
   };
 
@@ -231,7 +232,7 @@
     this.rhs = new Float64Array(n);
     this.time = 0;
     this.light = opts.light != null ? opts.light : 0.8;
-    this.switches = {}; this.capV = {}; this.cur = {}; this.jx = {}; this.pot = {}; this.meter = {}; this.motor = {}; this.obj = {};
+    this.switches = {}; this.capV = {}; this.cur = {}; this.jx = {}; this.pot = {}; this.meter = {}; this.motor = {}; this.obj = {}; this.mic = {};
     for (const e of elements) {
       if (e.def.kind === 'sw') this.switches[e.id] = false;
       if (e.def.kind === 'cap') this.capV[e.id] = (opts.capInit && opts.capInit[e.id]) || 0;
@@ -240,10 +241,13 @@
       if (e.def.kind === 'pot') this.pot[e.id] = (opts.pot && opts.pot[e.id] != null) ? opts.pot[e.id] : 0.5;
       if (e.def.kind === 'meter') this.meter[e.id] = (opts.meter && opts.meter[e.id]) || '50mA';
       if (e.def.kind === 'motor') this.motor[e.id] = { w: 0, hand: 0 };
+      if (e.def.kind === 'mic') this.mic[e.id] = 0;
       if (e.def.kind === 'obj') this.obj[e.id] = (opts.obj && opts.obj[e.id] != null) ? opts.obj[e.id] : 1e12;
     }
   }
 
+  // szénmikrofon: csendben kb. 1 kΩ, erős hangnyomásra (fújás) kb. 10 kΩ
+  function micR(p) { return 1000 + 9000 * Math.max(0, Math.min(1, p || 0)); }
   function potR(d, p) { p = Math.max(0, Math.min(1, p)); return { ra: Math.max(1, d.R * p), rb: Math.max(1, d.R * (1 - p)) }; }
 
   // A motor tengelyének mozgása (explicit Euler, a lépés végén). Kézi pörgetésnél a sebességet a kéz adja.
@@ -329,6 +333,7 @@
         case 'res': case 'lamp': case 'spk': stampG(a, b, 1 / d.R); break;
         case 'meter': stampG(a, b, 1 / METER[this.meter[e.id]].R); break;
         case 'obj': stampG(a, b, 1 / Math.max(0.05, this.obj[e.id])); break;
+        case 'mic': stampG(a, b, 1 / micR(this.mic[e.id])); break;
         case 'motor': { const g = 1 / MOTOR.Rm; stampG(a, b, g); stampI(a, b, -MOTOR.Ke * this.motor[e.id].w * g); break; }
         case 'sw': stampG(a, b, this.switches[e.id] ? 20 : 1e-10); break;
         case 'bat': { const g = 1 / d.Rint; stampG(a, b, g); stampI(a, b, -d.V * g); break; }
@@ -432,6 +437,7 @@
         case 'res': case 'lamp': case 'spk': i = u / d.R; break;
         case 'meter': i = u / METER[this.meter[e.id]].R; break;
         case 'obj': i = u / Math.max(0.05, this.obj[e.id]); break;
+        case 'mic': i = u / micR(this.mic[e.id]); break;
         case 'motor': i = (u - MOTOR.Ke * this.motor[e.id].w) / MOTOR.Rm; this._motorStep(e.id, i, dt); break;
         case 'sw': i = u * (this.switches[e.id] ? 20 : 1e-10); break;
         case 'bat': i = (u - d.V) / d.Rint; break;

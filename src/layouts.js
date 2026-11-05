@@ -311,4 +311,13 @@ L.siren = L.sound
   ]);
 function lvl1First(p) { return ['W7', 'W6', 'W4', 'W3', 'W1', 'R4', 'D1', 'SP'].includes(p.p) && !['R3a', 'R3b', 'R1a', 'R1b'].includes(p.id) ? 0 : 1; }
 
+// ---- 2. fázis: árnyékriasztó és hangra villogó LED ----
+
+// Árnyékriasztó: a sziréna, a C5 helyén fototranzisztorral, a gomb helyén vezetékkel.
+// Fényben a Q4 lehúzza a vezérlőfeszültséget (csend), árnyékban megszólal.
+L.shadow = L.siren.map((p) => (p.p === 'C5' ? { ...p, p: 'Q4' } : p.p === 'S2' ? { p: 'W3', at: 'A2', dir: 'd', id: 'Wk' } : p));
+
+// Hangra villogó LED: az éjjeli lámpa, a fototranzisztor helyén mikrofonnal.
+L.clap = L.night.map((p) => (p.p === 'Q4' ? { ...p, p: 'X1' } : p.p === 'R3' ? { ...p, p: 'R4' } : p));
+
 module.exports = L;

@@ -123,6 +123,9 @@ svg.board { display: block; width: 100%; height: auto; min-width: 520px; touch-a
 .meterctl .mlabel { font-weight: 700; font-size: 15px; }
 .meterctl .seg button { min-height: 38px; padding: 4px 10px; }
 .mread { font-variant-numeric: tabular-nums; font-size: 17px; min-width: 7ch; }
+.miclevel { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; }
+.miclevel i { width: 120px; height: 10px; border-radius: 99px; background: var(--line); overflow: hidden; display: block; }
+.miclevel b { display: block; height: 100%; width: 0; background: var(--spark); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
 
 /* panel */
@@ -292,6 +295,7 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
     M6: { kind: 'meter', name: 'Mérőműszer', short: 'M6' },
     M1: { kind: 'motor', name: 'Motor', short: 'M1' },
     M4: { kind: 'motor', name: 'Átlátszó motor', short: 'M4' },
+    X1: { kind: 'mic', name: 'Mikrofon', short: 'X1' },
     TP: { kind: 'obj', virtual: true, name: 'Vizsgált tárgy', short: '?' },
     CBIG: { kind: 'cap', C: 10, virtual: true, name: 'segéd-kondenzátor', short: 'C' },
     SP: { kind: 'spk', R: 8, name: 'Hangszóró', short: 'SP' },
@@ -311,8 +315,8 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
 
   // Melyik dobozban hány darab van (a hivatalos alkatrészlisták alapján).
   const KITS = {
-    '300': { name: 'Boffin I 300', parts: { J1: 1, J2: 1, W1: 6, W2: 9, W3: 4, W4: 2, W5: 1, W6: 1, W7: 1, B1: 2, S1: 1, S2: 1, R1: 1, R2: 1, R3: 1, R4: 1, R5: 1, RV: 1, D1: 1, D2: 1, C1: 1, C2: 1, C3: 1, C4: 1, C5: 1, Q1: 1, Q2: 1, Q4: 1, L1: 1, L2: 1, SP: 1, M1: 1 } },
-    light: { name: 'Boffin II Light', parts: { J1: 1, J2: 1, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, B1: 2, S1: 1, S2: 1, R1: 1, R3: 1, R5: 1, RV: 1, D1: 1, C2: 1, C4: 1, Q1: 1, Q2: 1, Q4: 1, SP: 1, M1: 1 } },
+    '300': { name: 'Boffin I 300', parts: { J1: 1, J2: 1, W1: 6, W2: 9, W3: 4, W4: 2, W5: 1, W6: 1, W7: 1, B1: 2, S1: 1, S2: 1, R1: 1, R2: 1, R3: 1, R4: 1, R5: 1, RV: 1, D1: 1, D2: 1, C1: 1, C2: 1, C3: 1, C4: 1, C5: 1, Q1: 1, Q2: 1, Q4: 1, L1: 1, L2: 1, SP: 1, M1: 1, X1: 1 } },
+    light: { name: 'Boffin II Light', parts: { J1: 1, J2: 1, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, B1: 2, S1: 1, S2: 1, R1: 1, R3: 1, R5: 1, RV: 1, D1: 1, C2: 1, C4: 1, Q1: 1, Q2: 1, Q4: 1, SP: 1, M1: 1, X1: 1 } },
     home: { name: 'Boffin II My Home', parts: { J1: 1, J2: 1, J4: 2, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, S1: 1, S2: 1, R3: 1, C5: 1, Q2: 1, Q4: 1, M4: 1, M6: 1 } },
   };
 
@@ -481,7 +485,7 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
     this.rhs = new Float64Array(n);
     this.time = 0;
     this.light = opts.light != null ? opts.light : 0.8;
-    this.switches = {}; this.capV = {}; this.cur = {}; this.jx = {}; this.pot = {}; this.meter = {}; this.motor = {}; this.obj = {};
+    this.switches = {}; this.capV = {}; this.cur = {}; this.jx = {}; this.pot = {}; this.meter = {}; this.motor = {}; this.obj = {}; this.mic = {};
     for (const e of elements) {
       if (e.def.kind === 'sw') this.switches[e.id] = false;
       if (e.def.kind === 'cap') this.capV[e.id] = (opts.capInit && opts.capInit[e.id]) || 0;
@@ -490,10 +494,13 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
       if (e.def.kind === 'pot') this.pot[e.id] = (opts.pot && opts.pot[e.id] != null) ? opts.pot[e.id] : 0.5;
       if (e.def.kind === 'meter') this.meter[e.id] = (opts.meter && opts.meter[e.id]) || '50mA';
       if (e.def.kind === 'motor') this.motor[e.id] = { w: 0, hand: 0 };
+      if (e.def.kind === 'mic') this.mic[e.id] = 0;
       if (e.def.kind === 'obj') this.obj[e.id] = (opts.obj && opts.obj[e.id] != null) ? opts.obj[e.id] : 1e12;
     }
   }
 
+  // szénmikrofon: csendben kb. 1 kΩ, erős hangnyomásra (fújás) kb. 10 kΩ
+  function micR(p) { return 1000 + 9000 * Math.max(0, Math.min(1, p || 0)); }
   function potR(d, p) { p = Math.max(0, Math.min(1, p)); return { ra: Math.max(1, d.R * p), rb: Math.max(1, d.R * (1 - p)) }; }
 
   // A motor tengelyének mozgása (explicit Euler, a lépés végén). Kézi pörgetésnél a sebességet a kéz adja.
@@ -579,6 +586,7 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
         case 'res': case 'lamp': case 'spk': stampG(a, b, 1 / d.R); break;
         case 'meter': stampG(a, b, 1 / METER[this.meter[e.id]].R); break;
         case 'obj': stampG(a, b, 1 / Math.max(0.05, this.obj[e.id])); break;
+        case 'mic': stampG(a, b, 1 / micR(this.mic[e.id])); break;
         case 'motor': { const g = 1 / MOTOR.Rm; stampG(a, b, g); stampI(a, b, -MOTOR.Ke * this.motor[e.id].w * g); break; }
         case 'sw': stampG(a, b, this.switches[e.id] ? 20 : 1e-10); break;
         case 'bat': { const g = 1 / d.Rint; stampG(a, b, g); stampI(a, b, -d.V * g); break; }
@@ -682,6 +690,7 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
         case 'res': case 'lamp': case 'spk': i = u / d.R; break;
         case 'meter': i = u / METER[this.meter[e.id]].R; break;
         case 'obj': i = u / Math.max(0.05, this.obj[e.id]); break;
+        case 'mic': i = u / micR(this.mic[e.id]); break;
         case 'motor': i = (u - MOTOR.Ke * this.motor[e.id].w) / MOTOR.Rm; this._motorStep(e.id, i, dt); break;
         case 'sw': i = u * (this.switches[e.id] ? 20 : 1e-10); break;
         case 'bat': i = (u - d.V) / d.Rint; break;
@@ -1096,6 +1105,15 @@ L.siren = L.sound
     { p: 'J4', at: 'E2', to: 'A5', id: 'J4b' },
   ]);
 function lvl1First(p) { return ['W7', 'W6', 'W4', 'W3', 'W1', 'R4', 'D1', 'SP'].includes(p.p) && !['R3a', 'R3b', 'R1a', 'R1b'].includes(p.id) ? 0 : 1; }
+
+// ---- 2. fázis: árnyékriasztó és hangra villogó LED ----
+
+// Árnyékriasztó: a sziréna, a C5 helyén fototranzisztorral, a gomb helyén vezetékkel.
+// Fényben a Q4 lehúzza a vezérlőfeszültséget (csend), árnyékban megszólal.
+L.shadow = L.siren.map((p) => (p.p === 'C5' ? { ...p, p: 'Q4' } : p.p === 'S2' ? { p: 'W3', at: 'A2', dir: 'd', id: 'Wk' } : p));
+
+// Hangra villogó LED: az éjjeli lámpa, a fototranzisztor helyén mikrofonnal.
+L.clap = L.night.map((p) => (p.p === 'Q4' ? { ...p, p: 'X1' } : p.p === 'R3' ? { ...p, p: 'R4' } : p));
 
 module.exports = L;
 
@@ -1557,10 +1575,10 @@ const EXPS = [
     intro: {
       k: 'Ugyanaz a villogó, de az egyik lámpa helyén hangszóró van. Minden villanásnál kattan egyet.',
       m: 'A villogó egyik LED-jét hangszóróra cseréljük. Ahányszor a tranzisztor ki- vagy bekapcsol, a hangszóró kattan.',
-      n: 'Astabil multivibrátor hangszóróval: a kollektoráram ugrásai kattanásként hallatszanak, kb. 2,6 Hz-cel (kb. 150 ütés percenként).',
+      n: 'Astabil multivibrátor hangszóróval: a kollektoráram ugrásai kattanásként hallatszanak. A ritmus kb. 0,6 s-onként ismétlődik (tik–tak: kb. 0,4 s és 0,2 s).',
     },
     guess: {
-      q: { k: 'Mit fogsz hallani?', m: 'Mit ad ki a hangszóró, ha a villogóba kötöd?', n: 'Mit hallasz, ha a hangszóró egy 2,6 Hz-es négyszögjelet kap?' },
+      q: { k: 'Mit fogsz hallani?', m: 'Mit ad ki a hangszóró, ha a villogóba kötöd?', n: 'Mit hallasz, ha a hangszóró egy lassú, kb. 1,7 Hz-es négyszögjelet kap?' },
       opts: [['Kattogást', 'sound'], ['Folyamatos sípolást', 'same'], ['Semmit', 'off']], right: 0,
       after: { k: 'Igen! Tik-tak, tik-tak.', m: 'Kattogást: a hangszóró membránja minden kapcsolásnál egyet ugrik.', n: 'Kattanásokat: a hangszóró csak az áram változására reagál, az állandó áramra nem.' },
     },
@@ -1575,7 +1593,7 @@ const EXPS = [
     why: {
       k: 'A hangszóró csak akkor szól, ha változik rajta az áram. A villogó mindig kapcsolgat, ezért a hangszóró minden kapcsolásnál kattan egyet.',
       m: 'A hangszóróban egy mágnes és egy tekercs mozgatja a membránt. Ha az áram hirtelen bekapcsol vagy kikapcsol, a membrán egyet ugrik: ez a kattanás. A zenészek metronómja is ilyen egyenletes kattogással segít tartani a ritmust.',
-      n: 'A kattanások üteme a multivibrátor periódusa (kb. 0,39 s, azaz kb. 150/perc). C5-tel az egyik félperiódus kb. 4,7-szer hosszabb, így egyenetlen, „sántító” ütem lesz. Ha mindkét oldalon nagyobb lenne a kondenzátor, egyenletesen lassulna.',
+      n: 'Minden átbillenésnél egy kattanás: periódusonként kettő. A szimulációban a hangszórós oldal kb. 0,4 s-ig vezet, a LED-es kb. 0,2 s-ig: a hangszórón kisebb a feszültségesés, mint a LED-en, ezért nagyobb a kollektor feszültséglépése, és lassabban billen vissza. C5-tel az egyik szakasz kb. 1 s-ra nyúlik. Ha mindkét oldalon nagyobb lenne a kondenzátor, egyenletesen lassulna.',
     },
   },
   {
@@ -1632,6 +1650,61 @@ const EXPS = [
     },
   },
 
+  // ===================== C) Érzékelők (új) =====================
+  {
+    id: 'shadow', chapter: 'C', title: 'Árnyékriasztó', tag: 'Megszólal, ha valaki eltakarja a fényt',
+    layout: LAY.shadow, sim: { dt: 0.000005, scale: 1 / 1000 }, slow: 1000, light: 0.7, controls: ['S1', 'light', 'sound'],
+    audio: { type: 'table', probe: 'SP', param: 'light', press: [], grid: [0, 0.03, 0.06, 0.1, 0.15, 0.2, 0.3, 0.45, 0.7, 1] },
+    intro: {
+      k: 'Ez egy riasztó. Amíg fény éri a kis fekete szemet, csendben van. Ha valaki eltakarja, megszólal!',
+      m: 'A sziréna kondenzátora helyén most fototranzisztor (Q4) van. Fényben elvezeti a rezgőkör áramát, ezért csend van. Árnyékban nem vezet, és a rezgőkör megszólal.',
+      n: 'A hangos multivibrátor egyik bázisellenállása az R4 (10 kΩ) és a Q4 alkotta, fényfüggő feszültségosztóról kap tápot. Fényben a Q4 a vezérlőfeszültséget 0,7 V alá húzza, a rezgés leáll.',
+    },
+    guess: {
+      q: { k: 'Ha letakarod a kis fekete szemet, mi lesz?', m: 'Mi történik, ha árnyék vetül a fototranzisztorra?', n: 'Mi történik a vezérlőfeszültséggel és a hanggal, ha a Q4-et elsötétíted?' },
+      opts: [['Megszólal a riasztó', 'sound'], ['Semmi', 'same'], ['Kialszik a LED', 'off']], right: 0,
+      after: { k: 'Igen! Sötétben megszólal.', m: 'Árnyékban a Q4 nem vezet, így a rezgőkör áramot kap, és szólni kezd.', n: 'A vezérlőfeszültség megemelkedik, és a rezgőkör teljes sötétben kb. 700 Hz-en szól.' },
+    },
+    variants: [],
+    hint: {
+      k: 'Kapcsold be a hangot, aztán húzd a fényt a hold felé!',
+      m: 'Kapcsold be az S1-et és a hangot, aztán halványítsd a fényt. Félhomályban mélyebb a hang!',
+      n: 'Keresd meg, milyen fénynél szólal meg, és hogyan változik a hangmagasság a fénnyel.',
+    },
+    why: {
+      k: 'A kis fekete szem fényben elveszi az áramot a riasztótól. Ha árnyék jön, már nem veszi el, és a riasztó megszólal.',
+      m: 'Ez a sziréna és az éjjeli lámpa keveréke. A fototranzisztor fényben „lecsapolja” a rezgőkör áramát. Árnyékban ez megszűnik, és a rezgőkör szól. Ilyen elven működnek a boltok ajtajában a csengők, amik megszólalnak, ha belépsz a fénysugárba.',
+      n: 'A szimulációban erős fénynél a rezgés leáll, teljes sötétben kb. 700 Hz, félhomályban kb. 340 Hz: a Q4 árama folyamatosan hangolja a feszültségvezérelt oszcillátort. Ez ugyanaz a kapcsolás, mint a sziréna, csak a C5 helyett fény állítja a vezérlőfeszültséget. A hang a szimulációból kiszámolt frekvencia–fényerő táblázatból készül.',
+    },
+  },
+
+  // ===================== F) Fény és hang továbbítása =====================
+  {
+    id: 'clap', chapter: 'F', title: 'Hangra villogó LED', tag: 'Tapsra, fújásra felvillan',
+    layout: LAY.clap, sim: { dt: 0.002, scale: 1 }, controls: ['S1', { mic: 'X1' }],
+    intro: {
+      k: 'Fújj bele a mikrofonba, vagy tapsolj mellette, és a lámpa felvillan!',
+      m: 'Az éjjeli lámpa fototranzisztora helyén most mikrofon (X1) van. A hang megnyomja a mikrofont, megváltozik az ellenállása, és ettől a tranzisztor bekapcsol.',
+      n: 'A szénmikrofon (X1) ellenállása csendben kb. 1 kΩ, erős hangnyomásra kb. 10 kΩ. Az R4-gyel (10 kΩ) feszültségosztót alkot a Q2 bázisán; erős hangnál a bázisfeszültség 0,6 V fölé emelkedik.',
+    },
+    guess: {
+      q: { k: 'Ha belefújsz a mikrofonba, mi lesz a lámpával?', m: 'Mi történik a LED-del, ha belefújsz az X1-be?', n: 'Mi történik a bázisfeszültséggel, ha a mikrofon ellenállása megnő?' },
+      opts: [['Kigyullad', 'on'], ['Semmi', 'off']], right: 0,
+      after: { k: 'Igen! A fújástól felvillan.', m: 'A fújás megnyomja a mikrofon belsejét, nő az ellenállása, és ettől a tranzisztor bekapcsolja a LED-et.', n: 'Nagyobb alsó ellenállás → nagyobb bázisfeszültség → a tranzisztor nyit.' },
+    },
+    variants: [],
+    hint: {
+      k: 'Kapcsold be, aztán nyomd a „Fújj bele” gombot! Vagy kapcsold be a tablet mikrofonját, és tapsolj!',
+      m: 'Kapcsold be az S1-et. Próbáld a „Fújj bele” gombbal, vagy kapcsold be a tablet mikrofonját, és beszélj, tapsolj.',
+      n: 'Figyeld a bázisáramot hangosabb és halkabb hangnál. Hol a bekapcsolási küszöb?',
+    },
+    why: {
+      k: 'A mikrofonban apró szemcsék vannak. Ha hang éri, összenyomódnak, és ettől másképp vezeti az áramot. A tranzisztor ezt észreveszi, és felkapcsolja a lámpát.',
+      m: 'A hang a levegő rezgése. A mikrofonba érve megmozdítja a belsejét, és ettől megváltozik az ellenállása. Ez a kicsi változás a tranzisztor bázisán elég ahhoz, hogy a LED kigyulladjon. Így működnek a tapsra kapcsoló lámpák. (A tablet mikrofonja itt csak azt méri, milyen hangos a hang, és ezzel „nyomja” a virtuális mikrofont.)',
+      n: 'Feszültségosztó: U_B = 3 V · R_X1 / (R_X1 + 10 kΩ). 1 kΩ-nál kb. 0,27 V (zárva), 10 kΩ-nál 1,5 V (a tranzisztor bekapcsol, a LED-áramot az R1 korlátozza). A küszöb a szimulációban kb. 3 kΩ-nál van. A valódi szénmikrofon változása beszédnél kisebb, ezért erős hang (fújás, taps közelről) kell.',
+    },
+  },
+
 ];
 
 
@@ -1644,7 +1717,7 @@ const CHAPTERS = [
   { id: 'F', title: 'Fény és hang továbbítása', short: 'Továbbítás' },
   { id: 'G', title: 'A fekete dobozok kinyitása', short: 'Fekete dobozok' },
 ];
-const ORDER = ['first', 'conduct', 'series', 'dimmer', 'generator', 'capbat', 'motorspeed', 'night', 'touch', 'water', 'delay', 'flipflop', 'and', 'or', 'not', 'flash', 'metronome', 'sound', 'organ', 'siren'];
+const ORDER = ['first', 'conduct', 'series', 'dimmer', 'generator', 'capbat', 'motorspeed', 'night', 'touch', 'water', 'shadow', 'delay', 'flipflop', 'and', 'or', 'not', 'flash', 'metronome', 'sound', 'organ', 'siren', 'clap'];
 EXPS.sort((x, y) => ORDER.indexOf(x.id) - ORDER.indexOf(y.id));
 
 // Egy változat alkalmazása: vagy átalakítja az elrendezést, vagy egy másik elrendezésre cseréli.
@@ -1695,6 +1768,7 @@ const ABOUT = {
   spk: ['Hangszóró', 'Az áram változása megrezegteti a membránját, ebből lesz a hang.'],
   pot: ['Állítható ellenállás', 'Tekerhető ellenállás: a csúszkája egy ellenálláscsíkon mozog. Három lába van: a két vége és a csúszka.'],
   meter: ['Mérőműszer', 'Megmutatja, mennyi áram folyik (0,5 mA vagy 50 mA állás), vagy mekkora a feszültség (5 V állás).'],
+  mic: ['Mikrofon', 'Szénmikrofon: a hang összenyomja a belsejét, és ettől megváltozik az ellenállása (csendben kb. 1 kΩ, fújásra kb. 10 kΩ).'],
   motor: ['Motor', 'Az áram forgatja. Fordítva is működik: ha te forgatod, áramot termel.'],
   obj: ['Vizsgált tárgy', 'Ez nincs a dobozban: ide érnek a kábelvégek vagy az ujjad.'],
   jumper: ['Átkötő kábel', 'Hajlékony vezeték két távoli pont között. A végét a pont tetején lévő patentra csíptesd.'],
@@ -1948,6 +2022,14 @@ function drawPart(parent, pl, level, contacts, opts) {
         label(def.short, 18, 10);
         break;
       }
+      case 'mic': {
+        svgEl('circle', { cx: 0, cy: 0, r: 12, fill: '#1E2227' }, body);
+        for (let k = -6; k <= 6; k += 4) svgEl('line', { x1: k, y1: -8, x2: k, y2: 8, stroke: '#5B636C', 'stroke-width': 1.4 }, body);
+        label('X1', 17, 10);
+        const ring = svgEl('circle', { cx: 0, cy: 0, r: 18, fill: 'none', stroke: 'var(--spark)', 'stroke-width': 3, opacity: 0 }, body);
+        out.glows.push({ el: ring, type: 'mic' });
+        break;
+      }
       case 'meter': {
         label('M6', 17, 10);
         // a számlap nem forog a testtel: képernyő-koordinátában rajzoljuk
@@ -2154,6 +2236,7 @@ function frame(ts) {
         if (gl.type === 'led') { const a = Math.abs(c || 0); const b = a > 1e-5 && c > 0 ? Math.min(1, Math.log10(a / 1e-5) / 3) : 0; gl.el.setAttribute('opacity', (b * 0.85).toFixed(2)); gl.lens.setAttribute('opacity', b.toFixed(2)); }
         else if (gl.type === 'lamp') { const b = Math.min(1, Math.abs(c || 0) / 0.15); gl.el.setAttribute('opacity', (b * 0.9).toFixed(2)); }
         else if (gl.type === 'spk') { const b = Math.min(1, Math.abs(c || 0) / 0.02); gl.el.setAttribute('opacity', (b * 0.9).toFixed(2)); gl.el.setAttribute('r', 18 + b * 8); }
+        else if (gl.type === 'mic') { const p = live ? S.sim.mic[it.id] || 0 : 0; gl.el.setAttribute('opacity', (p * 0.9).toFixed(2)); gl.el.setAttribute('r', 16 + p * 9); }
         else if (gl.type === 'shade') { gl.el.setAttribute('opacity', ((1 - S.light) * 0.75).toFixed(2)); }
       }
       if (it.knob) { const pv = live ? S.sim.pot[it.id] : (S.ctl.pot[it.id] != null ? S.ctl.pot[it.id] : 0.5); const an = (-135 + 270 * pv) * Math.PI / 180; it.knob.el.setAttribute('x2', (it.knob.cx + 12 * Math.sin(an)).toFixed(1)); it.knob.el.setAttribute('y2', (it.knob.cy - 12 * Math.cos(an)).toFixed(1)); }
@@ -2212,7 +2295,7 @@ async function buildTable(cfg) {
   const tbl = [];
   for (const x of cfg.grid) {
     let f;
-    if (cfg.type === 'table') f = await measureFreq(lay, { pot: { ...S.ctl.pot, [cfg.id]: x } }, (sim) => { for (const k of cfg.press) sim.switches[k] = true; });
+    if (cfg.type === 'table') f = await measureFreq(lay, cfg.param === 'light' ? { light: x, pot: S.ctl.pot } : { pot: { ...S.ctl.pot, [cfg.id]: x } }, (sim) => { for (const k of cfg.press) sim.switches[k] = true; });
     else f = await measureFreq(lay.map((p) => ((p.id || p.p) === cfg.cap ? { ...p, p: 'CBIG', id: cfg.cap } : p)), { capInit: { [cfg.cap]: x } });
     tbl.push([x, f]);
   }
@@ -2265,9 +2348,34 @@ function playClick() {
   }
   const src = ac.createBufferSource(); src.buffer = S.clickBuf; src.connect(ac.destination); src.start();
 }
+// mikrofon: a „Fújj bele” gomb vagy a tablet mikrofonjának hangereje nyomja a virtuális szénmikrofont
+async function setMicInput(on) {
+  if (!on) { if (S.micStream) S.micStream.getTracks().forEach((t) => t.stop()); S.micStream = null; S.micAn = null; renderControls(); return; }
+  const ac = ensureAC(); if (!ac || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { S.micErr = 'Ez a böngésző nem engedi a mikrofont.'; renderControls(); return; }
+  try {
+    const st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    const src = ac.createMediaStreamSource(st); const an = ac.createAnalyser(); an.fftSize = 1024; src.connect(an);
+    S.micStream = st; S.micAn = an; S.micBuf = new Float32Array(an.fftSize); S.micErr = null;
+  } catch (e) { S.micErr = 'A mikrofont nem engedélyezted, vagy nem érhető el. A „Fújj bele” gomb így is működik.'; }
+  renderControls();
+}
+function micFrame(dtR) {
+  const sim = S.sim; if (!sim) return;
+  const ids = Object.keys(sim.mic); if (!ids.length) return;
+  let target = S.micBlow ? 1 : 0;
+  if (S.micAn) {
+    S.micAn.getFloatTimeDomainData(S.micBuf); let q = 0; for (const x of S.micBuf) q += x * x;
+    const rms = Math.sqrt(q / S.micBuf.length); target = Math.max(target, Math.min(1, Math.max(0, (rms - 0.01) * 7)));
+  }
+  // gyors felfutás, lassabb lecsengés, mint egy valódi membránnál
+  const p0 = S.micP || 0; S.micP = target > p0 ? p0 + (target - p0) * Math.min(1, dtR * 40) : p0 + (target - p0) * Math.min(1, dtR * 8);
+  for (const id of ids) sim.mic[id] = S.micP;
+  if (S.micBar) S.micBar.style.width = Math.round(S.micP * 100) + '%';
+}
+
 // képkockánként: a sziréna vezérlőkondenzátora és a hang követése
 function audioFrame(dtR) {
-  const sim = S.sim; if (!sim) return; const cfg = audioCfg();
+  const sim = S.sim; if (!sim) return; const cfg = audioCfg(); micFrame(dtR);
   if (cfg.type === 'siren') {
     // a C5 egyszerűsített, valós idejű modellje (a teljes kapcsolás hangfrekvencián nem számolható valós időben):
     // töltés a gombon és az R4-en át, kisülés a bázisellenálláson át (a bázis nagyjából az idő felében vezet)
@@ -2278,9 +2386,9 @@ function audioFrame(dtR) {
   }
   const n = S.audioNode; if (!n || !S.soundOn) return;
   if (n.type === 'clicks') { const I = sim.cur[cfg.probe] || 0; if (S.lastI != null && Math.abs(I - S.lastI) > 0.004) playClick(); S.lastI = I; return; }
-  const x = n.type === 'table' ? sim.pot[cfg.id] : S.vc;
+  const x = n.type === 'siren' ? S.vc : cfg.param === 'light' ? S.light : sim.pot[cfg.id];
   const f = interp(n.tbl, x);
-  const gate = sim.switches.S1 && f > 0 && (n.type === 'siren' || cfg.press.every((k) => sim.switches[k]));
+  const gate = sim.switches.S1 && f > 0 && (n.type !== 'table' || cfg.press.every((k) => sim.switches[k]));
   const t = S.ac.currentTime;
   n.osc.frequency.setTargetAtTime(Math.max(40, f || 40), t, 0.015);
   n.gain.gain.setTargetAtTime(gate ? 0.1 : 0, t, 0.01);
@@ -2292,7 +2400,7 @@ function renderControls() {
   const ex = EXPS[S.exp];
   const live = S.stage >= 3;
   const status = $('#status'); status.innerHTML = '';
-  S.meterRead = null;
+  S.meterRead = null; S.micBar = null;
   if (live) {
     const p = document.createElement('span'); p.className = 'pill live'; p.textContent = 'Élő szimuláció'; status.append(p);
     if (ex.slow) { const q = document.createElement('span'); q.className = 'pill slow'; q.textContent = ex.slow + '× lassítva'; status.append(q); }
@@ -2338,6 +2446,18 @@ function renderControls() {
       const up = () => { if (cover.classList.contains('down')) { S.light = keep; inp.value = keep; cover.classList.remove('down'); } };
       cover.addEventListener('pointerdown', down); cover.addEventListener('pointerup', up); cover.addEventListener('pointerleave', up); cover.addEventListener('pointercancel', up);
       box.append(cover);
+    } else if (typeof c === 'object' && c.mic) {
+      const b = document.createElement('button'); b.className = 'ctrl hold'; b.textContent = 'Fújj bele!';
+      const down = (e) => { e.preventDefault(); S.micBlow = true; b.classList.add('down'); };
+      const up = () => { S.micBlow = false; b.classList.remove('down'); };
+      b.addEventListener('pointerdown', down); b.addEventListener('pointerup', up); b.addEventListener('pointerleave', up); b.addEventListener('pointercancel', up);
+      const m = document.createElement('button'); m.className = 'ctrl'; m.setAttribute('aria-pressed', String(!!S.micStream));
+      m.innerHTML = '<span class="knob"></span> Tablet mikrofonja';
+      m.onclick = () => setMicInput(!S.micStream);
+      const lvl = document.createElement('div'); lvl.className = 'miclevel'; lvl.innerHTML = '<span>Hangerő</span><i><b></b></i>';
+      S.micBar = lvl.querySelector('b');
+      box.append(b, m, lvl);
+      if (S.micErr) { const n = document.createElement('p'); n.className = 'note'; n.style.margin = '0'; n.textContent = S.micErr; box.append(n); }
     } else if (typeof c === 'object' && c.press) {
       const b = document.createElement('button'); b.className = 'ctrl hold';
       b.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="12" cy="12" r="3.5" fill="currentColor"/></svg> <span></span>';
@@ -2426,6 +2546,7 @@ function updateMeters() {
     if (k === 'meter') { const r = sim.meterReading(e.id); rows.push([e.id + ' (' + E.METER[r.range].label + ')', Math.abs(r.frac) > 1.05 ? 'túlcsordul' : (r.unit === 'V' ? fmtV(r.value) : fmtA(r.value))]); }
     if (k === 'motor') { rows.push([e.id + ' fordulatszáma', Math.round(Math.abs(sim.motor[e.id].w) * 60 / 2 / Math.PI) + ' /perc']); rows.push([e.id + ' árama', fmtA(sim.cur[e.id] || 0)]); }
     if (k === 'pot') { rows.push([e.id + ' csúszka', Math.round(sim.pot[e.id] * 100) + '%']); }
+    if (k === 'mic') { rows.push([e.id + ' ellenállása', (1 + 9 * (sim.mic[e.id] || 0)).toFixed(1).replace('.', ',') + ' kΩ']); }
   }
   rows.push(['idő a szimulációban', (sim.time < 1 ? (sim.time * 1000).toFixed(1).replace('.', ',') + ' ms' : sim.time.toFixed(1).replace('.', ',') + ' s')]);
   if (meterBox.children.length !== rows.length) { meterBox.innerHTML = ''; for (const r of rows) { const d = document.createElement('div'); d.innerHTML = '<small></small><b></b>'; meterBox.append(d); } }
@@ -2475,7 +2596,7 @@ function needList(layout) {
     return { p, n, src, missing: left };
   });
 }
-function sortKey(p) { const k = P[p].kind; return ['bat', 'sw', 'res', 'pot', 'led', 'cap', 'npn', 'pnp', 'photo', 'lamp', 'spk', 'motor', 'meter', 'jumper', 'wire'].indexOf(k) * 10 + (P[p].n || 0); }
+function sortKey(p) { const k = P[p].kind; return ['bat', 'sw', 'res', 'pot', 'led', 'cap', 'npn', 'pnp', 'photo', 'mic', 'lamp', 'spk', 'motor', 'meter', 'jumper', 'wire'].indexOf(k) * 10 + (P[p].n || 0); }
 function miniIcon(p) {
   const def = P[p]; const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 58 34');
   if (def.kind === 'wire') { svgEl('rect', { x: 4, y: 11, width: 50, height: 12, rx: 6, fill: COLORS.wire }, s); const t = svgEl('text', { x: 29, y: 21, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 800, fill: '#fff' }, s); t.textContent = def.n; return s; }
@@ -2680,6 +2801,7 @@ function goStage(i) {
 function markDone() { S.done[EXPS[S.exp].id] = true; store.set('done', S.done); }
 function selectExp(i) {
   if (S.soundOn) setSound(false);
+  if (S.micStream) setMicInput(false); S.micBlow = false; S.micP = 0;
   S.exp = i; S.step = 0; S.guess = null; S.variants = {}; S.sim = null; S.maxStage = 0; S.audio = null;
   S.ctl = initCtl(EXPS[i]); S.vc = 0;
   S.light = EXPS[i].light || 0.85;

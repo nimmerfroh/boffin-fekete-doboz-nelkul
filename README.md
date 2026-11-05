@@ -12,9 +12,10 @@ A készletek integrált áramkörei (zene-, riasztó-, „űrháborús” IC) fe
 
 **A) Áram és alkatrészek:** az első áramkör · vezet vagy nem vezet? · soros és párhuzamos izzók · fényerő-szabályzó
 **B) Energia és mozgás:** a motor mint áramfejlesztő · kondenzátor mint akkumulátor · motor sebességszabályzó
-**C) Érzékelők:** éjjeli lámpa · érintőkapcsoló · vízjelző
+**C) Érzékelők:** éjjeli lámpa · érintőkapcsoló · vízjelző · árnyékriasztó
 **D) Idő, memória, döntés:** késleltetett lámpa · emlékező lámpa (flip-flop) · kódzár (ÉS) · bármelyik gomb (VAGY) · fordító (NEM)
 **E) Rezgések és hangok:** villogó · metronóm · hang a villogóból · elektronikus hangszer · sziréna
+**F) Fény és hang továbbítása:** hangra villogó LED (a tablet mikrofonjával is)
 
 A további fejezetek tervét lásd: [docs/TERV.md](docs/TERV.md).
 

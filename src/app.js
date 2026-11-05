@@ -36,6 +36,7 @@ const ABOUT = {
   spk: ['Hangszóró', 'Az áram változása megrezegteti a membránját, ebből lesz a hang.'],
   pot: ['Állítható ellenállás', 'Tekerhető ellenállás: a csúszkája egy ellenálláscsíkon mozog. Három lába van: a két vége és a csúszka.'],
   meter: ['Mérőműszer', 'Megmutatja, mennyi áram folyik (0,5 mA vagy 50 mA állás), vagy mekkora a feszültség (5 V állás).'],
+  mic: ['Mikrofon', 'Szénmikrofon: a hang összenyomja a belsejét, és ettől megváltozik az ellenállása (csendben kb. 1 kΩ, fújásra kb. 10 kΩ).'],
   motor: ['Motor', 'Az áram forgatja. Fordítva is működik: ha te forgatod, áramot termel.'],
   obj: ['Vizsgált tárgy', 'Ez nincs a dobozban: ide érnek a kábelvégek vagy az ujjad.'],
   jumper: ['Átkötő kábel', 'Hajlékony vezeték két távoli pont között. A végét a pont tetején lévő patentra csíptesd.'],
@@ -289,6 +290,14 @@ function drawPart(parent, pl, level, contacts, opts) {
         label(def.short, 18, 10);
         break;
       }
+      case 'mic': {
+        svgEl('circle', { cx: 0, cy: 0, r: 12, fill: '#1E2227' }, body);
+        for (let k = -6; k <= 6; k += 4) svgEl('line', { x1: k, y1: -8, x2: k, y2: 8, stroke: '#5B636C', 'stroke-width': 1.4 }, body);
+        label('X1', 17, 10);
+        const ring = svgEl('circle', { cx: 0, cy: 0, r: 18, fill: 'none', stroke: 'var(--spark)', 'stroke-width': 3, opacity: 0 }, body);
+        out.glows.push({ el: ring, type: 'mic' });
+        break;
+      }
       case 'meter': {
         label('M6', 17, 10);
         // a számlap nem forog a testtel: képernyő-koordinátában rajzoljuk
@@ -495,6 +504,7 @@ function frame(ts) {
         if (gl.type === 'led') { const a = Math.abs(c || 0); const b = a > 1e-5 && c > 0 ? Math.min(1, Math.log10(a / 1e-5) / 3) : 0; gl.el.setAttribute('opacity', (b * 0.85).toFixed(2)); gl.lens.setAttribute('opacity', b.toFixed(2)); }
         else if (gl.type === 'lamp') { const b = Math.min(1, Math.abs(c || 0) / 0.15); gl.el.setAttribute('opacity', (b * 0.9).toFixed(2)); }
         else if (gl.type === 'spk') { const b = Math.min(1, Math.abs(c || 0) / 0.02); gl.el.setAttribute('opacity', (b * 0.9).toFixed(2)); gl.el.setAttribute('r', 18 + b * 8); }
+        else if (gl.type === 'mic') { const p = live ? S.sim.mic[it.id] || 0 : 0; gl.el.setAttribute('opacity', (p * 0.9).toFixed(2)); gl.el.setAttribute('r', 16 + p * 9); }
         else if (gl.type === 'shade') { gl.el.setAttribute('opacity', ((1 - S.light) * 0.75).toFixed(2)); }
       }
       if (it.knob) { const pv = live ? S.sim.pot[it.id] : (S.ctl.pot[it.id] != null ? S.ctl.pot[it.id] : 0.5); const an = (-135 + 270 * pv) * Math.PI / 180; it.knob.el.setAttribute('x2', (it.knob.cx + 12 * Math.sin(an)).toFixed(1)); it.knob.el.setAttribute('y2', (it.knob.cy - 12 * Math.cos(an)).toFixed(1)); }
@@ -553,7 +563,7 @@ async function buildTable(cfg) {
   const tbl = [];
   for (const x of cfg.grid) {
     let f;
-    if (cfg.type === 'table') f = await measureFreq(lay, { pot: { ...S.ctl.pot, [cfg.id]: x } }, (sim) => { for (const k of cfg.press) sim.switches[k] = true; });
+    if (cfg.type === 'table') f = await measureFreq(lay, cfg.param === 'light' ? { light: x, pot: S.ctl.pot } : { pot: { ...S.ctl.pot, [cfg.id]: x } }, (sim) => { for (const k of cfg.press) sim.switches[k] = true; });
     else f = await measureFreq(lay.map((p) => ((p.id || p.p) === cfg.cap ? { ...p, p: 'CBIG', id: cfg.cap } : p)), { capInit: { [cfg.cap]: x } });
     tbl.push([x, f]);
   }
@@ -606,9 +616,34 @@ function playClick() {
   }
   const src = ac.createBufferSource(); src.buffer = S.clickBuf; src.connect(ac.destination); src.start();
 }
+// mikrofon: a „Fújj bele” gomb vagy a tablet mikrofonjának hangereje nyomja a virtuális szénmikrofont
+async function setMicInput(on) {
+  if (!on) { if (S.micStream) S.micStream.getTracks().forEach((t) => t.stop()); S.micStream = null; S.micAn = null; renderControls(); return; }
+  const ac = ensureAC(); if (!ac || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { S.micErr = 'Ez a böngésző nem engedi a mikrofont.'; renderControls(); return; }
+  try {
+    const st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    const src = ac.createMediaStreamSource(st); const an = ac.createAnalyser(); an.fftSize = 1024; src.connect(an);
+    S.micStream = st; S.micAn = an; S.micBuf = new Float32Array(an.fftSize); S.micErr = null;
+  } catch (e) { S.micErr = 'A mikrofont nem engedélyezted, vagy nem érhető el. A „Fújj bele” gomb így is működik.'; }
+  renderControls();
+}
+function micFrame(dtR) {
+  const sim = S.sim; if (!sim) return;
+  const ids = Object.keys(sim.mic); if (!ids.length) return;
+  let target = S.micBlow ? 1 : 0;
+  if (S.micAn) {
+    S.micAn.getFloatTimeDomainData(S.micBuf); let q = 0; for (const x of S.micBuf) q += x * x;
+    const rms = Math.sqrt(q / S.micBuf.length); target = Math.max(target, Math.min(1, Math.max(0, (rms - 0.01) * 7)));
+  }
+  // gyors felfutás, lassabb lecsengés, mint egy valódi membránnál
+  const p0 = S.micP || 0; S.micP = target > p0 ? p0 + (target - p0) * Math.min(1, dtR * 40) : p0 + (target - p0) * Math.min(1, dtR * 8);
+  for (const id of ids) sim.mic[id] = S.micP;
+  if (S.micBar) S.micBar.style.width = Math.round(S.micP * 100) + '%';
+}
+
 // képkockánként: a sziréna vezérlőkondenzátora és a hang követése
 function audioFrame(dtR) {
-  const sim = S.sim; if (!sim) return; const cfg = audioCfg();
+  const sim = S.sim; if (!sim) return; const cfg = audioCfg(); micFrame(dtR);
   if (cfg.type === 'siren') {
     // a C5 egyszerűsített, valós idejű modellje (a teljes kapcsolás hangfrekvencián nem számolható valós időben):
     // töltés a gombon és az R4-en át, kisülés a bázisellenálláson át (a bázis nagyjából az idő felében vezet)
@@ -619,9 +654,9 @@ function audioFrame(dtR) {
   }
   const n = S.audioNode; if (!n || !S.soundOn) return;
   if (n.type === 'clicks') { const I = sim.cur[cfg.probe] || 0; if (S.lastI != null && Math.abs(I - S.lastI) > 0.004) playClick(); S.lastI = I; return; }
-  const x = n.type === 'table' ? sim.pot[cfg.id] : S.vc;
+  const x = n.type === 'siren' ? S.vc : cfg.param === 'light' ? S.light : sim.pot[cfg.id];
   const f = interp(n.tbl, x);
-  const gate = sim.switches.S1 && f > 0 && (n.type === 'siren' || cfg.press.every((k) => sim.switches[k]));
+  const gate = sim.switches.S1 && f > 0 && (n.type !== 'table' || cfg.press.every((k) => sim.switches[k]));
   const t = S.ac.currentTime;
   n.osc.frequency.setTargetAtTime(Math.max(40, f || 40), t, 0.015);
   n.gain.gain.setTargetAtTime(gate ? 0.1 : 0, t, 0.01);
@@ -633,7 +668,7 @@ function renderControls() {
   const ex = EXPS[S.exp];
   const live = S.stage >= 3;
   const status = $('#status'); status.innerHTML = '';
-  S.meterRead = null;
+  S.meterRead = null; S.micBar = null;
   if (live) {
     const p = document.createElement('span'); p.className = 'pill live'; p.textContent = 'Élő szimuláció'; status.append(p);
     if (ex.slow) { const q = document.createElement('span'); q.className = 'pill slow'; q.textContent = ex.slow + '× lassítva'; status.append(q); }
@@ -679,6 +714,18 @@ function renderControls() {
       const up = () => { if (cover.classList.contains('down')) { S.light = keep; inp.value = keep; cover.classList.remove('down'); } };
       cover.addEventListener('pointerdown', down); cover.addEventListener('pointerup', up); cover.addEventListener('pointerleave', up); cover.addEventListener('pointercancel', up);
       box.append(cover);
+    } else if (typeof c === 'object' && c.mic) {
+      const b = document.createElement('button'); b.className = 'ctrl hold'; b.textContent = 'Fújj bele!';
+      const down = (e) => { e.preventDefault(); S.micBlow = true; b.classList.add('down'); };
+      const up = () => { S.micBlow = false; b.classList.remove('down'); };
+      b.addEventListener('pointerdown', down); b.addEventListener('pointerup', up); b.addEventListener('pointerleave', up); b.addEventListener('pointercancel', up);
+      const m = document.createElement('button'); m.className = 'ctrl'; m.setAttribute('aria-pressed', String(!!S.micStream));
+      m.innerHTML = '<span class="knob"></span> Tablet mikrofonja';
+      m.onclick = () => setMicInput(!S.micStream);
+      const lvl = document.createElement('div'); lvl.className = 'miclevel'; lvl.innerHTML = '<span>Hangerő</span><i><b></b></i>';
+      S.micBar = lvl.querySelector('b');
+      box.append(b, m, lvl);
+      if (S.micErr) { const n = document.createElement('p'); n.className = 'note'; n.style.margin = '0'; n.textContent = S.micErr; box.append(n); }
     } else if (typeof c === 'object' && c.press) {
       const b = document.createElement('button'); b.className = 'ctrl hold';
       b.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="12" cy="12" r="3.5" fill="currentColor"/></svg> <span></span>';
@@ -767,6 +814,7 @@ function updateMeters() {
     if (k === 'meter') { const r = sim.meterReading(e.id); rows.push([e.id + ' (' + E.METER[r.range].label + ')', Math.abs(r.frac) > 1.05 ? 'túlcsordul' : (r.unit === 'V' ? fmtV(r.value) : fmtA(r.value))]); }
     if (k === 'motor') { rows.push([e.id + ' fordulatszáma', Math.round(Math.abs(sim.motor[e.id].w) * 60 / 2 / Math.PI) + ' /perc']); rows.push([e.id + ' árama', fmtA(sim.cur[e.id] || 0)]); }
     if (k === 'pot') { rows.push([e.id + ' csúszka', Math.round(sim.pot[e.id] * 100) + '%']); }
+    if (k === 'mic') { rows.push([e.id + ' ellenállása', (1 + 9 * (sim.mic[e.id] || 0)).toFixed(1).replace('.', ',') + ' kΩ']); }
   }
   rows.push(['idő a szimulációban', (sim.time < 1 ? (sim.time * 1000).toFixed(1).replace('.', ',') + ' ms' : sim.time.toFixed(1).replace('.', ',') + ' s')]);
   if (meterBox.children.length !== rows.length) { meterBox.innerHTML = ''; for (const r of rows) { const d = document.createElement('div'); d.innerHTML = '<small></small><b></b>'; meterBox.append(d); } }
@@ -816,7 +864,7 @@ function needList(layout) {
     return { p, n, src, missing: left };
   });
 }
-function sortKey(p) { const k = P[p].kind; return ['bat', 'sw', 'res', 'pot', 'led', 'cap', 'npn', 'pnp', 'photo', 'lamp', 'spk', 'motor', 'meter', 'jumper', 'wire'].indexOf(k) * 10 + (P[p].n || 0); }
+function sortKey(p) { const k = P[p].kind; return ['bat', 'sw', 'res', 'pot', 'led', 'cap', 'npn', 'pnp', 'photo', 'mic', 'lamp', 'spk', 'motor', 'meter', 'jumper', 'wire'].indexOf(k) * 10 + (P[p].n || 0); }
 function miniIcon(p) {
   const def = P[p]; const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 58 34');
   if (def.kind === 'wire') { svgEl('rect', { x: 4, y: 11, width: 50, height: 12, rx: 6, fill: COLORS.wire }, s); const t = svgEl('text', { x: 29, y: 21, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 800, fill: '#fff' }, s); t.textContent = def.n; return s; }
@@ -1021,6 +1069,7 @@ function goStage(i) {
 function markDone() { S.done[EXPS[S.exp].id] = true; store.set('done', S.done); }
 function selectExp(i) {
   if (S.soundOn) setSound(false);
+  if (S.micStream) setMicInput(false); S.micBlow = false; S.micP = 0;
   S.exp = i; S.step = 0; S.guess = null; S.variants = {}; S.sim = null; S.maxStage = 0; S.audio = null;
   S.ctl = initCtl(EXPS[i]); S.vc = 0;
   S.light = EXPS[i].light || 0.85;
