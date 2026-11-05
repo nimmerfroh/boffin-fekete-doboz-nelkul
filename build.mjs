@@ -10,8 +10,9 @@ const engine = read('./src/engine.js');
 const layouts = '(function () {\nconst module = { exports: {} };\n' + read('./src/layouts.js') + '\nwindow.BOFFIN_LAYOUTS = module.exports;\n})();';
 const experiments = read('./src/experiments.js');
 const app = read('./src/app.js');
+const puki = read('./src/puki.js');
 
-for (const [name, code] of [['ENGINE', engine], ['LAYOUTS', layouts], ['EXPERIMENTS', experiments], ['APP', app]]) {
+for (const [name, code] of [['PUKI', puki], ['ENGINE', engine], ['LAYOUTS', layouts], ['EXPERIMENTS', experiments], ['APP', app]]) {
   if (code.includes('</script')) throw new Error(`${name}: a kód nem tartalmazhat </script> szöveget`);
   const mark = `/*${name}*/`;
   if (!page.includes(mark)) throw new Error(`hiányzik a ${mark} jelölő a page.html-ből`);

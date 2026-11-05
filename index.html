@@ -231,6 +231,10 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
         <button data-age="m" aria-pressed="true"><span class="age">7</span> éves</button>
         <button data-age="n" aria-pressed="false"><span class="age">11</span> éves</button>
       </div>
+      <button class="iconbtn" id="puki" title="Véletlen pukihang">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 14c3-1 4-4 8-4M3 18c4 0 6-2 10-2M5 9c2 0 3-2 6-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="17" cy="11" r="2.2" fill="currentColor"/><circle cx="20.5" cy="16" r="1.6" fill="currentColor"/><circle cx="19" cy="6.5" r="1.3" fill="currentColor"/></svg>
+        Puki
+      </button>
       <button class="iconbtn" id="autoread" aria-pressed="false" title="Minden új szöveget felolvas">
         <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         Felolvasás
@@ -261,6 +265,67 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
   </footer>
 </div>
 
+<script>
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Fekete doboz nélkül – Copyright (C) 2026 Nimmerfroh Károly
+// Véletlen pukihangok előállítása (hangminta nélkül, számolással).
+// Böngészőben és Node-ban is fut.
+(function (root) {
+  'use strict';
+  // egyszerű, magozható véletlenszám-generátor (mulberry32)
+  function rng(seed) {
+    let a = seed >>> 0;
+    return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+  const KINDS = ['rövid', 'hosszú', 'cincogó', 'brummogó', 'pattogó', 'szortyogó'];
+
+  // Egy pukihang mintái. A „hang” egy lebegő magasságú, lüktető berregés (a záróizom csapkodása),
+  // egy kis zajjal keverve, aluláteresztő szűrőn át.
+  function puki(sr, seed) {
+    const R = rng(seed == null ? (Math.random() * 2 ** 32) : seed);
+    const between = (a, b) => a + (b - a) * R();
+    const kind = KINDS[Math.floor(R() * KINDS.length)];
+    let dur = between(0.35, 0.9), f0 = between(70, 150), noise = between(0.05, 0.25), flutter = between(18, 35), bend = between(-0.45, 0.25), cutoff = between(500, 1100);
+    let bursts = 1;
+    if (kind === 'rövid') { dur = between(0.15, 0.3); f0 = between(110, 190); }
+    if (kind === 'hosszú') { dur = between(1.1, 1.9); bend = between(-0.6, -0.2); }
+    if (kind === 'cincogó') { f0 = between(230, 380); dur = between(0.3, 0.8); cutoff = between(1400, 2200); noise = 0.05; }
+    if (kind === 'brummogó') { f0 = between(45, 70); dur = between(0.6, 1.2); cutoff = between(300, 500); }
+    if (kind === 'pattogó') { bursts = 2 + Math.floor(R() * 4); dur = between(0.5, 1.1); }
+    if (kind === 'szortyogó') { noise = between(0.4, 0.7); flutter = between(8, 16); }
+    const n = Math.round(sr * dur), out = new Float32Array(n);
+    // a pattogó fajtánál szünetek a hangban
+    const gaps = [];
+    for (let b = 1; b < bursts; b++) { const at = (b / bursts + between(-0.06, 0.06)) * dur; gaps.push([at, at + between(0.03, 0.08)]); }
+    let ph = 0, fph = 0, drift = 0, lp1 = 0, lp2 = 0, nz = 0, env = 0;
+    const kc = 1 - Math.exp(-2 * Math.PI * cutoff / sr);
+    for (let i = 0; i < n; i++) {
+      const t = i / sr, x = t / dur;
+      drift += (R() - 0.5) * 0.004; drift *= 0.999;                    // lassú, véletlen lebegés
+      const f = Math.max(30, f0 * (1 + bend * x + drift + 0.06 * Math.sin(2 * Math.PI * 3.1 * t)));
+      ph = (ph + f / sr) % 1;
+      fph = (fph + flutter * (1 + 0.3 * Math.sin(2 * Math.PI * 1.7 * t)) / sr) % 1;
+      // aszimmetrikus impulzus: rövid nyitás, hosszú zárás
+      const pulse = ph < 0.35 ? Math.sin(Math.PI * ph / 0.35) : -0.2;
+      const flap = 0.55 + 0.45 * Math.sin(2 * Math.PI * fph);
+      nz = 0.7 * nz + 0.3 * (R() * 2 - 1);                               // tompított zaj
+      let s = (pulse * (1 - noise) + nz * noise * 1.6) * flap;
+      lp1 += kc * (s - lp1); lp2 += kc * (lp1 - lp2); s = lp2;
+      // burkoló: gyors indulás, a végén elhal; a szüneteknél elhallgat
+      let target = x < 0.04 ? x / 0.04 : x > 0.8 ? Math.max(0, (1 - x) / 0.2) : 1;
+      for (const [a, b] of gaps) if (t >= a && t < b) target = 0;
+      env += (target - env) * 0.01;
+      out[i] = s * env;
+    }
+    let mx = 0; for (const v of out) mx = Math.max(mx, Math.abs(v));
+    const k = mx > 0 ? 0.7 / mx : 0; for (let i = 0; i < n; i++) out[i] *= k;
+    return { samples: out, kind, dur };
+  }
+  const api = { puki, KINDS };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.Puki = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
 <script>
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Fekete doboz nélkül – Copyright (C) 2026 Nimmerfroh Károly
@@ -1371,27 +1436,27 @@ const EXPS = [
     },
   },
   {
-    id: 'delay', chapter: 'D', hint: { k: 'Kapcsold be az S1-et, nyomd meg az S2 gombot, aztán engedd el!', m: 'Kapcsold be az S1-et, nyomd meg és engedd el az S2-t. Figyeld a kondenzátor sárga csíkját: ennyi töltés van benne.', n: 'S1 be, S2 rövid nyomás. Figyeld a C5 feszültségét és a bázisáramot a mérőn.' },
+    id: 'delay', chapter: 'D', hint: { k: 'Kapcsold be az S1-et, nyomd meg az S2 gombot, aztán engedd el!', m: 'Kapcsold be az S1-et, nyomd meg és engedd el az S2-t. Figyeld a kondenzátor sárga csíkját: ennyi töltés van benne. Aztán próbáld ki: engedd el a gombot, és rögtön kapcsold ki az S1-et! A lámpa azonnal elalszik, pedig a kondenzátorban még van töltés.', n: 'S1 be, S2 rövid nyomás. Figyeld a C5 feszültségét és a bázisáramot a mérőn. Utána: S2 elengedése után azonnal S1 ki. A C5 ugyanúgy kisül (a C5 → R3 → bázis → emitter → C5 körben), de a LED nem kap áramot.' },
     title: 'Késleltetett lámpa', tag: 'Elengeded, de még ég egy kicsit',
     layout: LAY.delay, sim: { dt: 0.002, scale: 1 }, controls: ['S1', 'S2'],
     intro: {
       k: 'Nyomd meg a gombot, aztán engedd el. A lámpa még egy kicsit világít, és lassan elalszik.',
-      m: 'Olyan, mint a lépcsőházi lámpa: egy gombnyomás, és egy ideig ég. A nagy kondenzátor (C5) egy kis töltéstartály.',
-      n: 'Időzítő: a nyomógomb a C5-öt feltölti, elengedés után a kondenzátor az R3-on át a Q2 bázisába sül ki, és amíg elég a bázisáram, a LED ég.',
+      m: 'Olyan, mint a lépcsőházi lámpa: egy gombnyomás, és egy ideig ég. A nagy kondenzátor (C5) nem a lámpát táplálja, hanem egy ideig bekapcsolva tartja a tranzisztort. A lámpa áramát mindig az elem adja.',
+      n: 'Időzítő: a nyomógomb a C5-öt feltölti, elengedés után a kondenzátor az R3-on át a Q2 bázisába sül ki. Amíg elég a bázisáram, a tranzisztor vezet, és az elem áramot ad a LED-nek.',
     },
     guess: {
       q: { k: 'Megnyomod és elengeded a gombot. Mit csinál a lámpa?', m: 'Megnyomod, majd elengeded a nyomógombot (S2). Mi lesz a LED-del?', n: 'Mi történik a LED-del az S2 elengedése után?' },
       opts: [['Azonnal elalszik', 'off'], ['Még ég egy darabig, aztán elalszik', 'fade'], ['Örökké ég', 'on']], right: 1,
-      after: { k: 'Így van! A kondenzátorban maradt egy kis áram, abból ég még.', m: 'A kondenzátor feltöltődött, és elengedés után lassan kiürül a tranzisztor felé. Amíg van benne töltés, ég a LED.', n: 'A kisülés közel exponenciális, az időállandó τ = R·C. Lent kicserélheted a kondenzátort vagy az ellenállást.' },
+      after: { k: 'Így van! A kondenzátor még egy ideig bekapcsolva tartja a tranzisztort, ezért ég még a lámpa.', m: 'A kondenzátor feltöltődött, és elengedés után lassan kiürül a tranzisztor bázisán át. Amíg van benne elég töltés, a tranzisztor bekapcsolva marad, és az elem áramot ad a LED-nek.', n: 'A kisülés közel exponenciális, az időállandó τ = R·C. Lent kicserélheted a kondenzátort vagy az ellenállást.' },
     },
     variants: [
       { id: 'c4', label: 'C5 helyett C4 (100 µF)', real: 'Cseréld a 470 µF-os kondenzátort (C5) a 100 µF-osra (C4). A + jel ugyanoda kerüljön.', apply: swapPart('C5', 'C4'), needs: ['C4'] },
       { id: 'r5', label: 'R3 helyett R5 (100 kΩ)', real: 'Cseréld az 5,1 kΩ-os R3-at a 100 kΩ-os R5-re. Hosszabb lesz vagy rövidebb? És milyen fényes?', apply: swapPart('R3', 'R5'), needs: ['R5'] },
     ],
     why: {
-      k: 'A kondenzátor olyan, mint egy kis vödör. A gomb megtölti, aztán lassan kifolyik belőle az áram a tranzisztorhoz. Amíg folyik, ég a lámpa.',
-      m: 'A gomb megnyomásakor a kondenzátor feltöltődik. Elengedés után az ellenálláson keresztül lassan kiürül, és közben nyitva tartja a tranzisztort. Kisebb kondenzátor hamarabb kiürül. Nagyobb ellenálláson lassabban folyik ki, de kevesebb áram jut a tranzisztorra, ezért halványabb.',
-      n: 'τ = R·C = 5,1 kΩ · 470 µF ≈ 2,4 s. A LED addig ég teljes fénnyel, amíg a bázisáram elég a telítéshez, utána fokozatosan halványul; a szimulációban kb. 5 s teljes fény, utána lassú halványulás. 100 µF-tal τ ≈ 0,5 s. 100 kΩ-mal τ ≈ 47 s, de a bázisáram csak kb. 23 µA, így a LED-áram a tranzisztor erősítésén múlik. A valódi tranzisztoroknál ez darabonként eltér.',
+      k: 'A lámpa mindig az elemből kapja az áramot. A tranzisztor olyan, mint egy csap: amíg nyitva van, folyik az áram a lámpába. A gomb megtölti a kondenzátort, ez a kis vödör. A vödörből egy kevés csöpög a csap karjára, és nyitva tartja. Ha kiürül, a csap elzáródik, és a lámpa elalszik.',
+      m: 'A gomb megnyomásakor a kondenzátor feltöltődik. Elengedés után az ellenálláson keresztül lassan kiürül, és közben nyitva tartja a tranzisztort. A LED áramát közben végig az elem adja, ezért kell, hogy az S1 be legyen kapcsolva. A kondenzátorból csak egy kicsi áram jön, a tranzisztor ennek sokszorosát engedi át az elemből a LED-be. Kisebb kondenzátor hamarabb kiürül. Nagyobb ellenálláson lassabban folyik ki, de kevesebb áram jut a tranzisztorra, ezért halványabb.',
+      n: 'A LED-áram végig az elemből folyik a kollektoron át. A C5-ből csak a bázisáram jön, ezt a tranzisztor kb. β-szorosra erősíti. τ = R·C = 5,1 kΩ · 470 µF ≈ 2,4 s. A LED addig ég teljes fénnyel, amíg a bázisáram elég a telítéshez, utána fokozatosan halványul; a szimulációban kb. 5 s teljes fény, utána lassú halványulás. 100 µF-tal τ ≈ 0,5 s. 100 kΩ-mal τ ≈ 47 s, de a bázisáram csak kb. 23 µA, így a LED-áram a tranzisztor erősítésén múlik. A valódi tranzisztoroknál ez darabonként eltér.',
     },
   },
   {
@@ -3277,6 +3342,14 @@ function setAge(a) {
 }
 function syncAutoread() { $('#autoread').setAttribute('aria-pressed', String(S.autoread)); store.set('autoread', S.autoread); }
 document.querySelectorAll('[data-age]').forEach((b) => { b.onclick = () => setAge(b.dataset.age); });
+// Puki gomb: minden nyomásra egy új, véletlen pukihang
+$('#puki').onclick = () => {
+  const ac = ensureAC(); if (!ac || !window.Puki) return;
+  const { samples } = window.Puki.puki(ac.sampleRate);
+  const buf = ac.createBuffer(1, samples.length, ac.sampleRate); buf.getChannelData(0).set(samples);
+  const src = ac.createBufferSource(); src.buffer = buf; src.playbackRate.value = 0.9 + Math.random() * 0.25;
+  const g = ac.createGain(); g.gain.value = 0.8; src.connect(g).connect(ac.destination); src.start();
+};
 $('#autoread').onclick = () => { S.autoread = !S.autoread; store.set('autoreadSet', true); syncAutoread(); if (!S.autoread) { try { speechSynthesis.cancel(); } catch (e) { /* nincs */ } } };
 
 // ---------- indulás ----------

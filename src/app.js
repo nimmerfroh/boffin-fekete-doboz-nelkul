@@ -1219,6 +1219,14 @@ function setAge(a) {
 }
 function syncAutoread() { $('#autoread').setAttribute('aria-pressed', String(S.autoread)); store.set('autoread', S.autoread); }
 document.querySelectorAll('[data-age]').forEach((b) => { b.onclick = () => setAge(b.dataset.age); });
+// Puki gomb: minden nyomásra egy új, véletlen pukihang
+$('#puki').onclick = () => {
+  const ac = ensureAC(); if (!ac || !window.Puki) return;
+  const { samples } = window.Puki.puki(ac.sampleRate);
+  const buf = ac.createBuffer(1, samples.length, ac.sampleRate); buf.getChannelData(0).set(samples);
+  const src = ac.createBufferSource(); src.buffer = buf; src.playbackRate.value = 0.9 + Math.random() * 0.25;
+  const g = ac.createGain(); g.gain.value = 0.8; src.connect(g).connect(ac.destination); src.start();
+};
 $('#autoread').onclick = () => { S.autoread = !S.autoread; store.set('autoreadSet', true); syncAutoread(); if (!S.autoread) { try { speechSynthesis.cancel(); } catch (e) { /* nincs */ } } };
 
 // ---------- indulás ----------

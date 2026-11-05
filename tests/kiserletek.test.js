@@ -271,3 +271,26 @@ test('G. U1: bekapcsoláskor kb. 20 s-ig zenél, a TRG (S2) újraindítja, a HLD
   s.switches.S2 = true; run(s, 0.1, 0.002); s.switches.S2 = false; run(s, 0.5, 0.002); assert.ok(s.ic.U1.active, 'TRG újraindít');
   const h = new E.Sim(lay('u1').concat([{ p: 'W3', at: 'A5', dir: 'd', id: 'Lhld' }])); h.switches.S1 = true; run(h, 25, 0.004); assert.ok(h.ic.U1.active, 'HLD-vel folyamatos');
 });
+
+test('késleltetett lámpa: a LED az elemből kap áramot, S1 nélkül a kisülő C5 sem gyújtja meg', () => {
+  for (const s1 of [true, false]) {
+    const s = new E.Sim(L.delay); s.switches.S1 = true; s.switches.S2 = true;
+    run(s, 1, 0.002);
+    s.switches.S2 = false; s.switches.S1 = s1;
+    run(s, 2, 0.002);
+    assert.ok(s.capV.C5 > 1.2, 'a C5 még nincs kisülve');
+    if (s1) assert.ok(s.cur.D1 > 0.008, 'S1 bekapcsolva ég'); else assert.ok(Math.abs(s.cur.D1) < 1e-6, 'S1 kikapcsolva nem ég');
+  }
+});
+
+test('puki: véletlen, véges, hallható hangminták', () => {
+  const P = require('../src/puki.js');
+  const kinds = new Set();
+  for (let seed = 1; seed <= 60; seed++) {
+    const { samples, kind, dur } = P.puki(48000, seed); kinds.add(kind);
+    assert.ok(dur > 0.1 && dur < 2.5);
+    let mx = 0; for (const v of samples) { assert.ok(Number.isFinite(v)); mx = Math.max(mx, Math.abs(v)); }
+    assert.ok(mx > 0.5 && mx <= 0.71, 'hangerő ' + mx);
+  }
+  assert.equal(kinds.size, P.KINDS.length, 'minden fajta előfordul');
+});
