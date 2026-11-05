@@ -955,7 +955,7 @@ function renderControls() {
       const w = document.createElement('div'); w.className = 'meterctl';
       const lab = document.createElement('span'); lab.className = 'mlabel'; lab.textContent = 'Műszer (M6):';
       const seg = document.createElement('div'); seg.className = 'seg';
-      for (const rg of Object.keys(E.METER)) {
+      for (const rg of (c.ranges || Object.keys(E.METER))) {   // ahol más állás veszélyes (rövidzár a mérőn át), ott csak a megengedett
         const b = document.createElement('button'); b.textContent = E.METER[rg].label; b.setAttribute('aria-pressed', String(S.sim.meter[c.meter] === rg));
         b.onclick = () => { S.ctl.meter[c.meter] = S.sim.meter[c.meter] = rg; renderControls(); };
         seg.append(b);
@@ -1122,7 +1122,8 @@ function stepText(pl, level, layout) {
   }
   if (def.kind === 'meter') {
     const rg = ex.sim && ex.sim.meter && ex.sim.meter[pl.id || pl.p];
-    return `Tedd le a mérőműszert (M6) ${art(pn(geo.snaps[0]))} és ${art(pn(geo.snaps[1]))} pont közé, ${lv}. A + jele ${art(pn(geo.snaps[0]))} pont felé nézzen.` + (rg ? ` Állítsd a kapcsolóját ${E.METER[rg].label === '5 V' ? 'az' : 'a'} ${E.METER[rg].label} állásba.` : '');
+    const only = ex.controls.some((c) => c && c.meter === (pl.id || pl.p) && c.ranges);
+    return `Tedd le a mérőműszert (M6) ${art(pn(geo.snaps[0]))} és ${art(pn(geo.snaps[1]))} pont közé, ${lv}. A + jele ${art(pn(geo.snaps[0]))} pont felé nézzen.` + (rg ? ` Állítsd a kapcsolóját ${E.METER[rg].label === '5 V' ? 'az' : 'a'} ${E.METER[rg].label} állásba.` : '') + (only ? ' Ennél a kísérletnél más állásba ne kapcsold: áramállásban a mérőn át rövidre zárnád az elemet.' : '');
   }
   if (def.kind === 'motor') return `Tedd le a motort (${def.short}) ${art(pn(geo.snaps[0]))} és ${art(pn(geo.snaps[1]))} pont közé, ${lv}. A + jele ${art(pn(geo.snaps[0]))} pontnál legyen. Tedd rá a propellert.`;
   if (def.kind === 'jumper') return `Csíptesd ${def.color === 'red' ? 'a piros' : 'a fekete'} átkötő kábel egyik végét ${art(pn(geo.snaps[0]))} pont tetejére, a másikat ${art(pn(geo.snaps[1]))} pont tetejére.`;

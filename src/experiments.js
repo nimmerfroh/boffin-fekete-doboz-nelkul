@@ -240,7 +240,7 @@ const EXPS = [
   },
   {
     id: 'capbat', chapter: 'B', title: 'Kondenzátor mint akkumulátor', tag: 'Feltöltöd, és egy kicsit kitart',
-    layout: LAY.capbat, sim: { dt: 0.002, scale: 1, meter: { M6: '5V' } }, controls: ['S2', { meter: 'M6' }],
+    layout: LAY.capbat, sim: { dt: 0.002, scale: 1, meter: { M6: '5V' } }, controls: ['S2', { meter: 'M6', ranges: ['5V'] }],
     intro: {
       k: 'A két nagy kondenzátor kis tartály az áramnak. A gombbal megtöltöd, aztán figyeld, meddig világít a lámpa.',
       m: 'Az S2 gomb nyomva tartásakor az elem feltölti a két 470 µF-os kondenzátort. Elengedés után az elem már nincs bekötve: a LED a kondenzátorokból kap áramot. A műszer a feszültségüket mutatja.',
@@ -257,7 +257,7 @@ const EXPS = [
     hint: {
       k: 'Nyomd meg és tartsd az S2 gombot, aztán engedd el, és figyeld a lámpát!',
       m: 'Tartsd nyomva az S2-t pár másodpercig, aztán engedd el. Figyeld a mutatót: ennyi „töltés” van a tartályban.',
-      n: 'Töltsd fel, engedd el, és figyeld a feszültség csökkenését. Melyik feszültségnél alszik ki a LED?',
+      n: 'Töltsd fel, engedd el, és figyeld a feszültség csökkenését. Melyik feszültségnél alszik ki a LED? Vigyázat: a mérő itt csak 5 V-os állásban lehet. Áramállásban (0,5 mA vagy 50 mA) szinte nincs ellenállása, és a gomb megnyomásakor rövidre zárná az elemet.',
     },
     why: {
       k: 'A kondenzátor olyan, mint egy kis vödör. A gombbal teletöltöd, utána a lámpa kiissza belőle az áramot. Kicsi a vödör, ezért hamar kiürül.',
@@ -298,7 +298,7 @@ const EXPS = [
     intro: {
       k: 'Ha ujjal megérinted a két pontot, kigyullad a lámpa. Pedig a kezed nem fém!',
       m: 'Az ujjad nagyon kevés áramot vezet. Két tranzisztor egymás után ezt a picike áramot olyan erősre növeli, hogy a LED kigyullad.',
-      n: 'Érintőkapcsoló Darlington-kapcsolással: az ujj (kb. 100 kΩ–1 MΩ) és az R2 adja a bázisáramot.',
+      n: 'Érintőkapcsoló Darlington-kapcsolással: az ujj (kb. 100 kΩ–1 MΩ) és az R5 (100 kΩ) adja a bázisáramot. Az R5 védelem is: ha a két pontot fém köti össze, ez korlátozza a tranzisztorok áramát.',
     },
     guess: {
       q: { k: 'Mi lesz, ha ujjal megérinted a két pontot?', m: 'Mi történik, ha egyszerre megérinted a C3 és az E3 pontot?', n: 'Elég-e a bőr ellenállásán átfolyó áram a LED bekapcsolásához?' },
@@ -314,7 +314,7 @@ const EXPS = [
     why: {
       k: 'A kezed egy nagyon picit vezeti az áramot. Ez olyan kevés, hogy egy lámpa nem gyulladna ki tőle. De a két tranzisztor felnagyítja, mint egy nagyító, és a lámpa kigyullad.',
       m: 'Az első tranzisztor a te picike áramodat kb. százszorosára erősíti. Ezt a második még százszorosára. Így tízezerszeres erősítés jön ki, és ez már elég a LED-nek. A telefonok érintőképernyője másképp működik, de ott is ilyen parányi változásokat erősítenek fel.',
-      n: 'Bázisáram ≈ (3 V − 1,4 V) / (R2 + R_bőr) ≈ 1,6 V / 500 kΩ ≈ 3 µA. β₁·β₂ ≈ 20 000-rel ez kb. 60 mA lehetne, de a LED körét az R1 kb. 11 mA-re korlátozza. Egyetlen tranzisztorral csak kb. 0,5 mA lenne: a LED alig derengene.',
+      n: 'Bázisáram ≈ (3 V − 1,4 V) / (R5 + R_bőr) ≈ 1,6 V / 600 kΩ ≈ 3 µA. β₁·β₂ ≈ 20 000-rel ez kb. 60 mA lehetne, de a LED körét az R1 kb. 11 mA-re korlátozza. Egyetlen tranzisztorral csak kb. 0,5 mA lenne: a LED alig derengene.',
     },
   },
   {

@@ -246,7 +246,11 @@
     // több rácsnál (külön elemmel) a negatív pólusokat egy közös földre kötjük: áram nem folyik rajta,
     // csak a lebegő áramkör feszültségeit rögzíti (stabilabb számítás)
     const bats = nl0.elements.filter((e) => e.def.kind === 'bat' && e.t.b >= 0);
-    for (let k = 1; k < bats.length; k++) if (bats[k].t.b !== bats[0].t.b && !nl0.elements.some((e) => e.t.a === bats[k].t.a && e.t.b === bats[0].t.b)) elements.push({ idx: -1, id: '#gnd' + k, p: 'RS', def: { kind: 'res', R: 1 }, t: { a: bats[k].t.b, b: bats[0].t.b }, internal: true });
+    // csak akkor, ha a két elem tényleg külön, egymással semmin át össze nem kötött áramkörben van
+    // (a sorba kötött elemeket nem szabad így összekötni: az egyiket rövidre zárná)
+    const par = new Map(); const fd = (x) => { while (par.has(x) && par.get(x) !== x) x = par.get(x); return x; };
+    for (const e of nl0.elements) { const ns = Object.values(e.t).filter((x) => x >= 0); for (const x of ns) if (!par.has(x)) par.set(x, x); for (let i = 1; i < ns.length; i++) { const r1 = fd(ns[0]), r2 = fd(ns[i]); if (r1 !== r2) par.set(r1, r2); } }
+    for (let k = 1; k < bats.length; k++) if (fd(bats[k].t.b) !== fd(bats[0].t.b)) elements.push({ idx: -1, id: '#gnd' + k, p: 'RS', def: { kind: 'res', R: 1 }, t: { a: bats[k].t.b, b: bats[0].t.b }, internal: true });
     for (const e of nl0.elements) {
       if (e.def.kind === 'led' && e.t.a >= 0 && e.t.b >= 0) {
         const mid = nets++;

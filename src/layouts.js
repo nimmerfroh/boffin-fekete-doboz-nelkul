@@ -182,7 +182,7 @@ L.touch = [
   { p: 'W3', at: 'B6', dir: 'd', id: 'Wc' },
   { p: 'W2', at: 'F6', dir: 'r', id: 'We' },
   { p: 'W3', at: 'C9', dir: 'd', id: 'Wbat' },
-  { p: 'R2', at: 'E3', dir: 'r' },
+  { p: 'R5', at: 'E3', dir: 'r' },   // 100 kΩ: ha a két pontot fém köti össze, ez korlátozza a tranzisztorok áramát
   { p: 'D1', at: 'C8', dir: 'd' },
   { p: 'W2', at: 'A3', dir: 'd', id: 'Lt' },
   { p: 'W2', at: 'A6', dir: 'd', id: 'Lc' },
