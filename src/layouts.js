@@ -479,4 +479,42 @@ L.ic_u22 = [
   { p: 'J2', at: 'C6', to: 'E5' },
 ];
 
+// U5 rádió két rácson. 1. rács: a vevő – hangolt kör (A1 ∥ CV) az U5 bemenetén, az R5 a kimenetről adja a bemenet
+// munkapontját (és az automatikus hangerő-szabályzást), a C1 ezt a pontot a rádiófrekvencia számára a (−)-ra köti;
+// az U5 tápja a kimenetén, az R4-en át jön; a hang a C3-on át a hangerő-szabályzóra (RV) megy.
+// 2. rács: az U4 erősítő és a hangszóró. Az RV csúszkáját és a két (−)-t átkötő kábel köti össze.
+L.ic_u5 = [
+  { p: 'S1', at: 'A9', dir: 'd' },
+  { p: 'B1', at: 'E9', dir: 'd' },
+  { p: 'R4', at: 'A8', dir: 'l' },
+  { p: 'U5', at: 'F1', dir: 'l' },
+  { p: 'A1', at: 'C2', dir: 'r' },
+  { p: 'CV', at: 'D2', dir: 'r' },
+  { p: 'R5', at: 'B6', dir: 'l' },
+  { p: 'C1', at: 'E4', dir: 'd' },
+  { p: 'C3', at: 'C6', dir: 'd' },
+  { p: 'RV', at: 'E5', dir: 'd' },
+  { p: 'W2', at: 'A8', dir: 'r', id: 'Wp' },
+  { p: 'W3', at: 'C9', dir: 'd', id: 'Ws' },
+  { p: 'W7', at: 'G3', dir: 'r', id: 'Wn' },
+  { p: 'W3', at: 'A6', dir: 'd', id: 'Wo' },
+  { p: 'W2', at: 'C2', dir: 'd', id: 'Wi' },
+  { p: 'W4', at: 'B4', dir: 'd', id: 'Wt' },
+  { p: 'W2', at: 'E5', dir: 'r', id: 'Wv' },
+  { p: 'J1', at: 'A6', to: 'F3' },
+  { p: 'J2', at: 'C2', to: 'G2' },
+  // 2. rács: erősítő
+  { p: 'W6', at: '2:A3', dir: 'r', id: 'Wp2' },
+  { p: 'W6', at: '2:F3', dir: 'r', id: 'Wn2' },
+  { p: 'W2', at: '2:C8', dir: 'd', id: 'Ws2' },
+  { p: 'U4', at: '2:B4', dir: 'u' },
+  { p: 'W2', at: '2:A5', dir: 'd', id: 'Lp2' },
+  { p: 'W3', at: '2:D4', dir: 'd', id: 'Ln2' },
+  { p: 'SP', at: '2:D5', dir: 'd' },
+  { p: 'S1', at: '2:A8', dir: 'd', id: 'S1b' },
+  { p: 'B1', at: '2:D8', dir: 'd', id: 'B1b' },
+  { p: 'J1', at: 'F6', to: '2:C4', id: 'J1b' },
+  { p: 'J2', at: 'G4', to: '2:F3', id: 'J2b' },
+];
+
 module.exports = L;

@@ -24,7 +24,7 @@ A készletek integrált áramkörei (zene-, riasztó-, „űrháborús” IC) fe
 **D) Idő, memória, döntés:** késleltetett lámpa · emlékező lámpa (flip-flop) · kódzár (ÉS) · bármelyik gomb (VAGY) · fordító (NEM)
 **E) Rezgések és hangok:** villogó · metronóm · hang a villogóból · elektronikus hangszer · sziréna
 **F) Fény és hang továbbítása:** hangra villogó LED (a tablet mikrofonjával is) · hangosbemondó (két tranzisztoros mikrofon-erősítő) · fénytávíró (két rács, üvegszál)
-**G) A fekete dobozok kinyitása:** U23 stroboszkóp · D8 színes LED · U2 riasztó · U3 űrháború · U1 zene · U32 dallam · U4 erősítő · U22 fényorgona · U24 infravevő. Az IC-t valódi alkatrészként építjük be, aztán „kinyitjuk”: megmutatjuk, mely saját kísérletek rakják ki a belsejét.
+**G) A fekete dobozok kinyitása:** U23 stroboszkóp · D8 színes LED · U2 riasztó · U3 űrháború · U1 zene · U32 dallam · U4 erősítő · U22 fényorgona · U24 infravevő · U5 rádió (középhullám, a Kossuth Rádió 540 kHz-en). Az IC-t valódi alkatrészként építjük be, aztán „kinyitjuk”: megmutatjuk, mely saját kísérletek rakják ki a belsejét.
 
 A további fejezetek tervét lásd: [docs/TERV.md](docs/TERV.md).
 
@@ -34,7 +34,7 @@ Minden kísérlet menete: hozzávalók (melyik dobozból), lépésenkénti épí
 
 A szimulátor (`src/engine.js`) a rácson elhelyezett alkatrészekből rakja össze a kapcsolást, majd SPICE-szerű módszerrel (csomóponti analízis, Newton-iteráció, Ebers–Moll tranzisztormodell) számolja az áramokat. Az elrendezéseket ugyanez a kód ellenőrzi: szintek, alátámasztás, ütközés. A hangot a szimulált hangszóróáramból állítja elő.
 
-Az IC-modulok (U1, U2, U3, U4, U22, U23, U24, U32 és a D8 színes LED) viselkedési modellek a kézikönyvben leírt lábkiosztás és működés alapján; a belső hangmintáik és pontos számaik saját közelítések. A szimuláció közelítés, a valódi alkatrészek ettől kicsit eltérhetnek, például a villogás sebességében vagy a késleltetés hosszában.
+Az IC-modulok (U1, U2, U3, U4, U5, U22, U23, U24, U32 és a D8 színes LED) viselkedési modellek a kézikönyvben leírt lábkiosztás és működés alapján; a belső hangmintáik és pontos számaik saját közelítések. A rádiónál a szimulátor nem számol rádiófrekvencián: a vétel erősségét a hangolt kör rezonanciafrekvenciájából becsüli, és a műsor helyett egy kitalált dallam szól. A szimuláció közelítés, a valódi alkatrészek ettől kicsit eltérhetnek, például a villogás sebességében vagy a késleltetés hosszában.
 
 ## Fejlesztés
 

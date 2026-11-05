@@ -56,7 +56,7 @@ Menet: megépítjük egyszerű alkatrészekből → megértjük → mellé tessz
 | ✅ U24 infravevő (Light) | fénytávíró látható fénnyel | jórészt |
 | ✅ U3 űrháború (300) | sziréna + villogó + emlékező lámpa | részben |
 | ✅ U1 zene és ✅ U32 dallam | hangszer + emlékező lámpa + késleltetés | elv |
-| U5 rádió (300) | középhullámú rádió | bizonytalan, haladó |
+| ✅ U5 rádió (300) | hangolt kör + az U4 (a rádiófrekvenciás részt nem építjük meg) | elv |
 | ✅ D8 színes LED | villogó | elv |
 
 ## App
@@ -75,6 +75,6 @@ Minden fázis végén: tesztek, böngészős ellenőrzés, commit, push, a GitHu
 ## Még hátravan
 - ✅ U4 erősítő IC és a hangosbemondó
 - ✅ U22 fényorgona, U24 infravevő, U3 űrháború, U32 dallam, D8 színes LED
-- U5 rádió (középhullám, a Kossuth Rádió 540 kHz-en)
+- ✅ U5 rádió (középhullám, a Kossuth Rádió 540 kHz-en)
 - ✅ Offline működés (telepíthető webapp)
 - A valódi készleten szerzett tapasztalatok alapján a szimuláció finomítása

@@ -59,6 +59,11 @@
     U22: { kind: 'ic', ic: 'organ', pins: ['R', 'G', 'B', 'P', 'N', 'FB', 'INP'], pos: [[0, 0], [0, 1], [0, 2], [1, 2], [2, 0], [2, 1], [2, 2]], body: [[1, 0], [1, 1]], name: 'Fényorgona', short: 'U22' },
     U24: { kind: 'ic', ic: 'ir', pins: ['P', 'OUT', 'N'], pos: [[0, 0], [1, 1], [2, 0]], body: [[1, 0]], name: 'Infravevő', short: 'U24' },
     U32: { kind: 'ic', ic: 'melody', pins: ['P', 'N'], pos: [[0, 0], [0, 2]], body: [[0, 1]], name: 'Dallam IC', short: 'U32' },
+    U5: { kind: 'ic', ic: 'radio', pins: ['N', 'INP', 'INP2', 'OUT'], pos: [[0, 0], [0, 1], [0, 2], [1, 0]], body: [[1, 1]], name: 'Rádió IC', short: 'U5' },
+    // antennatekercs (vasmagos tekercs, kb. 380 µH) és forgókondenzátor (kb. 40–220 pF): ezek adják a rádió hangolt körét.
+    // Hangfrekvencián a tekercs vezetékként, a forgókondenzátor szakadásként viselkedik.
+    A1: { kind: 'coil', R: 5, L: 380e-6, name: 'Antennatekercs', short: 'A1' },
+    CV: { kind: 'varcap', Cmin: 40e-12, Cmax: 220e-12, name: 'Forgókondenzátor', short: 'CV' },
     // színes LED: piros, zöld és kék LED egy tokban, egy kis vezérlőáramkörrel, beépített áramkorlátozó ellenállással
     D8: { kind: 'led', color: 'rgb', Is: 2.3e-20, n: 2, Rs: 100, name: 'Színes LED', short: 'D8' },
     FC: { kind: 'fiber', name: 'Üvegszálas kábel (két tartóval)', short: 'FC' },
@@ -75,7 +80,7 @@
 
   // Melyik dobozban hány darab van (a hivatalos alkatrészlisták alapján).
   const KITS = {
-    '300': { name: 'Boffin I 300', parts: { J1: 1, J2: 1, W1: 6, W2: 9, W3: 4, W4: 2, W5: 1, W6: 1, W7: 1, B1: 2, S1: 1, S2: 1, R1: 1, R2: 1, R3: 1, R4: 1, R5: 1, RV: 1, D1: 1, D2: 1, C1: 1, C2: 1, C3: 1, C4: 1, C5: 1, Q1: 1, Q2: 1, Q4: 1, L1: 1, L2: 1, SP: 1, M1: 1, X1: 1, U1: 1, U2: 1, U3: 1, U4: 1 } },
+    '300': { name: 'Boffin I 300', parts: { J1: 1, J2: 1, W1: 6, W2: 9, W3: 4, W4: 2, W5: 1, W6: 1, W7: 1, B1: 2, S1: 1, S2: 1, R1: 1, R2: 1, R3: 1, R4: 1, R5: 1, RV: 1, D1: 1, D2: 1, C1: 1, C2: 1, C3: 1, C4: 1, C5: 1, Q1: 1, Q2: 1, Q4: 1, L1: 1, L2: 1, SP: 1, M1: 1, X1: 1, U1: 1, U2: 1, U3: 1, U4: 1, U5: 1, A1: 1, CV: 1 } },
     light: { name: 'Boffin II Light', parts: { J1: 1, J2: 1, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, B1: 2, S1: 1, S2: 1, R1: 1, R3: 1, R5: 1, RV: 1, D1: 1, C2: 1, C4: 1, Q1: 1, Q2: 1, Q4: 1, SP: 1, M1: 1, X1: 1, FC: 1, U23: 1, U22: 1, U24: 1, D8: 1 } },
     home: { name: 'Boffin II My Home', parts: { J1: 1, J2: 1, J4: 2, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, S1: 1, S2: 1, R3: 1, C5: 1, Q2: 1, Q4: 1, M4: 1, M6: 1, U32: 1, D8: 1 } },
   };
@@ -274,7 +279,7 @@
     this.rhs = new Float64Array(n);
     this.time = 0;
     this.light = opts.light != null ? opts.light : 0.8;
-    this.switches = {}; this.capV = {}; this.cur = {}; this.jx = {}; this.pot = {}; this.meter = {}; this.motor = {}; this.obj = {}; this.mic = {}; this.ic = {};
+    this.switches = {}; this.capV = {}; this.cur = {}; this.jx = {}; this.pot = {}; this.meter = {}; this.motor = {}; this.obj = {}; this.mic = {}; this.ic = {}; this.tune = {};
     for (const e of elements) {
       if (e.def.kind === 'sw') this.switches[e.id] = false;
       // a kondenzátorok kezdőfeszültségében néhány mV eltérés: a valódi áramkörökben a zaj és az
@@ -283,6 +288,7 @@
       if (e.def.kind === 'npn' || e.def.kind === 'pnp') this.jx[e.id] = { vbe: 0, vbc: 0 };
       if (e.def.kind === 'led') this.jx[e.id] = { vd: 0 };
       if (e.def.kind === 'pot') this.pot[e.id] = (opts.pot && opts.pot[e.id] != null) ? opts.pot[e.id] : 0.5;
+      if (e.def.kind === 'varcap') this.tune[e.id] = (opts.tune && opts.tune[e.id] != null) ? opts.tune[e.id] : 0.5;
       if (e.def.kind === 'meter') this.meter[e.id] = (opts.meter && opts.meter[e.id]) || '50mA';
       if (e.def.kind === 'motor') this.motor[e.id] = { w: 0, hand: 0 };
       if (e.def.kind === 'mic') this.mic[e.id] = 0;
@@ -309,7 +315,12 @@
     organ: [['P', 1500], ['R', 1e6], ['G', 1e6], ['B', 1e6], ['INP', 1e6]],
     ir: [['P', 3000]],
     melody: [],
+    radio: [['OUT', 2000], ['INP', 1e6], ['INP2', 1, 'INP']],   // a két INP pont belül össze van kötve
   };
+  // A rádió: egy valódi adó, a Kossuth Rádió Solt 540 kHz-en. A műsort a szimuláció nem tudja venni,
+  // a hangja helyett egy egyszerű, lassan változó jel jelzi (a hangot az app egy kitalált dallammal adja).
+  const STATIONS = [{ f: 540e3, name: 'Kossuth Rádió (Solt, 540 kHz)' }];
+  const RADIO_STRAY = 15e-12, RADIO_Q = 35;
   // saját dallam a dallam IC (U32) modelljéhez
   const TUNE2 = [[392, .25], [392, .25], [440, .5], [392, .5], [523, .5], [494, 1], [392, .25], [392, .25], [440, .5], [392, .5], [587, .5], [523, 1], [0, .5]];
   const TUNE2_LEN = TUNE2.reduce((a, n) => a + n[1], 0);
@@ -407,6 +418,26 @@
       const ph = (st.t * 20) % 1;
       st.on = st.active && st.remote && ph < 0.7;
       st.gOut = st.on ? 1 / 100 : 1e-9;
+    } else if (d.ic === 'radio') {
+      // a hangolt kör: antennatekercs és forgókondenzátor párhuzamosan a bemenet és egy másik pont között
+      const vo = v('OUT'); st.active = vo > 0.2;
+      const inp = [t.INP, t.INP2].filter((x) => x >= 0);
+      const pair = (k) => this.nl.elements.find((x) => x.def.kind === k && (inp.includes(x.t.a) || inp.includes(x.t.b)));
+      const coil = pair('coil'), vc = pair('varcap');
+      const other = (x) => (inp.includes(x.t.a) ? x.t.b : x.t.a);
+      st.f0 = 0; st.match = 0; st.station = null;
+      if (coil && vc && other(coil) === other(vc) && other(coil) >= 0) {
+        const C = vc.def.Cmin + (vc.def.Cmax - vc.def.Cmin) * (this.tune[vc.id] != null ? this.tune[vc.id] : 0.5) + RADIO_STRAY;
+        st.f0 = 1 / (2 * Math.PI * Math.sqrt(coil.def.L * C));
+        for (const sta of STATIONS) {
+          const y = RADIO_Q * (st.f0 / sta.f - sta.f / st.f0); const m = 1 / (1 + y * y);
+          if (m > st.match) { st.match = m; st.station = sta.name; }
+        }
+      }
+      // a „műsor” lassan változó jele (a kijelzéshez); a kimenet ennek ütemében több-kevesebb áramot vesz fel
+      const prog = 0.6 * Math.sin(2 * Math.PI * 2.3 * st.t) + 0.4 * Math.sin(2 * Math.PI * 0.7 * st.t);
+      st.iAud = st.active ? 25e-6 * st.match * prog : 0;
+      st.on = st.active && st.match > 0.3;
     } else if (d.ic === 'melody') {
       st.active = v('P') > 2;
       let x = st.t % TUNE2_LEN, k = 0; while (k < TUNE2.length - 1 && x >= TUNE2[k][1]) { x -= TUNE2[k][1]; k++; }
@@ -424,9 +455,10 @@
     let io = 0;
     if (d.ic === 'amp') io = t.OUT >= 0 ? (v('OUT') - st.vt) / AMP_ROUT : 0;
     else if (t.OUT >= 0) io = v('OUT') * st.gOut;
-    cur.OUT = io;
+    cur.OUT = (cur.OUT || 0) + io;
     if (d.ic === 'organ' && t.FB >= 0) { cur.FB = (v('FB') - st.fbV) / 47000; sumN += cur.FB; }
     if (d.ic === 'melody' && t.P >= 0) { cur.P = v('P') * st.gP; sumN += cur.P; }
+    if (d.ic === 'radio' && t.OUT >= 0) { cur.OUT += st.iAud || 0; sumN += st.iAud || 0; }
     cur.N = -(sumN + io);
     this.cur[e.id] = cur;
   };
@@ -523,6 +555,7 @@
         } else if (t.OUT >= 0) stampG(I(t.OUT), I(t.N), st.gOut);
         if (d.ic === 'organ' && t.FB >= 0) { const g = 1 / 47000; stampG(I(t.FB), I(t.N), g); stampI(I(t.FB), I(t.N), -st.fbV * g); }
         if (d.ic === 'melody' && t.P >= 0) stampG(I(t.P), I(t.N), st.gP);
+        if (d.ic === 'radio' && t.OUT >= 0) stampI(I(t.OUT), I(t.N), st.iAud || 0);
         continue;
       }
       if (d.kind === 'pot') {
@@ -535,7 +568,8 @@
       const a = I(t.a), b = I(t.b);
       const u = vv(t.a) - vv(t.b);
       switch (d.kind) {
-        case 'res': case 'lamp': case 'spk': stampG(a, b, 1 / d.R); break;
+        case 'res': case 'lamp': case 'spk': case 'coil': stampG(a, b, 1 / d.R); break;
+        case 'varcap': stampG(a, b, 1e-12); break;
         case 'meter': stampG(a, b, 1 / METER[this.meter[e.id]].R); break;
         case 'obj': stampG(a, b, 1 / Math.max(0.05, this.obj[e.id])); break;
         case 'mic': stampG(a, b, 1 / micR(this.mic[e.id])); break;
@@ -640,7 +674,8 @@
       const u = this.nodeV(t.a) - this.nodeV(t.b);
       let i = 0;
       switch (d.kind) {
-        case 'res': case 'lamp': case 'spk': i = u / d.R; break;
+        case 'res': case 'lamp': case 'spk': case 'coil': i = u / d.R; break;
+        case 'varcap': i = 0; break;
         case 'meter': i = u / METER[this.meter[e.id]].R; break;
         case 'obj': i = u / Math.max(0.05, this.obj[e.id]); break;
         case 'mic': i = u / micR(this.mic[e.id]); break;
@@ -739,6 +774,6 @@
     return s;
   }
 
-  const api = { PARTS, KITS, METER, MOTOR, ROWS, BOARD_ROWS, DIRS, geometry, checkBuild, buildNetlist, Sim, ascii, postName, parsePost };
+  const api = { STATIONS, PARTS, KITS, METER, MOTOR, ROWS, BOARD_ROWS, DIRS, geometry, checkBuild, buildNetlist, Sim, ascii, postName, parsePost };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.BoffinEngine = api;
 })(typeof window !== 'undefined' ? window : globalThis);

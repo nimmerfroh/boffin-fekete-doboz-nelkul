@@ -963,6 +963,43 @@ const EXPS = [
     },
   },
 
+  {
+    id: 'u5', chapter: 'G', title: 'Kinyitjuk: U5 rádió', tag: 'Hangold be a Kossuth Rádiót',
+    layout: LAY.ic_u5, sim: { dt: 0.002, scale: 1, tune: { CV: 0.5 }, pot: { RV: 0.4 } },
+    controls: ['S1', { toggle: 'S1b', label: 'S1 (erősítő)' }, { tune: 'CV', ic: 'U5', label: 'Hangolás (CV)' }, { pot: 'RV', label: 'Hangerő (RV)', invert: true }, 'sound'],
+    audio: { type: 'radio', ic: 'U5', amp: 'U4', pot: 'RV' },
+    inside: {
+      title: 'Mi van az U5-ben?',
+      blocks: ['Nagyfrekvenciás erősítő: a nagyon gyenge rádiójelet felerősíti', 'Egyenirányító: a rádióhullámból kiválogatja a hangot', 'Önszabályozás: erős adónál visszaveszi az erősítést'],
+      built: ['amp'],
+      text: {
+        k: 'Az U5-ben egy nagyon érzékeny erősítő van, ami a levegőben repülő rádióhullámokból hangot csinál. Ezt már nem építettük meg, mert nagyon gyors tranzisztorok kellenek hozzá.',
+        m: 'A 300-as kézikönyv szerint az U5 egy különleges erősítő, amit csak rádiókban használnak. A rádióhullám nagyon gyorsan rezeg, másodpercenként félmilliószor. Az U5 ezt a gyors rezgést erősíti fel, és kiválogatja belőle a lassabb hangrezgést. A hangot utána az U4 erősíti fel, mint a hangosbemondódban.',
+        n: 'Az ilyen rádió-IC-kben (mint a TA7642 vagy a ZN414) több fokozatú nagyfrekvenciás erősítő, egy detektor (egyenirányító) és automatikus erősítésszabályozás (AGC) van; a tápot a kimeneti lábon, egy ellenálláson át kapják (itt R4). Az AGC-feszültség az R5-ön át jut vissza a hangolt kör aljára, a C1 ezt a pontot a rádiófrekvencia számára a (−)-ra köti. A szimulátor a rádiófrekvenciát nem számolja: a vétel erősségét a hangolt kör rezonanciafrekvenciájából és az adó frekvenciájából becsüli.',
+      },
+    },
+    variants: [],
+    intro: {
+      k: 'Rádiót építünk! A levegőben láthatatlan rádióhullámok repülnek. A tekerővel kell megkeresni az adót.',
+      m: 'Az antennatekercs (A1) és a forgókondenzátor (CV) együtt egy hangolt kört alkot: ez választja ki a sok rádióadó közül az egyiket. Az U5 a gyenge jelet hanggá alakítja, az U4 felerősíti, a hangszóró megszólaltatja. Két rácson építjük: az elsőn a vevő, a másodikon az erősítő, a kettőt két átkötő kábel köti össze.',
+      n: 'Középhullámú rádió: a hangolt kör (A1 ∥ CV) rezonanciafrekvenciája f = 1 / (2π·√(L·C)). A szimulációban L ≈ 380 µH, C ≈ 55–235 pF (a szórt kapacitással), így kb. 530–1100 kHz hangolható. Magyarországon középhullámon a Kossuth Rádió szól, 540 kHz-en, a solti adóról.',
+    },
+    guess: {
+      q: { k: 'Hol szól a rádió: a tekerő elején, közepén vagy a végén?', m: 'A forgókondenzátor melyik állásánál fogod a Kossuth Rádiót?', n: 'Mekkora kapacitás kell a 540 kHz-hez 380 µH-s tekerccsel?' },
+      opts: [['Majdnem a végén', 'on'], ['Középen', 'same'], ['Az elején', 'off']], right: 0,
+      after: { k: 'Igen! Majdnem egészen el kell tekerni.', m: 'Majdnem a végén: a Kossuth a középhullám legalsó szélén van, ahhoz a legnagyobb kapacitás kell.', n: 'C = 1 / ((2π·540 kHz)²·380 µH) ≈ 229 pF, ebből kb. 15 pF a szórt kapacitás, tehát a CV kb. 214 pF-on áll, közel a maximumhoz.' },
+    },
+    hint: {
+      k: 'Kapcsold be a hangot, aztán lassan tekerd a hangolást, amíg a sistergés helyett zene nem szól!',
+      m: 'Kapcsold be az S1-et és a hangot. Lassan húzd a hangolást, és figyeld, mikor tűnik el a sistergés. A valódi készleten a forgókondenzátort nagyon lassan tekerd, és fordítsd el a rácsot is: az antennatekercs iránya számít.',
+      n: 'Keresd meg, milyen széles az a sáv, ahol az adó jól szól. A valódi rádiónál este, sötétedés után külföldi középhullámú adók is bejöhetnek.',
+    },
+    why: {
+      k: 'A rádióadó tornya láthatatlan hullámokat küld, amelyek mindenhol ott vannak körülöttünk. A tekercs és a forgókondenzátor együtt olyan, mint egy hinta: csak akkor leng nagyot, ha a hullám épp a neki való ütemben lökdösi. A tekerővel ezt az ütemet állítod be.',
+      m: 'A hangolt kör a rezonancia miatt működik: a tekercs és a kondenzátor együtt egy bizonyos ütemben szeret rezegni, és ilyenkor egy adott frekvenciájú rádióhullámot sokkal erősebben vesz fel, mint a többit. A forgókondenzátorral ezt a frekvenciát állítod. Fontos: a szimulációban a Kossuth Rádió műsorát nem tudjuk venni, ezért egy kitalált dallam szól helyette. A valódi készlettel viszont, ha elég erős az adó, tényleg a Kossuth szólhat.',
+      n: 'A sávszélesség kb. f/Q: a modellünkben Q ≈ 35, így kb. 15 kHz széles sávban szól az adó. A valódi készleten az antennatekercs induktivitása és a forgókondenzátor tartománya eltérhet; ha a CV teljesen becsavart állásában sem éri el a 540 kHz-et, akkor a Kossuth nem fogható ezzel a kapcsolással. Az, hogy a solti adó éppen sugároz-e, a műsorszórótól függ (karbantartások is vannak).',
+    },
+  },
 ];
 
 
@@ -975,7 +1012,7 @@ const CHAPTERS = [
   { id: 'F', title: 'Fény és hang továbbítása', short: 'Továbbítás' },
   { id: 'G', title: 'A fekete dobozok kinyitása', short: 'Fekete dobozok' },
 ];
-const ORDER = ['first', 'conduct', 'series', 'dimmer', 'generator', 'capbat', 'motorspeed', 'night', 'touch', 'water', 'shadow', 'delay', 'flipflop', 'and', 'or', 'not', 'flash', 'metronome', 'sound', 'organ', 'siren', 'clap', 'amp', 'lightlink', 'u23', 'd8', 'u2', 'u3', 'u1', 'u32', 'u4', 'u22', 'u24'];
+const ORDER = ['first', 'conduct', 'series', 'dimmer', 'generator', 'capbat', 'motorspeed', 'night', 'touch', 'water', 'shadow', 'delay', 'flipflop', 'and', 'or', 'not', 'flash', 'metronome', 'sound', 'organ', 'siren', 'clap', 'amp', 'lightlink', 'u23', 'd8', 'u2', 'u3', 'u1', 'u32', 'u4', 'u22', 'u24', 'u5'];
 EXPS.sort((x, y) => ORDER.indexOf(x.id) - ORDER.indexOf(y.id));
 
 // Egy változat alkalmazása: vagy átalakítja az elrendezést, vagy egy másik elrendezésre cseréli.

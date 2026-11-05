@@ -125,6 +125,8 @@ svg.board { display: block; width: 100%; height: auto; min-width: 520px; touch-a
 .lightctl { display: flex; align-items: center; gap: 10px; border: 2px solid var(--line); background: var(--surface-2); border-radius: 14px; padding: 6px 14px; min-height: 52px; flex: 1 1 260px; }
 .lightctl input { flex: 1; accent-color: var(--spark); min-width: 0; height: 30px; }
 .lightctl label { font-weight: 700; font-size: 15px; white-space: nowrap; }
+.lightctl:has(.tuneread) { flex-wrap: wrap; padding-block: 8px; }
+.lightctl .tuneread { flex-basis: 100%; font-size: 14px; font-weight: 700; color: var(--muted); }
 .meterctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; border: 2px solid var(--line); background: var(--surface-2); border-radius: 14px; padding: 6px 12px; min-height: 52px; }
 .meterctl .mlabel { font-weight: 700; font-size: 15px; }
 .meterctl .seg button { min-height: 38px; padding: 4px 10px; }

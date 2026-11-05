@@ -12,7 +12,7 @@ const store = {
 };
 
 // ---------- segédek a magyar szövegekhez ----------
-const art = (w) => (/^[AEIOUÁÉÍÓÖŐÚÜŰaeiouáéíóöőúüűF]/.test(w) && !/^F[a-z]/.test(w) ? 'az ' : 'a ') + w; // F betű: "ef" -> az F3
+const art = (w) => ((/^[AEIOUÁÉÍÓÖŐÚÜŰaeiouáéíóöőúüűF]/.test(w) && !/^F[a-z]/.test(w)) || /^(1|5)\b|^(1|5)\./.test(w) ? 'az ' : 'a ') + w; // F betű: "ef" -> az F3; 1., 5. -> az
 const artNum = (n) => (n === 1 || n === 5 ? 'az ' : 'a ');
 const wireName = (n) => n + '-' + ({ 1: 'es', 2: 'es', 3: 'as', 4: 'es', 5: 'ös', 6: 'os', 7: 'es' })[n];
 const fmtA = (i) => { const a = Math.abs(i); if (a < 1e-6) return '0 mA'; if (a < 1e-3) return (a * 1e6).toFixed(0) + ' µA'; return (a * 1e3).toFixed(a < 0.01 ? 1 : 0).replace('.', ',') + ' mA'; };
@@ -57,7 +57,7 @@ const STAGES = ['Hozzávalók', 'Építés', 'Tippelj', 'Próbáld ki', 'Miért?
 // a vezérlők állapota kísérletenként (a változatok újraindításakor is megmarad)
 function initCtl(ex) {
   const sim = ex.sim || {};
-  const ctl = { pot: { ...(sim.pot || {}) }, meter: { ...(sim.meter || {}) }, obj: { ...(sim.obj || {}) }, objName: {} };
+  const ctl = { tune: { ...(sim.tune || {}) }, pot: { ...(sim.pot || {}) }, meter: { ...(sim.meter || {}) }, obj: { ...(sim.obj || {}) }, objName: {} };
   for (const c of ex.controls) {
     if (c && c.obj) ctl.objName[c.obj] = MATERIALS[c.set][0][0];
     if (c && c.touch) ctl.objName[c.touch] = 'érintsd';
@@ -129,13 +129,13 @@ const lvOff = (L) => (L > 1 ? -(L - 1) * LOFF : 0);
 
 const COLORS = {
   wire: '#2E63CF', res: '#F0BF2E', sw: '#3FA453', bat: '#8C96A2', cap: '#2F8F62', lamp: '#9AA3AE', spk: '#C2463E',
-  npn: '#D8443B', pnp: '#3FA453', photo: '#2A2F36', ledred: '#E0453F', ledgreen: '#38B26A',
+  coil: '#9AA3AE', varcap: '#3FA453', npn: '#D8443B', pnp: '#3FA453', photo: '#2A2F36', ledred: '#E0453F', ledgreen: '#38B26A',
   pot: '#3FA453', meter: '#2B3138', motor: '#AEB6BF', obj: '#7A8796', mic: '#6B737C',
 };
-const IC_COLOR = { U1: '#4E86E8', U2: '#D8443B', U23: '#D8443B', U3: '#3FA453', U4: '#E9C535', U22: '#22262B', U24: '#F2C230', U32: '#F0D84A' };
+const IC_COLOR = { U1: '#4E86E8', U2: '#D8443B', U23: '#D8443B', U3: '#3FA453', U4: '#E9C535', U22: '#22262B', U24: '#F2C230', U32: '#F0D84A', U5: '#D8443B' };
 const IC_INK = { U4: '#3B2A00', U24: '#3B2A00', U32: '#3B2A00' };
-const IC_COLORNAME = { U1: 'a kék', U2: 'a piros', U23: 'a piros', U3: 'a zöld', U4: 'a sárga', U22: 'a fekete', U24: 'a sárga', U32: 'a sárga' };
-const IC_INNER = { music: 'hangszer + memória', alarm: 'sziréna + választó', strobe: 'villogó', war: 'rezgőkörök + számláló', amp: 'erősítő', organ: 'hangkapcsoló + számláló + 3 LED', ir: 'fényszem + szűrő', melody: 'dallam + hangszóró' };
+const IC_COLORNAME = { U1: 'a kék', U2: 'a piros', U23: 'a piros', U3: 'a zöld', U4: 'a sárga', U22: 'a fekete', U24: 'a sárga', U32: 'a sárga', U5: 'a piros' };
+const IC_INNER = { music: 'hangszer + memória', alarm: 'sziréna + választó', strobe: 'villogó', war: 'rezgőkörök + számláló', amp: 'erősítő', organ: 'hangkapcsoló + számláló + 3 LED', ir: 'fényszem + szűrő', melody: 'dallam + hangszóró', radio: 'rádióerősítő + egyenirányító' };
 // a színes LED (D8) színsora a rajzon (saját közelítés)
 const RGB_SEQ = ['#FF4A3D', '#47F07A', '#4D8DFF', '#FFE14A', '#4DF2EC', '#F25CF0', '#FFFFFF'];
 const rgbCss = (c) => '#' + c.map((x) => (x ? 'ff' : '33')).join('');
@@ -354,6 +354,16 @@ function drawPart(parent, pl, level, contacts, opts) {
         out.glows.push({ el: shade, type: 'shade' });
         break;
       }
+      case 'coil': {
+        svgEl('path', { d: 'M-34,4 L-22,4 C-22,-12 -12,-12 -12,4 C-12,-12 -2,-12 -2,4 C-2,-12 8,-12 8,4 C8,-12 18,-12 18,4 L34,4' }, sym);
+        label(def.short, 19, 10);
+        break;
+      }
+      case 'varcap': {
+        svgEl('path', { d: 'M-30,0 L-5,0 M5,0 L30,0 M-5,-12 L-5,12 M5,-12 L5,12 M-14,12 L14,-14 M8,-14 L14,-14 L14,-8' }, sym);
+        label(def.short, 20, 10);
+        break;
+      }
       case 'lamp': {
         svgEl('circle', { cx: 0, cy: 0, r: 13, fill: '#EEF0F2', stroke: '#6B737C', 'stroke-width': 2 }, body);
         const glow = svgEl('circle', { cx: 0, cy: 0, r: 34, fill: '#FFE07A', opacity: 0, style: 'mix-blend-mode:screen' }, body);
@@ -521,7 +531,7 @@ function currentLayout() {
 function startSim() {
   const ex = EXPS[S.exp]; const lay = currentLayout();
   const prevSw = S.sim ? { ...S.sim.switches } : null;
-  S.sim = new E.Sim(lay, { light: S.light, pot: S.ctl.pot, meter: S.ctl.meter, obj: S.ctl.obj });
+  S.sim = new E.Sim(lay, { light: S.light, pot: S.ctl.pot, meter: S.ctl.meter, obj: S.ctl.obj, tune: S.ctl.tune });
   S.simLayout = lay;
   if (prevSw) for (const k in S.sim.switches) if (k in prevSw) S.sim.switches[k] = prevSw[k];
   S.wc = null;
@@ -603,7 +613,7 @@ function frame(ts) {
         if (blade) blade.setAttribute('d', it.def.mode === 'press' ? (on ? 'M-30,6 L-12,6 M12,6 L30,6 M-12,6 L12,6' : 'M-30,6 L-12,6 M12,6 L30,6 M-12,-2 L12,-2') : (on ? 'M-30,6 L-12,6 M12,6 L30,6 M-12,6 L12,6' : 'M-30,6 L-12,6 M12,6 L30,6 M-12,6 L12,-6'));
       }
     }
-    if (live && fcount % 6 === 0) { updateMeters(); updateMeterRead(); }
+    if (live && fcount % 6 === 0) { updateMeters(); updateMeterRead(); updateTuneRead(); }
   }
   requestAnimationFrame(frame);
 }
@@ -684,6 +694,7 @@ function stopAudio() {
   }
   if (S.audio && S.audio.src) { try { S.audio.src.stop(); } catch (e) { /* már leállt */ } S.audio.src = null; }
   if (S.audioNode && S.audioNode.osc) { try { S.audioNode.osc.stop(); } catch (e) { /* már leállt */ } }
+  if (S.audioNode && S.audioNode.srcs) for (const x of S.audioNode.srcs) { try { x.stop(); } catch (e) { /* már leállt */ } }
   S.audioNode = null;
 }
 async function setSound(on) {
@@ -727,6 +738,18 @@ async function setSound(on) {
     const noise = ac.createBufferSource(); noise.buffer = nb; noise.loop = true; const ng = ac.createGain(); ng.gain.value = 0;
     noise.connect(ng).connect(pre); noise.start();
     S.audioNode = { type: 'micamp', src, noise, ng, gate };
+  } else if (cfg.type === 'radio') {
+    // a műsort a szimuláció nem tudja venni: helyette egy kitalált, egyszerű dallam szól; mellette a sistergés
+    const sr = ac.sampleRate, n = Math.round(sr * 6.4); const mb = ac.createBuffer(1, n, sr); const m = mb.getChannelData(0);
+    const notes = [392, 440, 494, 523, 494, 440, 392, 330, 349, 392, 440, 392, 349, 330, 294, 330];
+    for (let i = 0; i < n; i++) { const t = i / sr, k = Math.floor(t / 0.4) % notes.length, x = (t % 0.4) / 0.4; const env = Math.min(1, x * 20) * Math.exp(-x * 2.2); const f = notes[k]; m[i] = env * (0.5 * Math.sin(2 * Math.PI * f * t) + 0.2 * Math.sin(4 * Math.PI * f * t) + 0.15 * Math.sin(2 * Math.PI * f / 2 * t)); }
+    const nb = ac.createBuffer(1, sr * 2, sr); const z = nb.getChannelData(0);
+    for (let i = 0; i < z.length; i++) z[i] = (Math.random() * 2 - 1) * (Math.random() < 0.002 ? 3 : 0.6);
+    const mus = ac.createBufferSource(); mus.buffer = mb; mus.loop = true; const gm = ac.createGain(); gm.gain.value = 0;
+    const noi = ac.createBufferSource(); noi.buffer = nb; noi.loop = true; const gn = ac.createGain(); gn.gain.value = 0;
+    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3500;   // a középhullámú adás hangja tompább
+    mus.connect(gm).connect(lp); noi.connect(gn).connect(lp); lp.connect(ac.destination); mus.start(); noi.start();
+    S.audioNode = { type: 'radio', srcs: [mus, noi], gm, gn };
   } else if (cfg.type === 'clicks') {
     S.audioNode = { type: 'clicks' }; S.lastI = null;
   } else {
@@ -787,6 +810,15 @@ function audioFrame(dtR) {
     sim.capV[cfg.cap] = S.vc;
   }
   const n = S.audioNode; if (!n || !S.soundOn) return;
+  if (n.type === 'radio') {
+    const tt = S.ac.currentTime; const st = sim.ic[cfg.ic], amp = sim.ic[cfg.amp];
+    const on = Object.keys(sim.switches).filter((k) => /^S1/.test(k)).every((k) => sim.switches[k]) && st && st.active && amp && amp.active;
+    const vol = on ? Math.max(0, Math.min(1, 1 - (sim.pot[cfg.pot] != null ? sim.pot[cfg.pot] : 0.5))) : 0;
+    const mt = st ? st.match : 0;
+    n.gm.gain.setTargetAtTime(0.35 * vol * mt, tt, 0.05);
+    n.gn.gain.setTargetAtTime(vol * (st && st.f0 ? 0.03 + 0.1 * (1 - mt) : 0.04), tt, 0.05);
+    return;
+  }
   if (n.type === 'micamp') {
     const tt = S.ac.currentTime; const on = Object.keys(sim.switches).filter((k) => /^S1/.test(k)).every((k) => sim.switches[k]);
     n.gate.gain.setTargetAtTime(on ? 0.8 : 0, tt, 0.02);
@@ -815,7 +847,7 @@ function renderControls() {
   const ex = EXPS[S.exp];
   const live = S.stage >= 3;
   const status = $('#status'); status.innerHTML = '';
-  S.meterRead = null; S.micBar = null;
+  S.meterRead = null; S.micBar = null; S.tuneRead = null;
   if (live) {
     const p = document.createElement('span'); p.className = 'pill live'; p.textContent = 'Élő szimuláció'; status.append(p);
     if (ex.slow) { const q = document.createElement('span'); q.className = 'pill slow'; q.textContent = ex.slow + '× lassítva'; status.append(q); }
@@ -901,6 +933,15 @@ function renderControls() {
       b.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') down(e); });
       b.addEventListener('keyup', up);
       box.append(b);
+    } else if (typeof c === 'object' && c.tune) {
+      const w = document.createElement('div'); w.className = 'lightctl';
+      const id = 'tune-' + c.tune;
+      w.innerHTML = '<label for="' + id + '"></label><input id="' + id + '" type="range" min="0" max="1" step="0.002"><span class="tuneread"></span>';
+      w.querySelector('label').textContent = c.label || c.tune;
+      const inp = w.querySelector('input'); inp.value = S.sim.tune[c.tune];
+      inp.oninput = () => { S.ctl.tune[c.tune] = S.sim.tune[c.tune] = +inp.value; };
+      S.tuneRead = { el: w.querySelector('.tuneread'), ic: c.ic };
+      box.append(w);
     } else if (typeof c === 'object' && c.pot) {
       const w = document.createElement('div'); w.className = 'lightctl';
       const id = 'pot-' + c.pot;
@@ -954,6 +995,11 @@ function renderControls() {
   }
 }
 
+function updateTuneRead() {
+  if (!S.tuneRead || !S.sim) return; const st = S.sim.ic[S.tuneRead.ic]; if (!st) return;
+  const txt = !st.f0 ? 'nincs hangolt kör' : Math.round(st.f0 / 1000) + ' kHz' + (st.match > 0.5 ? ' · ' + st.station : st.match > 0.1 ? ' · halkan jön egy adó' : ' · csak sistergés');
+  if (S.tuneRead.el.textContent !== txt) S.tuneRead.el.textContent = txt;
+}
 function updateMeterRead() {
   if (!S.meterRead || !S.sim) return;
   const r = S.sim.meterReading(S.meterRead.id); let txt;

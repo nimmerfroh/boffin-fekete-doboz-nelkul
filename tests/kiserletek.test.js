@@ -340,3 +340,17 @@ test('D8 és U32: a színes LED és a dallam IC áramot vesz fel; a dallam IC á
   for (let i = 0; i < 1500; i++) { s.step(0.002); const v = s.meterReading('M6').value; mx = Math.max(mx, v); mn = Math.min(mn, v); }
   assert.ok(mx > 0.008 && mn < 0.003, `U32 mérő ${mn}–${mx}`);
 });
+test('U5 rádió: csak a Kossuth 540 kHz-es frekvenciájára hangolva szól, a hangerőt az RV állítja', () => {
+  const tuneFor = (f) => { const C = 1 / ((2 * Math.PI * f) ** 2 * E.PARTS.A1.L) - 15e-12; return (C - E.PARTS.CV.Cmin) / (E.PARTS.CV.Cmax - E.PARTS.CV.Cmin); };
+  const swing = (tune, pot) => {
+    const s = new E.Sim(L.ic_u5, { tune: { CV: tune }, pot: { RV: pot } }); s.switches.S1 = s.switches.S1b = true; run(s, 4, 0.002);
+    let mx = -1, mn = 1; for (let i = 0; i < 600; i++) { s.step(0.002); mx = Math.max(mx, s.cur.SP); mn = Math.min(mn, s.cur.SP); }
+    return { pp: mx - mn, st: s.ic.U5 };
+  };
+  const on = swing(tuneFor(540e3), 0.2), off = swing(tuneFor(800e3), 0.2), quiet = swing(tuneFor(540e3), 0.95);
+  assert.ok(Math.abs(on.st.f0 - 540e3) < 3e3, 'f0 ' + on.st.f0);
+  assert.ok(on.st.match > 0.9 && off.st.match < 0.02);
+  assert.ok(on.pp > 0.01, 'szól: ' + on.pp);
+  assert.ok(off.pp < on.pp / 20, 'elhangolva csend: ' + off.pp);
+  assert.ok(quiet.pp < on.pp / 3, 'lehalkítva: ' + quiet.pp);
+});
