@@ -2597,18 +2597,20 @@ function frame(ts) {
     for (const fl of R.flows) {
       let I = live ? curOf(fl) : 0;
       const a = Math.abs(I);
-      // a pöttyök már egészen kis áramnál is látszanak (lassan), hogy a pici bázisáram se tűnjön el;
-      // a sebesség az áram logaritmusával nő
-      let v = 0;
-      if (a > 5e-7) v = Math.sign(I) * Math.min(190, 6 + 30 * Math.log10(a / 5e-7));
+      // A pöttyök sebessége és erőssége az áram négyzetgyökével nő (mint a LED fénye): ahogy egy áram elfogy,
+      // a pöttyök lelassulnak és elhalványulnak. A tranzisztor bázisáramát százszorosan számítjuk,
+      // hogy a kis vezérlőáram ugyanúgy látsszon, mint az általa nyitott nagy kollektoráram.
+      const ae = fl.f.src === 'B' ? a * 100 : a;
+      const op = Math.min(1, Math.sqrt(ae / 1e-3));
+      const v = op > 0.04 ? Math.sign(I) * Math.min(190, 190 * Math.sqrt(ae / 0.01)) : 0;
       fl.phase += v * dtR;
-      const show = a > 5e-7;
+      const show = op > 0.04;
       const n = fl.dots.length; const sp = fl.L / n;
       for (let k = 0; k < n; k++) {
         const d = fl.dots[k];
         if (!show) { d.setAttribute('opacity', 0); continue; }
         const p = pointAt(fl, fl.phase + k * sp);
-        d.setAttribute('cx', p[0].toFixed(1)); d.setAttribute('cy', p[1].toFixed(1)); d.setAttribute('opacity', 1);
+        d.setAttribute('cx', p[0].toFixed(1)); d.setAttribute('cy', p[1].toFixed(1)); d.setAttribute('opacity', op.toFixed(2));
       }
     }
     for (const it of R.items) {
