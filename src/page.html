@@ -123,6 +123,11 @@ svg.board { display: block; width: 100%; height: auto; min-width: 520px; touch-a
 .meterctl .mlabel { font-weight: 700; font-size: 15px; }
 .meterctl .seg button { min-height: 38px; padding: 4px 10px; }
 .mread { font-variant-numeric: tabular-nums; font-size: 17px; min-width: 7ch; }
+.inside { border: 2px solid var(--accent); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; background: var(--surface); }
+.inside .vh { display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap; }
+.inside .vh b { font-family: var(--font-display); font-size: 19px; }
+.inside .blocks { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 4px; }
+.inside .built { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .miclevel { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; }
 .miclevel i { width: 120px; height: 10px; border-radius: 99px; background: var(--line); overflow: hidden; display: block; }
 .miclevel b { display: block; height: 100%; width: 0; background: var(--spark); }

@@ -49,13 +49,13 @@ Menet: megépítjük egyszerű alkatrészekből → megértjük → mellé tessz
 
 | IC | Egyszerű alkatrészekből | Mennyire |
 |---|---|---|
-| U23 stroboszkóp (Light) | villogó | teljesen |
-| U2 riasztó (300) | sziréna | teljesen |
+| ✅ U23 stroboszkóp (Light) | villogó | teljesen |
+| ✅ U2 riasztó (300) | sziréna | teljesen |
 | U4 erősítő (300) | mikrofon-erősítő | teljesen, gyengébb hangerővel |
 | U22 fényorgona (Light) | hangra villogó LED | jórészt |
 | U24 infravevő (Light) | fénytávíró látható fénnyel | jórészt |
 | U3 űrháború (300) | két rezgőkör keverése | részben |
-| U1 zene / U32 dallam | orgona + emlékező lámpa | elv |
+| ✅ U1 zene (U32 dallam még nincs) | hangszer + emlékező lámpa + késleltetés | elv |
 | U5 rádió (300) | középhullámú rádió | bizonytalan, haladó |
 | D8 színes LED | több LED + villogó | elv |
 
@@ -71,3 +71,9 @@ Menet: megépítjük egyszerű alkatrészekből → megértjük → mellé tessz
 3. G (fekete dobozok) + offline mód
 
 Minden fázis végén: tesztek, böngészős ellenőrzés, commit, push, a GitHub Pages frissül.
+
+## Még hátravan
+- U4 erősítő IC és a diszkrét mikrofon-erősítő (hangosbemondó)
+- U22 fényorgona, U24 infravevő, U3 űrháború, U5 rádió (G fejezet folytatása)
+- Offline működés (telepíthető webapp)
+- A valódi készleten szerzett tapasztalatok alapján a szimuláció finomítása

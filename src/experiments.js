@@ -609,6 +609,120 @@ const EXPS = [
     },
   },
 
+  // ===================== G) A fekete dobozok kinyitása =====================
+  {
+    id: 'u23', chapter: 'G', title: 'Kinyitjuk: U23 stroboszkóp', tag: 'Egy kész villogó egy dobozban',
+    layout: LAY.ic_u23, sim: { dt: 0.001, scale: 1 }, controls: ['S1'],
+    inside: {
+      title: 'Mi van az U23-ban?',
+      blocks: ['Két tranzisztoros villogó (rezgőkör)', 'Kondenzátorok: ezek adják az ütemet', 'Kimeneti tranzisztor: ez kapcsolja a LED-et'],
+      built: ['flash', 'metronome'],
+      text: {
+        k: 'Az U23 belsejében ugyanaz van, mint amit te építettél: egy villogó. Csak kicsiben, egy dobozba zárva.',
+        m: 'A Light kézikönyve szerint az U23 ellenállásokból, kondenzátorokból és tranzisztorokból áll. Ugyanaz a rezgőkör dolgozik benne, mint a te villogódban. A CTL lábon keresztül állíthatod, milyen gyorsan villogjon.',
+        n: 'A gyártó szerint a modul diszkrét alkatrészekből (ellenállás, kondenzátor, tranzisztor) épül fel. A pontos belső rajzát nem ismerjük, de a működése egy villogó (astabil multivibrátor): a CTL-en befolyó áram a kondenzátor töltőáramát állítja, az OUT egy kimeneti tranzisztor, ami a (−) felé kapcsol.',
+      },
+    },
+    variants: [
+      { id: 'fast', label: 'R5 helyett R3 (5,1 kΩ)', real: 'Cseréld a 100 kΩ-os R5-öt (A3–C3) az 5,1 kΩ-os R3-ra. Gyorsabb vagy lassabb lesz a villogás?', apply: (lay) => lay.map((p) => (p.p === 'R5' ? { ...p, p: 'R3' } : p)), needs: ['R3'] },
+    ],
+    intro: {
+      k: 'Ez egy fekete doboz, vagyis IC. Bekötjük, és villog. Mit gondolsz, mi lehet benne?',
+      m: 'Az U23 stroboszkóp IC a Light dobozban van. Bekötjük egy LED-del, és megnézzük, mit csinál. Aztán kinyitjuk, és megnézzük, mi van benne.',
+      n: 'Az U23 lábai: (+) és (−) a táp, OUT a kimenet (a (−) felé kapcsol), CTL a sebességszabályzó bemenet, NC nincs bekötve. A CTL-re kötött ellenállás (itt R5) szabja meg a villogás ütemét.',
+    },
+    guess: {
+      q: { k: 'Mit gondolsz, mi van a dobozban?', m: 'Mi lehet az U23 belsejében, ha villogtatja a LED-et?', n: 'Milyen kapcsolás valósíthatja meg az U23 működését?' },
+      opts: [['Egy villogó, mint amit építettem', 'blink'], ['Egy kis elem', 'on'], ['Varázslat', 'same']], right: 0,
+      after: { k: 'Igen! Egy villogó van benne, mint a tiéd.', m: 'Egy rezgőkör, mint a te villogód, csak parányi alkatrészekből.', n: 'Egy astabil multivibrátor és egy kimeneti kapcsolótranzisztor.' },
+    },
+    hint: {
+      k: 'Kapcsold be, és figyeld a lámpát! Aztán nyomd meg a „Nyisd ki az IC-t” gombot.',
+      m: 'Kapcsold be az S1-et. Nyisd ki az IC-t, és nézd meg, mi van benne. Próbáld ki az R3-mal is.',
+      n: 'Mérd meg a CTL-en befolyó áramot R5-tel és R3-mal. Hogyan függ tőle a villogás üteme?',
+    },
+    why: {
+      k: 'Az IC egy kis doboz, amibe sok apró alkatrészt zártak. Az U23-ban egy villogó van, mint amit te raktál össze. Így már tudod, mi van benne, és nyugodtan használhatod.',
+      m: 'Az IC-ket azért találták ki, hogy ne kelljen mindig mindent elemenként összerakni. Te már megépítetted ugyanezt két tranzisztorból és két kondenzátorból (Villogó). Az U23 ugyanezt tudja, csak kisebb helyen, kevesebb vezetékkel. Nagyobb ellenállással a CTL lábon lassabban villog, kisebbel olyan gyorsan, hogy folyamatos fénynek látszik.',
+      n: 'A modellünkben a villogás frekvenciája arányos a CTL áramával: 100 kΩ-mal kb. 5 Hz (látható villogás), 5,1 kΩ-mal kb. 40 Hz, ami már folyamatos fénynek tűnik. A saját villogódban ugyanezt a bázisellenállás és a kondenzátor szorzata szabta meg (≈ 0,69 · R · C). Ez egy viselkedési modell, a valódi modul számai ettől eltérhetnek.',
+    },
+  },
+  {
+    id: 'u2', chapter: 'G', title: 'Kinyitjuk: U2 riasztó', tag: 'Egy sziréna, kész formában',
+    layout: LAY.ic_u2, sim: { dt: 0.002, scale: 1 }, controls: ['S1', 'sound'], audio: { type: 'ic', ic: 'U2' },
+    inside: {
+      title: 'Mi van az U2-ben?',
+      blocks: ['Hangkeltő rezgőkör (mint a hangszered)', 'Lassú vezérlő: felfelé söpri a hangot (mint a sziréna kondenzátora)', 'Választó: a bemenetek döntik el, melyik hangot adja', 'Kimeneti tranzisztor a hangszóróhoz'],
+      built: ['siren', 'organ', 'and'],
+      text: {
+        k: 'Az U2-ben egy sziréna van, mint amit te építettél. Csak többféle hangot is tud.',
+        m: 'A kézikönyv szerint az U2 egy speciális hangkeltő IC és néhány segédalkatrész. Benne egy rezgőkör szól, amit egy lassabb jel hangol, ahogy a te szirénádban a kondenzátor. A bemenetek (IN1, IN2, IN3) választják ki, melyik hangot adja.',
+        n: 'Belül egy feszültségvezérelt oszcillátor (mint a szirénád), egy lassú vezérlőjel-generátor (söprés, szaggatás) és egy logikai választó: a három bemenet kombinációja dönti el a hangot, ahogy a kódzárban és a VAGY-kapuban a gombok. A kimeneti tranzisztor hajtja a hangszórót.',
+      },
+    },
+    variants: [
+      { id: 'in1', label: 'IN1 is a (+)-ra', real: 'Tegyél egy 3-as vezetéket az A3 és a C3 pont közé (2. szint): így az IN1 is a (+)-ra kerül.', apply: (lay) => lay.concat([{ p: 'W3', at: 'A3', dir: 'd', id: 'Lin1' }]) },
+      { id: 'in3', label: 'IN3 is a (+)-ra', real: 'Tegyél egy 3-as vezetéket az A5 és a C5 pont közé (2. szint): így az IN3 is a (+)-ra kerül.', apply: (lay) => lay.concat([{ p: 'W3', at: 'A5', dir: 'd', id: 'Lin3' }]) },
+    ],
+    intro: {
+      k: 'Ez a piros doboz egy riasztó. Bekötjük, és megszólal. Ismerős lesz a hangja!',
+      m: 'Az U2 riasztó IC a Boffin I 300 dobozban van. Bekötjük a hangszóróval. A bemeneteivel (IN1, IN2, IN3) választhatod ki a hangot.',
+      n: 'Az U2 lábai: IN1, IN2, IN3 vezérlőbemenetek (a (+)-ra kötve aktívak, ezeken kap tápot is), (−) a táp negatív pólusa, OUT a kimenet (a hangszórón át a (+) felé).',
+    },
+    guess: {
+      q: { k: 'Melyik saját kísérletedre fog hasonlítani a hangja?', m: 'Melyik megépített kísérletedhez hasonlít az U2 hangja?', n: 'Melyik saját kapcsolásod valósítja meg az U2 alapműködését?' },
+      opts: [['A szirénára', 'sound'], ['Az éjjeli lámpára', 'on'], ['A kódzárra', 'off']], right: 0,
+      after: { k: 'Igen! Olyan, mint a szirénád.', m: 'Igen, a felfelé söprő hang olyan, mint a te szirénád hangja.', n: 'A söprő hang egy feszültségvezérelt oszcillátor, ahogy a szirénádban.' },
+    },
+    hint: {
+      k: 'Kapcsold be, és kapcsold be a hangot!',
+      m: 'Kapcsold be az S1-et és a hangot. Próbáld ki a lenti változatokat: más bemenetekkel más hangot ad.',
+      n: 'Próbáld végig a bemenet-kombinációkat. Nyisd ki az IC-t, és vesd össze a saját szirénáddal.',
+    },
+    why: {
+      k: 'A riasztó IC belsejében egy sziréna van, mint amit te raktál össze. A gyártó a sok kis alkatrészt egyetlen dobozba tette, hogy könnyebb legyen használni.',
+      m: 'Te már megépítetted a riasztó lelkét: a szirénát. Ott egy kondenzátor lassan töltődött, és közben változott a hang. Az U2-ben ugyanez történik, csak parányi alkatrészekkel, és többféle mintával. A bemenetekkel választasz, mint a kódzárban a gombokkal.',
+      n: 'Az U2 öt hangot ad a bemenetek kombinációitól függően. A modellünkben: IN2 = söprő riasztó, IN1 = gépfegyver, IN3 = tűzoltóautó, IN1+IN2 = lézerpisztoly, IN2+IN3 = mentőautó. Ezek saját közelítések: a valódi IC hangmintáit és pontos hozzárendelését nem ismerjük. A kijelzésen a kimenet átlagos áramát látod, mert a hangfrekvenciás kapcsolgatás túl gyors a valós idejű szimulációhoz.',
+    },
+  },
+  {
+    id: 'u1', chapter: 'G', title: 'Kinyitjuk: U1 zene', tag: 'Hangszer + memória + léptető',
+    layout: LAY.ic_u1, sim: { dt: 0.002, scale: 1 }, controls: ['S1', { press: 'S2', label: 'Újra (TRG)' }, 'sound'], audio: { type: 'ic', ic: 'U1' },
+    inside: {
+      title: 'Mi van az U1-ben?',
+      blocks: ['Hangkeltő rezgőkör: ez szól (mint a hangszered)', 'Memória: a dallam hangjai (sok-sok emlékező lámpa)', 'Léptető (számláló): sorban kiolvassa a hangokat', 'Időzítő: kb. 20 másodperc után leállítja (mint a késleltetett lámpa)'],
+      built: ['organ', 'flipflop', 'delay'],
+      text: {
+        k: 'A zene IC-ben egy hangszer van, mint a tiéd, és egy emlékező rész, ami megjegyzi a dallamot.',
+        m: 'Egy dallamhoz három dolog kell: valami, ami szól (a hangszered), valami, ami megjegyzi a hangokat (sok emlékező lámpa), és valami, ami sorban lépteti őket. Az U1-ben mindhárom benne van, egy speciális hangkeltő IC-ben.',
+        n: 'A dallamot egy csak olvasható memória (ROM) tárolja; egy számláló lépteti a címeket, a kiolvasott adat egy programozható oszcillátor frekvenciáját állítja. Egy ilyen memória bitjeit nem tudjuk elemenként megépíteni (nagyon sok kellene), de az építőköveit igen: rezgőkör (hangszer), 1 bites memória (emlékező lámpa), időzítő (késleltetett lámpa).',
+      },
+    },
+    variants: [
+      { id: 'hld', label: 'HLD a (+)-ra: folyamatos zene', real: 'Tegyél egy 3-as vezetéket az A5 és a C5 pont közé (2. szint): így a HLD a (+)-ra kerül, és a zene nem áll le.', apply: (lay) => lay.concat([{ p: 'W3', at: 'A5', dir: 'd', id: 'Lhld' }]) },
+    ],
+    intro: {
+      k: 'Ez a kék doboz zenél! Bekötjük, és lejátszik egy dallamot. Mi lehet benne?',
+      m: 'Az U1 zene IC a Boffin I 300 dobozban van. Bekapcsoláskor kb. 20 másodpercig zenél. Az S2 gombbal újraindíthatod.',
+      n: 'Az U1 lábai: (+) és (−) a táp, OUT a kimenet, TRG az újraindító bemenet (a (+)-ra érintve újra zenél), HLD a tartó bemenet (a (+)-ra kötve folyamatosan zenél).',
+    },
+    guess: {
+      q: { k: 'Mi kell ahhoz, hogy egy doboz dallamot játsszon?', m: 'Mi kell egy dallam lejátszásához?', n: 'Milyen építőelemekből áll egy dallamlejátszó?' },
+      opts: [['Hangszer és memória a hangoknak', 'sound'], ['Csak egy hangszóró', 'same'], ['Csak egy elem', 'on']], right: 0,
+      after: { k: 'Igen! Kell valami, ami szól, és valami, ami emlékszik a dallamra.', m: 'Kell egy hangszer, egy memória és valami, ami sorban lépteti a hangokat.', n: 'Oszcillátor, memória (ROM) és számláló.' },
+    },
+    hint: {
+      k: 'Kapcsold be, és kapcsold be a hangot! Ha elhallgat, nyomd meg az Újra gombot.',
+      m: 'Kapcsold be az S1-et és a hangot. Kb. 20 másodperc után leáll; az S2-vel újraindíthatod.',
+      n: 'Kösd a HLD-t a (+)-ra (lenti változat), és figyeld, hogy nem áll le. Nyisd ki az IC-t.',
+    },
+    why: {
+      k: 'A zene IC egy nagyon okos doboz. Van benne egy hangszer, mint amit te építettél, és egy nagy-nagy emlékező rész, ami megjegyzi, melyik hang jön.',
+      m: 'Ezt az IC-t már nem tudjuk elemenként megépíteni, mert a dallam megjegyzéséhez rengeteg emlékező lámpa kellene. De minden darabját ismered: a hangszer szól, az emlékező lámpa megjegyez, a késleltetett lámpa pedig egy idő után leállít. Az IC ezeket rakja össze, parányi méretben.',
+      n: 'A modellünk egy saját, rövid dallamot játszik (a valódi U1 dallamát nem ismerjük), kb. 20 s-ig; a HLD a (+)-on folyamatos lejátszást ad, a TRG felfutó éle újraindít. Egy 20 hangos dallam néhány száz bitnyi memóriát igényel, ez több száz flip-flop lenne: ezért éri meg integrált áramkörbe zárni.',
+    },
+  },
+
 ];
 
 
@@ -621,7 +735,7 @@ const CHAPTERS = [
   { id: 'F', title: 'Fény és hang továbbítása', short: 'Továbbítás' },
   { id: 'G', title: 'A fekete dobozok kinyitása', short: 'Fekete dobozok' },
 ];
-const ORDER = ['first', 'conduct', 'series', 'dimmer', 'generator', 'capbat', 'motorspeed', 'night', 'touch', 'water', 'shadow', 'delay', 'flipflop', 'and', 'or', 'not', 'flash', 'metronome', 'sound', 'organ', 'siren', 'clap', 'lightlink'];
+const ORDER = ['first', 'conduct', 'series', 'dimmer', 'generator', 'capbat', 'motorspeed', 'night', 'touch', 'water', 'shadow', 'delay', 'flipflop', 'and', 'or', 'not', 'flash', 'metronome', 'sound', 'organ', 'siren', 'clap', 'lightlink', 'u23', 'u2', 'u1'];
 EXPS.sort((x, y) => ORDER.indexOf(x.id) - ORDER.indexOf(y.id));
 
 // Egy változat alkalmazása: vagy átalakítja az elrendezést, vagy egy másik elrendezésre cseréli.

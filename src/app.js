@@ -36,6 +36,7 @@ const ABOUT = {
   spk: ['Hangszóró', 'Az áram változása megrezegteti a membránját, ebből lesz a hang.'],
   pot: ['Állítható ellenállás', 'Tekerhető ellenállás: a csúszkája egy ellenálláscsíkon mozog. Három lába van: a két vége és a csúszka.'],
   meter: ['Mérőműszer', 'Megmutatja, mennyi áram folyik (0,5 mA vagy 50 mA állás), vagy mekkora a feszültség (5 V állás).'],
+  ic: ['Integrált áramkör (IC)', 'Sok apró alkatrész egyetlen dobozba zárva. A lábain keresztül kötjük be; a belsejét nem látjuk, ezért hívjuk fekete doboznak.'],
   mic: ['Mikrofon', 'Szénmikrofon: a hang összenyomja a belsejét, és ettől megváltozik az ellenállása (csendben kb. 1 kΩ, fújásra kb. 10 kΩ).'],
   motor: ['Motor', 'Az áram forgatja. Fordítva is működik: ha te forgatod, áramot termel.'],
   obj: ['Vizsgált tárgy', 'Ez nincs a dobozban: ide érnek a kábelvégek vagy az ujjad.'],
@@ -129,8 +130,10 @@ const lvOff = (L) => (L > 1 ? -(L - 1) * LOFF : 0);
 const COLORS = {
   wire: '#2E63CF', res: '#F0BF2E', sw: '#3FA453', bat: '#8C96A2', cap: '#2F8F62', lamp: '#9AA3AE', spk: '#C2463E',
   npn: '#D8443B', pnp: '#3FA453', photo: '#2A2F36', ledred: '#E0453F', ledgreen: '#38B26A',
-  pot: '#3FA453', meter: '#2B3138', motor: '#AEB6BF', obj: '#7A8796',
+  pot: '#3FA453', meter: '#2B3138', motor: '#AEB6BF', obj: '#7A8796', mic: '#6B737C',
 };
+const IC_COLOR = { U1: '#4E86E8', U2: '#D8443B', U23: '#D8443B' };
+const IC_INNER = { music: 'hangszer + memória', alarm: 'sziréna + választó', strobe: 'villogó' };
 const JUMPER_COLOR = { red: '#D13B33', black: '#22262B', blue: '#2F6FD6' };
 const MATERIALS = {
   materials: [['semmi (levegő)', 1e12], ['alufólia', 0.1], ['ceruzabél', 300], ['sós víz', 2000], ['csapvíz', 20000], ['a kezed', 3e5], ['papír', 1e12], ['műanyag', 1e12]],
@@ -138,6 +141,7 @@ const MATERIALS = {
 };
 
 function partColor(def) {
+  if (def.kind === 'ic') return IC_COLOR[def.short] || '#666';
   if (def.kind === 'led') return def.color === 'green' ? COLORS.ledgreen : COLORS.ledred;
   return COLORS[def.kind] || '#888';
 }
@@ -198,6 +202,31 @@ function drawPart(parent, pl, level, contacts, opts) {
   }
 
   const col = partColor(def);
+  if (def.kind === 'ic') {
+    const xs = pts.map((q) => q[0]), ys = pts.map((q) => q[1]);
+    const x0 = Math.min(...xs) - 24, x1 = Math.max(...xs) + 24, y0 = Math.min(...ys) - 24, y1 = Math.max(...ys) + 24;
+    const open = !!S.icOpen;
+    svgEl('rect', { x: x0, y: y0, width: x1 - x0, height: y1 - y0, rx: 12, fill: col, 'fill-opacity': open ? 0.18 : 1, stroke: open ? col : 'rgba(0,0,0,.3)', 'stroke-width': open ? 3 : 2, 'stroke-dasharray': open ? '8 5' : '' }, g);
+    const cx = (x0 + x1) / 2;
+    if (!open) {
+      const t = svgEl('text', { x: cx, y: (y0 + y1) / 2 + 2, 'text-anchor': 'middle', 'font-size': 24, 'font-weight': 800, fill: '#fff', 'font-family': 'var(--font-display)' }, g); t.textContent = def.short;
+      const t2 = svgEl('text', { x: cx, y: (y0 + y1) / 2 + 20, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 700, fill: 'rgba(255,255,255,.9)' }, g); t2.textContent = def.name.toUpperCase();
+    } else {
+      // kinyitva: a belső építőkövek vázlata (két tranzisztor és egy kondenzátor) és a felirat
+      const my = (y0 + y1) / 2 - 4;
+      for (const dx of [-30, 30]) svgEl('path', { d: `M${cx + dx - 11},${my - 9} L${cx + dx + 11},${my - 9} L${cx + dx},${my + 9} Z`, fill: '#D8443B', stroke: '#8A2620', 'stroke-width': 1.5, 'stroke-linejoin': 'round' }, g);
+      svgEl('path', { d: `M${cx - 14},${my} L${cx - 4},${my} M${cx - 4},${my - 8} L${cx - 4},${my + 8} M${cx + 4},${my - 8} L${cx + 4},${my + 8} M${cx + 4},${my} L${cx + 14},${my}`, stroke: '#2F8F62', 'stroke-width': 2.4, fill: 'none' }, g);
+      const t = svgEl('text', { x: cx, y: my + 28, 'text-anchor': 'middle', 'font-size': 12, 'font-weight': 800, fill: 'var(--ink)', 'font-family': 'var(--font-display)' }, g); t.textContent = def.short + ': ' + IC_INNER[def.ic];
+    }
+    const act = svgEl('circle', { cx: x1 - 12, cy: y0 + 12, r: 5, fill: 'var(--spark)', opacity: 0 }, g);
+    out.icAct = act;
+    geo.snaps.forEach((q, i) => {
+      svgEl('circle', { cx: pts[i][0], cy: pts[i][1], r: 8, fill: '#D9DEE4', stroke: '#5C6670', 'stroke-width': 1.5 }, g);
+      const l = svgEl('text', { x: pts[i][0], y: pts[i][1] + (q.r === geo.snaps[0].r ? -12 : 21), 'text-anchor': 'middle', 'font-size': 9, 'font-weight': 800, fill: open ? 'var(--ink)' : '#fff' }, g);
+      l.textContent = q.term === 'P' ? '+' : q.term === 'N' ? '−' : q.term;
+    });
+    return out;
+  }
   if (def.kind === 'pot') {
     const ia = geo.snaps.findIndex((s) => s.term === 'a'), ib = geo.snaps.findIndex((s) => s.term === 'b'), iw = geo.snaps.findIndex((s) => s.term === 'w');
     const d = `M${pts[ia][0]},${pts[ia][1]} L${pts[ib][0]},${pts[ib][1]} L${pts[iw][0]},${pts[iw][1]} Z`;
@@ -530,6 +559,7 @@ function frame(ts) {
       if (it.meter) { const fr = live ? S.sim.meterReading(it.id).frac : 0; const an = Math.max(-0.08, Math.min(1.08, fr)) * 110 - 55; it.meter.needle.setAttribute('transform', `rotate(${an.toFixed(1)} 0 4)`); it.meter.needle.setAttribute('stroke', Math.abs(fr) > 1.05 ? '#E0201A' : '#C2413A'); }
       if (it.fan) { const w = live ? S.sim.motor[it.id].w : 0; it.fan.a += Math.sign(w) * Math.min(Math.abs(w), 300) * 0.06 * dtR * 57.3; it.fan.el.setAttribute('transform', `rotate(${(it.fan.a % 360).toFixed(1)})`); it.fan.el.style.opacity = Math.abs(w) > 150 ? 0.55 : 1; }
       if (it.fiber) { const lk = live && S.sim.links[0]; const b = lk && S.sim.fiberOn ? Math.min(1, Math.max(0, S.sim.cur[lk.led] || 0) / 0.01) : 0; it.fiber.core.setAttribute('opacity', (b * 0.95).toFixed(2)); }
+      if (it.icAct) { const st = live && S.sim.ic[it.id]; it.icAct.setAttribute('opacity', st && st.active ? (st.on ? 1 : 0.35) : 0); }
       if (it.objLabel) { const nm = S.ctl.objName[it.id] || '?'; if (it.objLabel.textContent !== nm) it.objLabel.textContent = nm; }
       if (it.capBar) { const vC = live ? S.sim.capV[it.id] || 0 : 0; it.capBar.el.setAttribute('width', (Math.min(1, Math.abs(vC) / 3) * it.capBar.w).toFixed(1)); }
       if (it.isSwitch) {
@@ -619,6 +649,10 @@ async function setSound(on) {
     const src = ac.createBufferSource(); src.buffer = S.audio.buf; src.loop = true;
     const gain = ac.createGain(); src.connect(gain).connect(ac.destination);
     src.start(); S.audio.src = src; S.audio.gain = gain; syncSoundGate();
+  } else if (cfg.type === 'ic') {
+    const osc = ac.createOscillator(); osc.type = 'square';
+    const g = ac.createGain(); g.gain.value = 0; osc.connect(g).connect(ac.destination); osc.start();
+    S.audioNode = { type: 'ic', osc, gain: g };
   } else if (cfg.type === 'clicks') {
     S.audioNode = { type: 'clicks' }; S.lastI = null;
   } else {
@@ -677,6 +711,13 @@ function audioFrame(dtR) {
     sim.capV[cfg.cap] = S.vc;
   }
   const n = S.audioNode; if (!n || !S.soundOn) return;
+  if (n.type === 'ic') {
+    const st = sim.ic[cfg.ic]; const spk = Math.abs(sim.cur.SP || 0) > 0.001;
+    const tt = S.ac.currentTime;
+    if (st && st.f > 0) n.osc.frequency.setTargetAtTime(st.f, tt, 0.004);
+    n.gain.gain.setTargetAtTime(st && st.on && spk ? 0.1 : 0, tt, 0.006);
+    return;
+  }
   if (n.type === 'clicks') { const I = sim.cur[cfg.probe] || 0; if (S.lastI != null && Math.abs(I - S.lastI) > 0.004) playClick(); S.lastI = I; return; }
   const x = n.type === 'siren' ? S.vc : cfg.param === 'light' ? S.light : sim.pot[cfg.id];
   const f = interp(n.tbl, x);
@@ -848,6 +889,7 @@ function updateMeters() {
     if (k === 'meter') { const r = sim.meterReading(e.id); rows.push([e.id + ' (' + E.METER[r.range].label + ')', Math.abs(r.frac) > 1.05 ? 'túlcsordul' : (r.unit === 'V' ? fmtV(r.value) : fmtA(r.value))]); }
     if (k === 'motor') { rows.push([e.id + ' fordulatszáma', Math.round(Math.abs(sim.motor[e.id].w) * 60 / 2 / Math.PI) + ' /perc']); rows.push([e.id + ' árama', fmtA(sim.cur[e.id] || 0)]); }
     if (k === 'pot') { rows.push([e.id + ' csúszka', Math.round(sim.pot[e.id] * 100) + '%']); }
+    if (k === 'ic') { const st = sim.ic[e.id]; rows.push([e.id + ' állapota', st.active ? (st.f ? 'működik, ' + Math.round(st.f) + ' Hz' : 'működik') : 'áll']); }
     if (k === 'mic') { rows.push([e.id + ' ellenállása', (1 + 9 * (sim.mic[e.id] || 0)).toFixed(1).replace('.', ',') + ' kΩ']); }
   }
   rows.push(['idő a szimulációban', (sim.time < 1 ? (sim.time * 1000).toFixed(1).replace('.', ',') + ' ms' : sim.time.toFixed(1).replace('.', ',') + ' s')]);
@@ -898,12 +940,13 @@ function needList(layout) {
     return { p, n, src, missing: left };
   });
 }
-function sortKey(p) { const k = P[p].kind; return ['bat', 'sw', 'res', 'pot', 'led', 'cap', 'npn', 'pnp', 'photo', 'mic', 'lamp', 'spk', 'motor', 'meter', 'jumper', 'wire'].indexOf(k) * 10 + (P[p].n || 0); }
+function sortKey(p) { const k = P[p].kind; return ['bat', 'sw', 'ic', 'res', 'pot', 'led', 'cap', 'npn', 'pnp', 'photo', 'mic', 'lamp', 'spk', 'motor', 'meter', 'jumper', 'wire'].indexOf(k) * 10 + (P[p].n || 0); }
 function miniIcon(p) {
   const def = P[p]; const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 58 34');
   if (def.kind === 'wire') { svgEl('rect', { x: 4, y: 11, width: 50, height: 12, rx: 6, fill: COLORS.wire }, s); const t = svgEl('text', { x: 29, y: 21, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 800, fill: '#fff' }, s); t.textContent = def.n; return s; }
   if (def.kind === 'jumper') { svgEl('path', { d: 'M6,10 C14,34 44,34 52,10', fill: 'none', stroke: JUMPER_COLOR[def.color], 'stroke-width': 4, 'stroke-linecap': 'round' }, s); return s; }
-  if (def.kind === 'npn' || def.kind === 'pnp' || def.kind === 'pot') { svgEl('path', { d: 'M12,9 L46,9 L29,26 Z', fill: partColor(def), stroke: partColor(def), 'stroke-width': 10, 'stroke-linejoin': 'round' }, s); }
+  if (def.kind === 'ic') { svgEl('rect', { x: 3, y: 4, width: 52, height: 26, rx: 6, fill: partColor(def) }, s); }
+  else if (def.kind === 'npn' || def.kind === 'pnp' || def.kind === 'pot') { svgEl('path', { d: 'M12,9 L46,9 L29,26 Z', fill: partColor(def), stroke: partColor(def), 'stroke-width': 10, 'stroke-linejoin': 'round' }, s); }
   else svgEl('rect', { x: 3, y: 6, width: 52, height: 22, rx: 7, fill: partColor(def) }, s);
   const t = svgEl('text', { x: 29, y: def.kind === 'npn' || def.kind === 'pnp' ? 19 : 21, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 800, fill: def.kind === 'res' || def.kind === 'motor' ? '#3B2A00' : '#fff', 'font-family': 'var(--font-display)' }, s); t.textContent = def.short;
   return s;
@@ -930,6 +973,11 @@ function stepText(pl, level, layout) {
     if (ex.controls.some((c) => c && c.touch)) return `Ezt nem kell lerakni: ide fogsz ujjal érinteni. Ha kész az áramkör, érintsd meg egyszerre ${art(a)} és ${art(b)} pont tetejét.`;
     if (ex.controls.some((c) => c && c.set === 'water')) return 'Ezt nem kell lerakni: ez jelöli a poharat. Készíts elő egy poharat; a két átkötő kábel szabad vége kerül majd bele.';
     return 'Ezt nem kell lerakni: ez jelöli a vizsgált tárgyat. Készíts elő néhány dolgot: alufóliát, ceruzát (a hegyét), egy pohár vizet, papírt, egy műanyag tárgyat.';
+  }
+  if (def.kind === 'ic') {
+    const nm = (q) => (q.term === 'P' ? '(+)' : q.term === 'N' ? '(−)' : q.term);
+    const top = geo.snaps.slice(0, 3).map((q) => nm(q) + ' ' + art(pn(q))).join(', '), bot = geo.snaps.slice(3).map((q) => nm(q) + ' ' + art(pn(q))).join(', ');
+    return `Tedd le ${def.short === 'U1' ? 'a kék' : 'a piros'} ${def.name} modult (${def.short}) ${lv}, a felirattal olvashatóan. A felső lábai: ${top}; az alsók: ${bot}.`;
   }
   if (def.kind === 'pot') {
     const a = geo.snaps.find((s2) => s2.term === 'a'), b = geo.snaps.find((s2) => s2.term === 'b'), w = geo.snaps.find((s2) => s2.term === 'w');
@@ -1033,6 +1081,7 @@ function renderPanel() {
   } else if (S.stage >= 3) {
     if (S.stage === 3) {
       body.append(sayBlock(ex.hint[S.age], { auto: true }));
+      if (ex.inside) body.append(insideCard(ex));
       if (ex.variants.length) {
         body.append(el('h3', null, 'Kísérletezz'));
         const vs = el('div', 'vars');
@@ -1051,6 +1100,7 @@ function renderPanel() {
       next('Miért működik?', () => goStage(4));
     } else {
       body.append(sayBlock(ex.why[S.age], { auto: true }));
+      if (ex.inside) body.append(insideCard(ex));
       if (S.age === 'n') {
         body.append(el('h3', null, 'Mérőműszer'));
         meterBox = el('div', 'meter'); body.append(meterBox);
@@ -1066,6 +1116,26 @@ function renderPanel() {
     if (S.age === 'n' && S.stage === 3) { body.append(el('h3', null, 'Mérőműszer')); meterBox = el('div', 'meter'); body.append(meterBox); }
   }
   panel.append(nav);
+}
+
+function insideCard(ex) {
+  const d = el('div', 'inside');
+  const h = el('div', 'vh'); h.append(el('b', null, ex.inside.title));
+  const t = el('button', 'mini', S.icOpen ? 'Csukd be az IC-t' : 'Nyisd ki az IC-t'); t.setAttribute('aria-pressed', String(!!S.icOpen));
+  t.onclick = () => { S.icOpen = !S.icOpen; refreshBoard(); renderPanel(); };
+  h.append(t); d.append(h);
+  if (S.icOpen) {
+    d.append(sayBlock(ex.inside.text[S.age]));
+    const ol = el('ol', 'blocks'); for (const b of ex.inside.blocks) ol.append(el('li', null, b)); d.append(ol);
+    const row = el('div', 'built'); row.append(el('span', 'note', 'Ezeket már megépítetted, nézd meg újra:'));
+    for (const id of ex.inside.built) {
+      const i = EXPS.findIndex((x) => x.id === id); if (i < 0) continue;
+      const b = el('button', 'mini', EXPS[i].chapter + ' · ' + EXPS[i].title); b.onclick = () => { selectExp(i); goStage(3); };
+      row.append(b);
+    }
+    d.append(row);
+  }
+  return d;
 }
 
 function guessIcon(kind) {
@@ -1107,7 +1177,7 @@ function selectExp(i) {
   if (S.soundOn) setSound(false);
   if (S.micStream) setMicInput(false); S.micBlow = false; S.micP = 0;
   S.exp = i; S.step = 0; S.guess = null; S.variants = {}; S.sim = null; S.maxStage = 0; S.audio = null;
-  S.ctl = initCtl(EXPS[i]); S.vc = 0;
+  S.ctl = initCtl(EXPS[i]); S.vc = 0; S.icOpen = false;
   S.light = EXPS[i].light || 0.85;
   store.set('exp', i);
   renderStrip(); goStage(0);

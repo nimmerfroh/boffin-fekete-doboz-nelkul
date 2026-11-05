@@ -342,4 +342,40 @@ L.lightlink = L.fast.concat([
   { p: 'FC', at: 'D4', to: '2:B2' },
 ]);
 
+// ---- 3. fázis: G fejezet, IC-modulok ----
+// Közös keret: felső sín (+) az A sorban, alsó sín (−) az F sorban, elem és kapcsoló a 8. oszlopban.
+const icFrame = [
+  { p: 'W6', at: 'A3', dir: 'r', id: 'Wp' },
+  { p: 'W6', at: 'F3', dir: 'r', id: 'Wn' },
+  { p: 'W2', at: 'C8', dir: 'd', id: 'Ws' },
+];
+const icFrameTop = [
+  { p: 'W3', at: 'A4', dir: 'd', id: 'Lp' },   // az IC középső felső lába a (+)-ra
+  { p: 'W3', at: 'D3', dir: 'd', id: 'Ln' },   // az IC (−) lába az alsó sínre
+  { p: 'S1', at: 'A8', dir: 'd' },
+  { p: 'B1', at: 'D8', dir: 'd' },
+];
+
+// U23 stroboszkóp: CTL-en ellenállás (sebesség), OUT-on LED + R1 a (+) felől.
+L.ic_u23 = icFrame.concat([
+  { p: 'U23', at: 'C3' },
+  { p: 'R1', at: 'B7', dir: 'd' },
+], icFrameTop, [
+  { p: 'R5', at: 'A3', dir: 'd' },
+  { p: 'D1', at: 'D7', dir: 'l' },
+  { p: 'W2', at: 'A7', dir: 'd', id: 'Lr' },
+]);
+
+// U2 riasztó: az IN2 a (+)-ra, hangszóró az OUT és a (+) között.
+L.ic_u2 = icFrame.concat([
+  { p: 'U2', at: 'C3' },
+  { p: 'SP', at: 'B7', dir: 'd' },
+], icFrameTop, [
+  { p: 'W3', at: 'D5', dir: 'r', id: 'Lo' },
+  { p: 'W2', at: 'A7', dir: 'd', id: 'Lsp' },
+]);
+
+// U1 zene: ugyanaz a keret; a (+) láb középen van, ugyanúgy a felső sínre kötve.
+L.ic_u1 = L.ic_u2.map((p) => (p.p === 'U2' ? { ...p, p: 'U1' } : p)).concat([{ p: 'S2', at: 'A3', dir: 'd' }]);  // S2: újraindítás (TRG)
+
 module.exports = L;

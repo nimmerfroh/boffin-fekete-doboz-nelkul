@@ -248,3 +248,26 @@ test('a rezgőkörök 44,1 és 48 kHz-es lépésközzel is maguktól elindulnak'
     assert.ok(edges > 5, `${id} @ ${sr} Hz: ${edges} él`);
   }
 });
+
+// ---------- 3. fázis: G fejezet (IC-modulok) ----------
+test('G. U23: villog, a CTL-ellenállás szabja az ütemet (100 kΩ lassú, 5,1 kΩ gyors)', () => {
+  const rate = (layout) => { const s = new E.Sim(layout); s.switches.S1 = true; let on = false; const ed = []; for (let i = 0; i < 3000; i++) { s.step(0.001); const now = s.cur.D1 > 0.005; if (now && !on) ed.push(s.time); on = now; } return (ed.length - 1) / (ed[ed.length - 1] - ed[0]); };
+  const slow = rate(lay('u23')), fast = rate(lay('u23').map((p) => (p.p === 'R5' ? { ...p, p: 'R3' } : p)));
+  assert.ok(slow > 2 && slow < 10, `lassú: ${slow}`); assert.ok(fast > 25, `gyors: ${fast}`);
+  const off = new E.Sim(lay('u23')); run(off, 0.5, 0.001); assert.ok(Math.abs(off.cur.D1) < 1e-6, 'kikapcsolva nem villoghat');
+});
+
+test('G. U2: az IN2 a (+)-on söprő riasztóhangot ad, más bemenetekkel más hangot', () => {
+  const st = (extra) => { const s = new E.Sim(lay('u2').concat(extra || [])); s.switches.S1 = true; const fs = []; for (let i = 0; i < 700; i++) { s.step(0.002); fs.push(s.ic.U2.f); } return { s, fs }; };
+  const a = st(); assert.equal(a.s.ic.U2.mode, 2); assert.ok(Math.max(...a.fs) - Math.min(...a.fs.filter((f) => f > 0)) > 500, 'söprés');
+  assert.ok(Math.abs(a.s.cur.SP) > 0.01, 'a hangszórón áram folyik');
+  const b = st([{ p: 'W3', at: 'A3', dir: 'd', id: 'Lin1' }]); assert.equal(b.s.ic.U2.mode, 3);
+});
+
+test('G. U1: bekapcsoláskor kb. 20 s-ig zenél, a TRG (S2) újraindítja, a HLD-vel nem áll le', () => {
+  const s = new E.Sim(lay('u1')); s.switches.S1 = true; run(s, 1, 0.002);
+  assert.ok(s.ic.U1.active && s.ic.U1.f > 0);
+  run(s, 20, 0.004); assert.ok(!s.ic.U1.active, '20 s után leáll');
+  s.switches.S2 = true; run(s, 0.1, 0.002); s.switches.S2 = false; run(s, 0.5, 0.002); assert.ok(s.ic.U1.active, 'TRG újraindít');
+  const h = new E.Sim(lay('u1').concat([{ p: 'W3', at: 'A5', dir: 'd', id: 'Lhld' }])); h.switches.S1 = true; run(h, 25, 0.004); assert.ok(h.ic.U1.active, 'HLD-vel folyamatos');
+});
