@@ -160,3 +160,55 @@ test('a fototranzisztoros áramkör hirtelen fényváltozásnál is gyorsan konv
   for (let f = 0; f < 200; f++) { s.light = f % 20 < 10 ? rnd() : (f % 2 ? 0 : 1); for (let i = 0; i < 8; i++) if (!s.step(0.002)) fails++; }
   assert.equal(fails, 0);
 });
+
+// ---------- 2. fázis: D és E fejezet ----------
+const freqOf = (layout, opts, prep, secs) => {
+  const s = new E.Sim(layout, opts); s.switches.S1 = true; if (prep) prep(s);
+  const dt = 1 / 48000; let on = false; const edges = [];
+  for (let i = 0, n = Math.round((secs || 0.03) / dt); i < n; i++) { s.step(dt); const now = Math.abs(s.cur.SP || 0) > 0.01; if (now && !on) edges.push(s.time); on = now; }
+  return edges.length > 3 ? (edges.length - 2) / (edges[edges.length - 1] - edges[1]) : 0;
+};
+
+test('D. emlékező lámpa: a gomb elengedése után is megtartja az állapotot, β = 80…300', () => {
+  for (const bf of [80, 150, 300]) withBeta(bf, () => {
+    const s = new E.Sim(lay('flipflop')); s.switches.S1 = true; run(s, 0.05, 0.001);
+    s.switches.S2b = true; run(s, 0.1, 0.001); s.switches.S2b = false; run(s, 0.3, 0.001);
+    assert.ok(s.cur.D1 > 0.005 && s.cur.D2 < 0.0005, `β=${bf} S2b után: ${s.cur.D1} ${s.cur.D2}`);
+    s.switches.S2a = true; run(s, 0.1, 0.001); s.switches.S2a = false; run(s, 0.3, 0.001);
+    assert.ok(s.cur.D2 > 0.005 && s.cur.D1 < 0.0005, `β=${bf} S2a után: ${s.cur.D1} ${s.cur.D2}`);
+  });
+});
+
+test('D. logikai kapuk igazságtáblája (ÉS, VAGY, NEM), β = 80…300', () => {
+  const led = (id, sw) => { const s = new E.Sim(lay(id)); s.switches.S1 = true; Object.assign(s.switches, sw); run(s, 0.02, 0.001); return s.cur.D1 > 0.005; };
+  for (const bf of [80, 300]) withBeta(bf, () => {
+    for (const [a, b] of [[0, 0], [0, 1], [1, 0], [1, 1]]) {
+      assert.equal(led('and', { S2a: !!a, S2b: !!b }), !!(a && b), `ÉS ${a}${b} β=${bf}`);
+      assert.equal(led('or', { S2a: !!a, S2b: !!b }), !!(a || b), `VAGY ${a}${b} β=${bf}`);
+    }
+    assert.equal(led('not', { S2: false }), true); assert.equal(led('not', { S2: true }), false);
+  });
+});
+
+test('E. metronóm: kb. 0,6 s-onként ismétlődő tik-tak; C5-tel lassabb', () => {
+  const T = period(lay('metronome'), 'SP', 4, 0.0005, 0.004);
+  assert.ok(T > 0.45 && T < 0.8, `T=${T}`);
+  const T2 = period(lay('metronome').map((p) => (p.id === 'C4a' ? { ...p, p: 'C5' } : p)), 'SP', 8, 0.001, 0.004);
+  assert.ok(T2 > 1.8 * T, `C5-tel T=${T2}`);
+});
+
+test('E. hangszer: billentyű nélkül néma, a gombbal hangolható', () => {
+  const o = lay('organ');
+  assert.equal(freqOf(o, { pot: { RV: 0.3 } }), 0);
+  const fs = [0, 0.2, 0.6, 1].map((p) => freqOf(o, { pot: { RV: p } }, (s) => { s.switches.S2 = true; }));
+  for (let i = 1; i < fs.length; i++) assert.ok(fs[i] < fs[i - 1], `nem csökken: ${fs}`);
+  assert.ok(fs[0] > 2000 && fs[3] < 400, `tartomány: ${fs}`);
+});
+
+test('E. sziréna: a hang a vezérlőfeszültséggel emelkedik, 0,7 V alatt néma', () => {
+  const big = lay('siren').map((p) => ((p.id || p.p) === 'C5' ? { ...p, p: 'CBIG', id: 'C5' } : p));
+  const f = (v) => freqOf(big, { capInit: { C5: v } });
+  assert.equal(f(0.6), 0);
+  const fs = [0.8, 1.5, 3].map(f);
+  assert.ok(fs[0] > 300 && fs[1] > fs[0] && fs[2] > fs[1], `f: ${fs}`);
+});

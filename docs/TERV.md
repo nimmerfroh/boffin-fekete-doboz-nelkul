@@ -29,15 +29,15 @@ Minden kísérletre igaz:
 
 ### D) Idő, memória, döntés
 - ✅ Késleltetett lámpa
-- Emlékező lámpa (flip-flop)
-- Kódzár (ÉS-kapu)
-- VAGY- és NEM-kapu
+- ✅ Emlékező lámpa (flip-flop)
+- ✅ Kódzár (ÉS-kapu)
+- ✅ VAGY-kapu (két nyomógomb) és ✅ NEM-kapu (fordító)
 
 ### E) Rezgések és hangok
 - ✅ Villogó, ✅ Hang a villogóból
-- Metronóm
-- Elektronikus orgona
-- Sziréna
+- ✅ Metronóm
+- ✅ Elektronikus orgona
+- ✅ Sziréna
 
 ### F) Fény és hang továbbítása
 - Fénytávíró (villogó LED → fototranzisztor → hangszóró)

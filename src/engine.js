@@ -43,6 +43,7 @@
     M1: { kind: 'motor', name: 'Motor', short: 'M1' },
     M4: { kind: 'motor', name: 'Átlátszó motor', short: 'M4' },
     TP: { kind: 'obj', virtual: true, name: 'Vizsgált tárgy', short: '?' },
+    CBIG: { kind: 'cap', C: 10, virtual: true, name: 'segéd-kondenzátor', short: 'C' },
     SP: { kind: 'spk', R: 8, name: 'Hangszóró', short: 'SP' },
     J1: { kind: 'jumper', name: 'Átkötő kábel (fekete)', short: 'J', color: 'black' },
     J2: { kind: 'jumper', name: 'Átkötő kábel (piros)', short: 'J', color: 'red' },

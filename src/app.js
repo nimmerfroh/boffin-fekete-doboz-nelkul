@@ -470,6 +470,7 @@ function frame(ts) {
     const t0 = performance.now();
     if (dt > 0) for (let i = 0; i < n; i++) { S.sim.step(dt); if (performance.now() - t0 > 12) break; }
     S.wc = S.sim.wireCurrents();
+    audioFrame(dtR);
   }
   if (R) {
     for (const fl of R.flows) {
@@ -512,53 +513,119 @@ function frame(ts) {
   requestAnimationFrame(frame);
 }
 
-// ---------- hang (a hangszórós kísérlethez) ----------
-async function buildAudio() {
-  const lay = currentLayout();
-  if (!lay.some((p) => p.p === 'SP')) return null;
-  if (!S.ac) return null;
-  const sr = S.ac.sampleRate; const dt = 1 / sr;
-  const sim = new E.Sim(lay); sim.switches.S1 = true;
+// ---------- hang ----------
+// Módok: 'loop' – a hangszóró szimulált áramából egy periódus, ismételve;
+// 'clicks' – kattanás a hangszóró áramának ugrásainál (élő szimulációból);
+// 'table' / 'siren' – a frekvencia egy előre kiszimulált táblázatból (gomb állása / vezérlőfeszültség szerint).
+function audioCfg() { return EXPS[S.exp].audio || { type: 'loop', probe: 'SP' }; }
+function ensureAC() {
+  const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
+  if (!S.ac) { try { S.ac = new AC(); } catch (e) { return null; } }
+  if (S.ac.state === 'suspended') S.ac.resume().catch(() => {});
+  return S.ac;
+}
+const tick0 = () => new Promise((r) => setTimeout(r, 0));
+async function buildLoop() {
+  const lay = currentLayout(); const sr = S.ac.sampleRate; const dt = 1 / sr;
+  const sim = new E.Sim(lay, { pot: S.ctl.pot }); sim.switches.S1 = true;
   const total = Math.round(sr * 0.045); const samples = new Float32Array(total);
-  for (let i = 0; i < total; i++) {
-    sim.step(dt); samples[i] = sim.cur.SP || 0;
-    if (i % 600 === 0) await new Promise((r) => setTimeout(r, 0));
-  }
-  const start = Math.round(sr * 0.02);
-  const tail = samples.subarray(start); let m = 0; for (const x of tail) m += x; m /= tail.length;
+  for (let i = 0; i < total; i++) { sim.step(dt); samples[i] = sim.cur.SP || 0; if (i % 600 === 0) await tick0(); }
+  const tail = samples.subarray(Math.round(sr * 0.02)); let m = 0; for (const x of tail) m += x; m /= tail.length;
   const cr = []; for (let i = 1; i < tail.length; i++) if (tail[i - 1] < m && tail[i] >= m) cr.push(i);
   if (cr.length < 3) return null;
-  const a = cr[0], b = cr[cr.length - 1];
-  const len = b - a; let mx = 0; for (let i = a; i < b; i++) mx = Math.max(mx, Math.abs(tail[i] - m));
-  const buf = S.ac.createBuffer(1, len, sr); const ch = buf.getChannelData(0);
-  for (let i = 0; i < len; i++) ch[i] = ((tail[a + i] - m) / (mx || 1)) * 0.5;
-  const freq = sr * (cr.length - 1) / (b - a);
-  return { buf, freq };
+  const a = cr[0], b = cr[cr.length - 1]; let mx = 0; for (let i = a; i < b; i++) mx = Math.max(mx, Math.abs(tail[i] - m));
+  const buf = S.ac.createBuffer(1, b - a, sr); const ch = buf.getChannelData(0);
+  for (let i = 0; i < b - a; i++) ch[i] = ((tail[a + i] - m) / (mx || 1)) * 0.5;
+  return { buf, freq: sr * (cr.length - 1) / (b - a) };
+}
+async function measureFreq(lay, opts, prep) {
+  const sim = new E.Sim(lay, opts); sim.switches.S1 = true; if (prep) prep(sim);
+  const dt = 1 / 48000, n = Math.round(0.03 / dt); let on = false; const edges = [];
+  for (let i = 0; i < n; i++) {
+    sim.step(dt); const now = Math.abs(sim.cur.SP || 0) > 0.01; if (now && !on) edges.push(sim.time); on = now;
+    if (i % 400 === 0) await tick0();
+  }
+  return edges.length > 3 ? (edges.length - 2) / (edges[edges.length - 1] - edges[1]) : 0;
+}
+async function buildTable(cfg) {
+  const lay = currentLayout(); const key = cfg.type + JSON.stringify(lay);
+  S.tables = S.tables || {}; if (S.tables[key]) return S.tables[key];
+  const tbl = [];
+  for (const x of cfg.grid) {
+    let f;
+    if (cfg.type === 'table') f = await measureFreq(lay, { pot: { ...S.ctl.pot, [cfg.id]: x } }, (sim) => { for (const k of cfg.press) sim.switches[k] = true; });
+    else f = await measureFreq(lay.map((p) => ((p.id || p.p) === cfg.cap ? { ...p, p: 'CBIG', id: cfg.cap } : p)), { capInit: { [cfg.cap]: x } });
+    tbl.push([x, f]);
+  }
+  S.tables[key] = tbl; return tbl;
+}
+function interp(tbl, x) {
+  if (x <= tbl[0][0]) return tbl[0][1];
+  for (let i = 1; i < tbl.length; i++) if (x <= tbl[i][0]) { const [x0, y0] = tbl[i - 1], [x1, y1] = tbl[i]; if (!y0 || !y1) return x - x0 < x1 - x ? y0 : y1; return y0 + (y1 - y0) * (x - x0) / (x1 - x0); }
+  return tbl[tbl.length - 1][1];
+}
+function stopAudio() {
+  if (S.audio && S.audio.src) { try { S.audio.src.stop(); } catch (e) { /* már leállt */ } S.audio.src = null; }
+  if (S.audioNode && S.audioNode.osc) { try { S.audioNode.osc.stop(); } catch (e) { /* már leállt */ } }
+  S.audioNode = null;
 }
 async function setSound(on) {
-  S.soundOn = on;
-  if (S.audio && S.audio.src) { try { S.audio.src.stop(); } catch (e) { /* már leállt */ } S.audio.src = null; }
+  S.soundOn = on; stopAudio();
   if (!on) { renderControls(); return; }
-  // a hangkörnyezetet a kattintáson belül, várakozás nélkül indítjuk (a böngészők csak így engedik)
-  const AC = window.AudioContext || window.webkitAudioContext;
-  if (!AC) { S.soundOn = false; renderControls(); return; }
-  if (!S.ac) { try { S.ac = new AC(); } catch (e) { S.soundOn = false; renderControls(); return; } }
-  if (S.ac.state === 'suspended') S.ac.resume().catch(() => {});
-  if (!S.audio || S.audio.key !== JSON.stringify(currentLayout())) {
+  const ac = ensureAC(); if (!ac) { S.soundOn = false; renderControls(); return; }
+  const cfg = audioCfg();
+  if (cfg.type === 'loop') {
+    if (!S.audio || S.audio.key !== JSON.stringify(currentLayout())) {
+      S.audioBusy = true; renderControls();
+      const res = await buildLoop(); S.audioBusy = false;
+      if (!res) { S.soundOn = false; renderControls(); return; }
+      S.audio = { key: JSON.stringify(currentLayout()), ...res };
+    }
+    if (!S.soundOn) return;
+    const src = ac.createBufferSource(); src.buffer = S.audio.buf; src.loop = true;
+    const gain = ac.createGain(); src.connect(gain).connect(ac.destination);
+    src.start(); S.audio.src = src; S.audio.gain = gain; syncSoundGate();
+  } else if (cfg.type === 'clicks') {
+    S.audioNode = { type: 'clicks' }; S.lastI = null;
+  } else {
     S.audioBusy = true; renderControls();
-    const res = await buildAudio();
-    S.audioBusy = false;
-    if (!res) { S.soundOn = false; renderControls(); return; }
-    S.audio = { key: JSON.stringify(currentLayout()), ...res };
+    const tbl = await buildTable(cfg); S.audioBusy = false;
+    if (!S.soundOn) { renderControls(); return; }
+    const osc = ac.createOscillator(); osc.type = 'square';
+    const g = ac.createGain(); g.gain.value = 0; osc.connect(g).connect(ac.destination); osc.start();
+    S.audioNode = { type: cfg.type, osc, gain: g, tbl };
   }
-  if (!S.soundOn) return;
-  const src = S.ac.createBufferSource(); src.buffer = S.audio.buf; src.loop = true;
-  const gain = S.ac.createGain(); gain.gain.value = 0.35; src.connect(gain).connect(S.ac.destination);
-  if (!S.sim || !S.sim.switches.S1) gain.gain.value = 0;
-  src.start(); S.audio.src = src; S.audio.gain = gain;
   renderControls();
 }
 function syncSoundGate() { if (S.audio && S.audio.gain) S.audio.gain.gain.value = S.sim && S.sim.switches.S1 ? 0.35 : 0; }
+function playClick() {
+  const ac = S.ac; if (!ac) return;
+  if (!S.clickBuf) {
+    const n = Math.round(ac.sampleRate * 0.025); S.clickBuf = ac.createBuffer(1, n, ac.sampleRate); const ch = S.clickBuf.getChannelData(0);
+    for (let i = 0; i < n; i++) ch[i] = Math.sin(i / ac.sampleRate * 2 * Math.PI * 1800) * Math.exp(-i / (n / 6)) * 0.6;
+  }
+  const src = ac.createBufferSource(); src.buffer = S.clickBuf; src.connect(ac.destination); src.start();
+}
+// képkockánként: a sziréna vezérlőkondenzátora és a hang követése
+function audioFrame(dtR) {
+  const sim = S.sim; if (!sim) return; const cfg = audioCfg();
+  if (cfg.type === 'siren') {
+    // a C5 egyszerűsített, valós idejű modellje (a teljes kapcsolás hangfrekvencián nem számolható valós időben):
+    // töltés a gombon és az R4-en át, kisülés a bázisellenálláson át (a bázis nagyjából az idő felében vezet)
+    const press = sim.switches.S1 && sim.switches.S2; let v = S.vc || 0;
+    const iIn = press ? (3 - v) / cfg.R : 0; const iOut = v > 0.65 ? (v - 0.65) / cfg.Rb * 0.5 : 0;
+    v += (iIn - iOut) / cfg.C * dtR; S.vc = Math.max(0, Math.min(3, v));
+    sim.capV[cfg.cap] = S.vc;
+  }
+  const n = S.audioNode; if (!n || !S.soundOn) return;
+  if (n.type === 'clicks') { const I = sim.cur[cfg.probe] || 0; if (S.lastI != null && Math.abs(I - S.lastI) > 0.004) playClick(); S.lastI = I; return; }
+  const x = n.type === 'table' ? sim.pot[cfg.id] : S.vc;
+  const f = interp(n.tbl, x);
+  const gate = sim.switches.S1 && f > 0 && (n.type === 'siren' || cfg.press.every((k) => sim.switches[k]));
+  const t = S.ac.currentTime;
+  n.osc.frequency.setTargetAtTime(Math.max(40, f || 40), t, 0.015);
+  n.gain.gain.setTargetAtTime(gate ? 0.1 : 0, t, 0.01);
+}
 
 // ---------- vezérlők a rács alatt ----------
 function renderControls() {
@@ -612,6 +679,16 @@ function renderControls() {
       const up = () => { if (cover.classList.contains('down')) { S.light = keep; inp.value = keep; cover.classList.remove('down'); } };
       cover.addEventListener('pointerdown', down); cover.addEventListener('pointerup', up); cover.addEventListener('pointerleave', up); cover.addEventListener('pointercancel', up);
       box.append(cover);
+    } else if (typeof c === 'object' && c.press) {
+      const b = document.createElement('button'); b.className = 'ctrl hold';
+      b.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="12" cy="12" r="3.5" fill="currentColor"/></svg> <span></span>';
+      b.querySelector('span').textContent = c.label || c.press;
+      const down = (e) => { e.preventDefault(); S.sim.switches[c.press] = true; b.classList.add('down'); };
+      const up = () => { if (S.sim) S.sim.switches[c.press] = false; b.classList.remove('down'); };
+      b.addEventListener('pointerdown', down); b.addEventListener('pointerup', up); b.addEventListener('pointerleave', up); b.addEventListener('pointercancel', up);
+      b.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') down(e); });
+      b.addEventListener('keyup', up);
+      box.append(b);
     } else if (typeof c === 'object' && c.pot) {
       const w = document.createElement('div'); w.className = 'lightctl';
       const id = 'pot-' + c.pot;
@@ -945,7 +1022,7 @@ function markDone() { S.done[EXPS[S.exp].id] = true; store.set('done', S.done); 
 function selectExp(i) {
   if (S.soundOn) setSound(false);
   S.exp = i; S.step = 0; S.guess = null; S.variants = {}; S.sim = null; S.maxStage = 0; S.audio = null;
-  S.ctl = initCtl(EXPS[i]);
+  S.ctl = initCtl(EXPS[i]); S.vc = 0;
   S.light = EXPS[i].light || 0.85;
   store.set('exp', i);
   renderStrip(); goStage(0);

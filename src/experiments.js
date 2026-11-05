@@ -13,7 +13,7 @@ const flipPart = (id) => (lay) => lay.map((p) => {
   return { ...p, at: E.ROWS[r + 2 * dr] + (c + 2 * dc), dir: opp };
 });
 
-const SOUND_LAYOUT = LAY.flash.map((p) => (p.p === 'C4' ? { ...p, p: 'C2' } : p.p === 'D2' ? { ...p, p: 'SP', id: 'SP' } : p));
+const SOUND_LAYOUT = LAY.sound;
 
 const EXPS = [
   {
@@ -343,6 +343,190 @@ const EXPS = [
     },
   },
 
+  // ===================== D) Idő, memória, döntés =====================
+  {
+    id: 'flipflop', chapter: 'D', title: 'Emlékező lámpa', tag: 'Megjegyzi, melyik gombot nyomtad',
+    layout: LAY.flipflop, sim: { dt: 0.002, scale: 1 }, controls: ['S1', { press: 'S2a', label: 'S2a gomb' }, { press: 'S2b', label: 'S2b gomb' }],
+    intro: {
+      k: 'Két lámpa és két gomb. Megnyomod az egyiket, és az áramkör megjegyzi, akkor is, ha elengedted!',
+      m: 'Két tranzisztor egymást tartja be- és kikapcsolva. A gombokkal átbillented őket, és ott is maradnak: az áramkör emlékszik.',
+      n: 'Bistabil multivibrátor (RS flip-flop): két keresztbe csatolt NPN tranzisztor. A gombok a bázisokat földelik (beállítás és törlés).',
+    },
+    guess: {
+      q: { k: 'Megnyomod és elengeded a gombot. A lámpa marad, vagy visszaugrik?', m: 'Megnyomod, majd elengeded az S2b-t. Mi lesz a LED-ekkel elengedés után?', n: 'Mi tartja meg az állapotot a gomb elengedése után?' },
+      opts: [['Úgy marad', 'on'], ['Visszaugrik', 'off']], right: 0,
+      after: { k: 'Igen! Megjegyzi. Ez egy pici memória.', m: 'Úgy marad: a két tranzisztor egymást tartja abban az állapotban. Ez egy 1 bites memória.', n: 'A visszacsatolás: a bekapcsolt tranzisztor alacsonyan tartja a másik bázisát, a kikapcsolt a magas kollektorfeszültségével nyitva tartja a párját.' },
+    },
+    variants: [],
+    hint: {
+      k: 'Kapcsold be, aztán nyomd meg az egyik gombot, majd a másikat!',
+      m: 'Kapcsold be az S1-et. Nyomd meg felváltva az S2a-t és az S2b-t, és figyeld, melyik LED ég elengedés után.',
+      n: 'Figyeld a két bázisáramot: mindig csak az egyik tranzisztor vezet. A halványan derengő LED áramát a másik tranzisztor bázisárama adja.',
+    },
+    why: {
+      k: 'A két tranzisztor olyan, mint két gyerek egy libikókán: ha az egyik lent van, a másik fent marad. A gomb átbillenti őket, és úgy is maradnak.',
+      m: 'Amelyik tranzisztor be van kapcsolva, az lehúzza a másik bázisát, így az kikapcsolva marad. A kikapcsolt tranzisztor pedig áramot ad a párjának, hogy az bekapcsolva maradjon. Ezért marad meg az állapot. A számítógép memóriájában milliárdnyi ilyen kis „libikóka” van.',
+      n: 'A kikapcsolt oldal LED-jén csak a másik tranzisztor bázisárama folyik (kb. 0,1 mA), ezért dereng halványan. Ez egy statikus memóriacella (SRAM) alapja: két keresztbe kötött fordító. A számítógépek gyorsítótára így tárol biteket.',
+    },
+  },
+  {
+    id: 'and', chapter: 'D', title: 'Kódzár (ÉS-kapu)', tag: 'Csak két gombbal együtt nyílik',
+    layout: LAY.and, sim: { dt: 0.002, scale: 1 }, controls: ['S1', { press: 'S2a', label: 'S2a gomb' }, { press: 'S2b', label: 'S2b gomb' }],
+    intro: {
+      k: 'Ez egy titkos zár. A lámpa csak akkor gyullad ki, ha mindkét gombot egyszerre nyomod.',
+      m: 'Két tranzisztor egymás alatt van, mint két ajtó egymás után. Az áram csak akkor jut át, ha mindkét ajtó nyitva van.',
+      n: 'ÉS-kapu két sorba kötött NPN tranzisztorral: a kimenet (LED) csak akkor aktív, ha mindkét bemenet (gomb) aktív.',
+    },
+    guess: {
+      q: { k: 'Ha csak az egyik gombot nyomod, kigyullad a lámpa?', m: 'Kigyullad a LED, ha csak az S2a-t nyomod?', n: 'Mi az ÉS-kapu kimenete, ha csak az egyik bemenet aktív?' },
+      opts: [['Nem, mindkettő kell', 'off'], ['Igen', 'on']], right: 0,
+      after: { k: 'Igen! Mindkét gomb kell, ez a titkos kód.', m: 'Mindkét tranzisztornak vezetnie kell, különben az áram útja megszakad.', n: '0 ÉS 1 = 0: a soros kapcsolásban bármelyik lezárt tranzisztor megszakítja az áramot.' },
+    },
+    variants: [],
+    hint: {
+      k: 'Kapcsold be. Nyomd az egyik gombot, aztán a másikat, aztán mindkettőt egyszerre!',
+      m: 'Próbáld ki mind a négy esetet: egyik sem, csak az egyik, csak a másik, mindkettő.',
+      n: 'Írd fel az igazságtáblát a négy esetre.',
+    },
+    why: {
+      k: 'Az áramnak két kapun kell átmennie egymás után. Mindkét kaput a saját gombja nyitja. Ha az egyik zárva van, az áram nem jut át.',
+      m: 'Ez az ÉS-kapu: „ez ÉS az is kell”. A számítógép ilyen kapukból dönt. Egy liftajtó is csak akkor indul, ha be van csukva ÉS megnyomták a gombot.',
+      n: 'Igazságtábla: 00→0, 01→0, 10→0, 11→1. A valódi logikai áramkörökben ugyanígy tranzisztorok sorba kötésével építik (CMOS NAND-kapu). Ezekből a kapukból bármilyen számolás összerakható.',
+    },
+  },
+  {
+    id: 'or', chapter: 'D', title: 'Bármelyik gomb (VAGY-kapu)', tag: 'Egyik vagy másik, mindegy',
+    layout: LAY.or, sim: { dt: 0.002, scale: 1 }, controls: [{ press: 'S2a', label: 'S2a gomb' }, { press: 'S2b', label: 'S2b gomb' }],
+    intro: {
+      k: 'Két csengőgomb, mint egy ház két ajtaján. Bármelyiket nyomod, a lámpa kigyullad.',
+      m: 'A két nyomógomb egymás mellett van. Az áram bármelyiken át tud menni.',
+      n: 'VAGY-kapu: két párhuzamos kapcsoló. A kimenet akkor aktív, ha legalább az egyik bemenet aktív.',
+    },
+    guess: {
+      q: { k: 'Ha csak az egyik gombot nyomod, kigyullad a lámpa?', m: 'Kigyullad a LED, ha csak az egyik gombot nyomod?', n: 'Mi a VAGY-kapu kimenete, ha csak az egyik bemenet aktív?' },
+      opts: [['Igen, bármelyik elég', 'on'], ['Nem, mindkettő kell', 'off']], right: 0,
+      after: { k: 'Igen! Bármelyik gomb elég.', m: 'A két gomb két külön utat ad az áramnak. Elég, ha az egyik nyitva van.', n: '0 VAGY 1 = 1: a párhuzamos ágak közül egy is elég a kör zárásához.' },
+    },
+    variants: [],
+    hint: {
+      k: 'Nyomd az egyik gombot, aztán a másikat!',
+      m: 'Próbáld ki mind a négy esetet, és hasonlítsd össze a kódzárral.',
+      n: 'Írd fel az igazságtáblát, és vesd össze az ÉS-kapuéval.',
+    },
+    why: {
+      k: 'Az áram két úton is mehet. Ha bármelyik gombot megnyomod, kinyílik egy út, és a lámpa kigyullad.',
+      m: 'Ez a VAGY-kapu: „ez VAGY az elég”. Egy autóban a belső világítás akkor gyullad fel, ha bármelyik ajtót kinyitod.',
+      n: 'Igazságtábla: 00→0, 01→1, 10→1, 11→1. Itt kapcsolókkal építettük; tranzisztorral két párhuzamos tranzisztor adja ugyanezt. Az ÉS, a VAGY és a NEM együtt bármilyen logikai függvényt meg tud valósítani.',
+    },
+  },
+  {
+    id: 'not', chapter: 'D', title: 'Fordító (NEM-kapu)', tag: 'Megnyomod, és kialszik',
+    layout: LAY.not, sim: { dt: 0.002, scale: 1 }, controls: ['S1', { press: 'S2', label: 'S2 gomb' }],
+    intro: {
+      k: 'Fordított lámpa: magától ég, és ha megnyomod a gombot, kialszik.',
+      m: 'A tranzisztor a LED mellett van. Ha a gombbal bekapcsolod, az áram a tranzisztoron megy át a LED helyett, és a LED kialszik.',
+      n: 'NEM-kapu (inverter): a tranzisztor a LED-del párhuzamosan van kötve, és bekapcsolva rövidre zárja. Gomb lenyomva → LED ki; gomb felengedve → LED be.',
+    },
+    guess: {
+      q: { k: 'Ha megnyomod a gombot, mi lesz a lámpával?', m: 'Mi történik a LED-del, ha megnyomod az S2-t?', n: 'Mi a NEM-kapu kimenete aktív bemenetnél?' },
+      opts: [['Kialszik', 'off'], ['Kigyullad', 'on']], right: 0,
+      after: { k: 'Igen! Ez a fordított lámpa.', m: 'A bekapcsolt tranzisztor „rövidzár” a LED mellett: az áram azon megy, nem a LED-en.', n: 'NEM 1 = 0: a telített tranzisztoron kb. 0,1 V esik, ez kevés a LED nyitásához.' },
+    },
+    variants: [],
+    hint: {
+      k: 'Kapcsold be, aztán nyomd meg a gombot!',
+      m: 'Kapcsold be az S1-et, és nyomogasd az S2-t. Figyeld, merre mennek a sárga pöttyök gombnyomásra.',
+      n: 'Nézd a kollektoráramot gombnyomásra: kb. 29 mA, mert most csak az R1 korlátozza.',
+    },
+    why: {
+      k: 'A tranzisztor egy rövidebb út az áramnak. Ha kinyitod a gombbal, az áram inkább arra megy, és a lámpának nem jut.',
+      m: 'Ez a NEM-kapu: mindig az ellenkezőjét csinálja annak, amit a bemenet mond. A számítógépben ez a legegyszerűbb építőkocka. Két ilyen fordító egymásba kötve az emlékező lámpát adja.',
+      n: 'Bemenet 0 → kimenet 1, bemenet 1 → kimenet 0. Az emlékező lámpa (flip-flop) két keresztbe kötött NEM-kapu. Ha két gombot párhuzamosan kötünk a bázisra, NEM-VAGY (NOR) kapu lesz belőle; a NOR egymagában is univerzális: bármelyik logikai áramkör felépíthető belőle.',
+    },
+  },
+
+  // ===================== E) Rezgések és hangok (új) =====================
+  {
+    id: 'metronome', chapter: 'E', title: 'Metronóm', tag: 'Kattog, mint egy óra',
+    layout: LAY.metronome, sim: { dt: 0.0005, scale: 1 }, controls: ['S1', 'sound'], audio: { type: 'clicks', probe: 'SP' },
+    intro: {
+      k: 'Ugyanaz a villogó, de az egyik lámpa helyén hangszóró van. Minden villanásnál kattan egyet.',
+      m: 'A villogó egyik LED-jét hangszóróra cseréljük. Ahányszor a tranzisztor ki- vagy bekapcsol, a hangszóró kattan.',
+      n: 'Astabil multivibrátor hangszóróval: a kollektoráram ugrásai kattanásként hallatszanak. A ritmus kb. 0,6 s-onként ismétlődik (tik–tak: kb. 0,4 s és 0,2 s).',
+    },
+    guess: {
+      q: { k: 'Mit fogsz hallani?', m: 'Mit ad ki a hangszóró, ha a villogóba kötöd?', n: 'Mit hallasz, ha a hangszóró egy lassú, kb. 1,7 Hz-es négyszögjelet kap?' },
+      opts: [['Kattogást', 'sound'], ['Folyamatos sípolást', 'same'], ['Semmit', 'off']], right: 0,
+      after: { k: 'Igen! Tik-tak, tik-tak.', m: 'Kattogást: a hangszóró membránja minden kapcsolásnál egyet ugrik.', n: 'Kattanásokat: a hangszóró csak az áram változására reagál, az állandó áramra nem.' },
+    },
+    variants: [
+      { id: 'c5', label: 'Az egyik C4 helyett C5 (470 µF)', real: 'Cseréld a középső 100 µF-os kondenzátort (a D5–D7 közöttit) a 470 µF-os C5-re. A + jel a D5 felé nézzen.', apply: (lay) => lay.map((p) => (p.id === 'C4a' ? { ...p, p: 'C5' } : p)), needs: ['C5'] },
+    ],
+    hint: {
+      k: 'Kapcsold be, és nyomd meg a Hang gombot!',
+      m: 'Kapcsold be az S1-et és a hangot. Figyeld: a kattanás akkor jön, amikor a LED ki- vagy bekapcsol.',
+      n: 'Figyeld meg, hogy a kattanás a hangszóró áramának ugrásakor szól. A C5-ös változattal lassíthatod.',
+    },
+    why: {
+      k: 'A hangszóró csak akkor szól, ha változik rajta az áram. A villogó mindig kapcsolgat, ezért a hangszóró minden kapcsolásnál kattan egyet.',
+      m: 'A hangszóróban egy mágnes és egy tekercs mozgatja a membránt. Ha az áram hirtelen bekapcsol vagy kikapcsol, a membrán egyet ugrik: ez a kattanás. A zenészek metronómja is ilyen egyenletes kattogással segít tartani a ritmust.',
+      n: 'Minden átbillenésnél egy kattanás: periódusonként kettő. A szimulációban a hangszórós oldal kb. 0,4 s-ig vezet, a LED-es kb. 0,2 s-ig: a hangszórón kisebb a feszültségesés, mint a LED-en, ezért nagyobb a kollektor feszültséglépése, és lassabban billen vissza. C5-tel az egyik szakasz kb. 1 s-ra nyúlik. Ha mindkét oldalon nagyobb lenne a kondenzátor, egyenletesen lassulna.',
+    },
+  },
+  {
+    id: 'organ', chapter: 'E', title: 'Elektronikus hangszer', tag: 'Gombbal szól, tekerővel hangolod',
+    layout: LAY.organ, sim: { dt: 0.000005, scale: 1 / 1000, pot: { RV: 0.3 } }, slow: 1000,
+    controls: ['S1', { press: 'S2', label: 'Billentyű (S2)' }, { pot: 'RV', label: 'Hangmagasság (RV)', invert: true }, 'sound'],
+    audio: { type: 'table', probe: 'SP', param: 'pot', id: 'RV', press: ['S2'], grid: [0, 0.04, 0.1, 0.2, 0.35, 0.55, 0.8, 1] },
+    intro: {
+      k: 'Ez egy hangszer! Nyomd a gombot, és szól. A tekerővel magasabb vagy mélyebb lesz.',
+      m: 'A hangos villogó egyik ellenállása helyén egy billentyű (S2) és egy állítható ellenállás (RV) van. A billentyű indítja a rezgést, az RV a sebességét, vagyis a hangmagasságot állítja.',
+      n: 'Astabil multivibrátor, amelynek egyik bázisellenállása R2 + RV (1–51 kΩ), és egy nyomógombon át kap tápot. Gomb nélkül az egyik tranzisztor nem kap bázisáramot, a rezgés leáll.',
+    },
+    guess: {
+      q: { k: 'Ha tekered a tekerőt, mi lesz a hanggal?', m: 'Mi történik a hanggal, ha nagyobbra állítod az RV ellenállását?', n: 'Hogyan függ a frekvencia az RV ellenállásától?' },
+      opts: [['Mélyebb lesz', 'slow'], ['Magasabb lesz', 'sound'], ['Nem változik', 'same']], right: 0,
+      after: { k: 'Igen! Nagyobb fékezés, lassabb rezgés, mélyebb hang.', m: 'Nagyobb ellenálláson lassabban töltődik a kondenzátor, lassabb a rezgés: mélyebb a hang.', n: 'A félperiódus ≈ 0,69 · R · C, tehát nagyobb R → hosszabb periódus → kisebb frekvencia.' },
+    },
+    variants: [],
+    hint: {
+      k: 'Kapcsold be a hangot, aztán nyomd a billentyűt, és közben tekerd a hangmagasságot!',
+      m: 'Kapcsold be az S1-et és a hangot. Tartsd nyomva a billentyűt, és tekerd az RV-t. Tudsz dallamot játszani?',
+      n: 'Keresd meg a legmélyebb és a legmagasabb hangot. A kijelzés 1000× lassított.',
+    },
+    why: {
+      k: 'A hang nagyon gyors rezgés. A tekerő azt állítja, milyen gyorsan rezeg: gyors rezgés magas hang, lassú rezgés mély hang.',
+      m: 'A hangmagasságot az adja meg, hányszor rezeg másodpercenként a hangszóró. A tekerő a kondenzátor töltődését lassítja vagy gyorsítja. A billentyű nélkül az egyik tranzisztor nem kap áramot, ezért csend van, mint egy zongorán, ha nem ütsz le billentyűt.',
+      n: 'A szimuláció szerint kb. 240 Hz és 3,2 kHz között hangolható. A frekvencia nem arányos a gomb állásával, mert a másik oldal félperiódusa állandó (0,69 · 5,1 kΩ · 0,1 µF ≈ 0,35 ms). Az első elektronikus hangszerek (pl. a theremin) is ilyen oszcillátorokkal működtek.',
+    },
+  },
+  {
+    id: 'siren', chapter: 'E', title: 'Sziréna', tag: 'Felfelé és lefelé csúszó hang',
+    layout: LAY.siren, sim: { dt: 0.000005, scale: 1 / 1000 }, slow: 1000, controls: ['S1', { press: 'S2', label: 'Sziréna gomb (S2)' }, 'sound'],
+    audio: { type: 'siren', probe: 'SP', cap: 'C5', R: 10000, Rb: 5100, C: 470e-6, grid: [0.7, 0.75, 0.85, 1, 1.25, 1.6, 2, 2.5, 3] },
+    intro: {
+      k: 'Tartsd nyomva a gombot: a hang egyre magasabb. Engedd el: lassan lecsúszik és elhallgat. Mint egy mentőautó!',
+      m: 'A hangos villogó egyik oldala nem közvetlenül az elemről kap áramot, hanem egy nagy kondenzátorról (C5). A gomb lassan feltölti, elengedve lassan kiürül, és közben változik a hang.',
+      n: 'Az astabil multivibrátor egyik bázisellenállását egy RC-tag (R4 = 10 kΩ, C5 = 470 µF) feszültsége táplálja: a vezérlőfeszültség változásával változik a frekvencia (feszültségvezérelt oszcillátor).',
+    },
+    guess: {
+      q: { k: 'Ha nyomva tartod a gombot, mi lesz a hanggal?', m: 'Mi történik a hanggal, amíg nyomva tartod az S2-t?', n: 'Hogyan változik a frekvencia a C5 töltődése közben?' },
+      opts: [['Egyre magasabb', 'sound'], ['Egyre mélyebb', 'slow'], ['Ugyanolyan marad', 'same']], right: 0,
+      after: { k: 'Igen! Felfelé csúszik, mint a sziréna.', m: 'Ahogy a kondenzátor töltődik, a tranzisztor egyre gyorsabban kap áramot, és egyre gyorsabban rezeg.', n: 'Nagyobb vezérlőfeszültségnél gyorsabban töltődik a bázisoldali kondenzátor, rövidebb a félperiódus, nő a frekvencia.' },
+    },
+    variants: [],
+    hint: {
+      k: 'Kapcsold be a hangot, aztán tartsd nyomva a gombot pár másodpercig, majd engedd el!',
+      m: 'Kapcsold be az S1-et és a hangot. Tartsd nyomva az S2-t, figyeld a C5 sárga csíkját, aztán engedd el.',
+      n: 'Figyeld a C5 feszültségét a mérőn: kb. 0,7 V alatt elhallgat. A kijelzés 1000× lassított.',
+    },
+    why: {
+      k: 'A nagy kondenzátor egy lassan teli- és kiürülő vödör. Minél telibb, annál gyorsabban rezeg a villogó, és annál magasabb a hang.',
+      m: 'A villogó sebessége attól függ, milyen erősen kap áramot az egyik tranzisztor. Ezt az áramot most egy lassan töltődő kondenzátor adja. Töltődéskor nő a hang, kisüléskor csökken. A dobozban lévő riasztó IC (U2) is ilyen, egymást vezérlő rezgőkörökkel szól.',
+      n: 'A szimuláció szerint kb. 0,8 V-on 630 Hz, 3 V-on kb. 1450 Hz, 0,7 V alatt a rezgés leáll. Töltéskor τ ≈ R4 · C5 ≈ 4,7 s (a bázisáram miatt valamivel gyorsabban áll be). Ez egy feszültségvezérelt oszcillátor (VCO), a szintetizátorok és a rádiók egyik alapeleme. A hang a szimulációból kiszámolt frekvencia–feszültség táblázatból és a C5 egyszerűsített töltődési modelljéből készül.',
+    },
+  },
+
 ];
 
 
@@ -355,7 +539,7 @@ const CHAPTERS = [
   { id: 'F', title: 'Fény és hang továbbítása', short: 'Továbbítás' },
   { id: 'G', title: 'A fekete dobozok kinyitása', short: 'Fekete dobozok' },
 ];
-const ORDER = ['first', 'conduct', 'series', 'dimmer', 'generator', 'capbat', 'motorspeed', 'night', 'touch', 'water', 'delay', 'flash', 'sound'];
+const ORDER = ['first', 'conduct', 'series', 'dimmer', 'generator', 'capbat', 'motorspeed', 'night', 'touch', 'water', 'delay', 'flipflop', 'and', 'or', 'not', 'flash', 'metronome', 'sound', 'organ', 'siren'];
 EXPS.sort((x, y) => ORDER.indexOf(x.id) - ORDER.indexOf(y.id));
 
 // Egy változat alkalmazása: vagy átalakítja az elrendezést, vagy egy másik elrendezésre cseréli.

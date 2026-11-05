@@ -201,4 +201,114 @@ L.water = L.touch.filter((p) => p.p !== 'TP').concat([
   { p: 'J1', at: 'E3', to: 'G1' },
 ]);
 
+// ---- 2. fázis: D fejezet ----
+
+// Emlékező lámpa (flip-flop): a villogó elrendezése, a két kondenzátor helyén ellenállással;
+// az S2a / S2b a bázisokat földeli.
+L.flipflop = L.flash
+  .filter((p) => p.id !== 'R3a' && p.id !== 'R3b')
+  .map((p) => (p.id === 'C4a' ? { ...p, p: 'R3', id: 'Rx1' } : p.id === 'C4b' ? { ...p, p: 'R3', id: 'Rx2' } : p))
+  .concat([
+    { p: 'W1', at: 'C1', id: 'Wg1' },
+    { p: 'W1', at: 'C5', id: 'Wg2' },
+    { p: 'S2', at: 'C3', dir: 'l', id: 'S2a' },
+    { p: 'S2', at: 'C7', dir: 'l', id: 'S2b' },
+    { p: 'J4', at: 'C1', to: 'G4', id: 'J4a' },
+    { p: 'J4', at: 'C5', to: 'G5', id: 'J4b' },
+  ]);
+
+// Kódzár (ÉS-kapu): két tranzisztor egymás alatt; mindkét gombot nyomni kell.
+L.and = [
+  { p: 'W7', at: 'A3', dir: 'r', id: 'Wp' },
+  { p: 'W2', at: 'G8', dir: 'r', id: 'Wn' },
+  { p: 'W3', at: 'C9', dir: 'd', id: 'Ws' },
+  { p: 'Q2', at: 'E7', dir: 'd', id: 'Q2b' },
+  { p: 'D1', at: 'C5', dir: 'r' },
+  { p: 'S2', at: 'D4', dir: 'r', id: 'S2a' },
+  { p: 'R3', at: 'F2', dir: 'r', id: 'R3b' },
+  { p: 'W1', at: 'D2', id: 'Wsp' },
+  { p: 'R1', at: 'A5', dir: 'd' },
+  { p: 'Q2', at: 'C7', dir: 'd', id: 'Q2a' },
+  { p: 'R3', at: 'D4', dir: 'l', id: 'R3a' },
+  { p: 'S2', at: 'F6', dir: 'l', id: 'S2b' },
+  { p: 'W2', at: 'G7', dir: 'r', id: 'Ln' },
+  { p: 'S1', at: 'A9', dir: 'd' },
+  { p: 'B1', at: 'E9', dir: 'd' },
+  { p: 'J1', at: 'D2', to: 'A3' },
+  { p: 'J2', at: 'F2', to: 'A4' },
+];
+
+// Bármelyik gomb (VAGY-kapu): két nyomógomb egymás mellett.
+L.or = [
+  { p: 'W5', at: 'B4', dir: 'r' },
+  { p: 'W3', at: 'B2', dir: 'd' },
+  { p: 'W2', at: 'D4', dir: 'r', id: 'W2a' },
+  { p: 'W2', at: 'D7', dir: 'r', id: 'W2b' },
+  { p: 'S2', at: 'C3', dir: 'r', id: 'S2b' },
+  { p: 'S2', at: 'B4', dir: 'l', id: 'S2a' },
+  { p: 'R1', at: 'D2', dir: 'r' },
+  { p: 'D1', at: 'D5', dir: 'r' },
+  { p: 'B1', at: 'B8', dir: 'd' },
+  { p: 'W2', at: 'C2', dir: 'r', id: 'La' },
+  { p: 'W2', at: 'B5', dir: 'd', id: 'Lb' },
+];
+
+// Fordító (NEM-kapu): a tranzisztor a LED-del párhuzamosan; gombnyomásra elvezeti az áramot.
+L.not = [
+  { p: 'W5', at: 'B4', dir: 'r' },
+  { p: 'W3', at: 'B2', dir: 'd' },
+  { p: 'W2', at: 'D4', dir: 'r', id: 'W2a' },
+  { p: 'W2', at: 'D7', dir: 'r', id: 'W2b' },
+  { p: 'Q2', at: 'E6', dir: 'd' },
+  { p: 'S2', at: 'F1', dir: 'r' },
+  { p: 'S1', at: 'B4', dir: 'l' },
+  { p: 'R1', at: 'D2', dir: 'r' },
+  { p: 'D1', at: 'D5', dir: 'r' },
+  { p: 'B1', at: 'B8', dir: 'd' },
+  { p: 'R3', at: 'F5', dir: 'l' },
+  { p: 'J1', at: 'F1', to: 'B5' },
+  { p: 'J2', at: 'E6', to: 'D4' },
+  { p: 'J4', at: 'G6', to: 'D8' },
+];
+
+// ---- 2. fázis: E fejezet ----
+
+// Hang a villogóból: a villogó 0,1 µF-os kondenzátorokkal, a jobb LED helyén hangszóró.
+L.sound = L.flash.map((p) => (p.p === 'C4' ? { ...p, p: 'C2' } : p.p === 'D2' ? { ...p, p: 'SP', id: 'SP' } : p));
+
+// Metronóm: a villogó, a jobb LED helyén hangszóróval (minden átbillenéskor kattan).
+L.metronome = L.flash.map((p) => (p.p === 'D2' ? { ...p, p: 'SP', id: 'SP' } : p));
+
+// Hangszer: a hangos villogó bal oldali bázisellenállása helyén nyomógomb + állítható ellenállás + R2.
+L.organ = L.sound
+  .filter((p) => p.id !== 'R3a')
+  .map((p) => (p.id === 'C4b' || p.id === 'Wsa' ? { ...p, at: 'E1' } : p.p === 'J2' ? { ...p, at: 'E1' } : p))
+  .concat([
+    { p: 'RV', at: 'A1', dir: 'd' },
+    { p: 'W1', at: 'D2', id: 'Wsr' },
+    { p: 'S2', at: 'A1', dir: 'r' },
+    { p: 'R2', at: 'B2', dir: 'd' },
+    { p: 'J4', at: 'D2', to: 'C3' },
+  ]);
+
+// Sziréna: a bal oldali bázisellenállás egy kondenzátor (C5) feszültségéről kap tápot;
+// a gomb az R4-en át tölti, elengedve lassan kisül, közben a hang magassága változik.
+L.siren = L.sound
+  .filter((p) => p.id !== 'Wp')
+  .concat([
+    { p: 'W6', at: 'A4', dir: 'r', id: 'Wp' },
+    { p: 'W3', at: 'A1', dir: 'r', id: 'Wv' },
+    { p: 'W1', at: 'C1', id: 'Wsc' },
+    { p: 'R4', at: 'C2', dir: 'd' },
+  ])
+  // a 2. szintű alkatrészek a vezetékek után jönnek
+  .sort((a, b) => lvl1First(a) - lvl1First(b))
+  .concat([
+    { p: 'C5', at: 'A1', dir: 'd' },
+    { p: 'S2', at: 'A2', dir: 'd' },
+    { p: 'J4', at: 'C1', to: 'G4', id: 'J4a' },
+    { p: 'J4', at: 'E2', to: 'A5', id: 'J4b' },
+  ]);
+function lvl1First(p) { return ['W7', 'W6', 'W4', 'W3', 'W1', 'R4', 'D1', 'SP'].includes(p.p) && !['R3a', 'R3b', 'R1a', 'R1b'].includes(p.id) ? 0 : 1; }
+
 module.exports = L;
