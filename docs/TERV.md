@@ -75,5 +75,5 @@ Minden fázis végén: tesztek, böngészős ellenőrzés, commit, push, a GitHu
 ## Még hátravan
 - U4 erősítő IC és a diszkrét mikrofon-erősítő (hangosbemondó)
 - U22 fényorgona, U24 infravevő, U3 űrháború, U5 rádió (G fejezet folytatása)
-- Offline működés (telepíthető webapp)
+- ✅ Offline működés (telepíthető webapp)
 - A valódi készleten szerzett tapasztalatok alapján a szimuláció finomítása

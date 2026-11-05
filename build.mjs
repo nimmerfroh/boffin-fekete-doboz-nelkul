@@ -18,4 +18,8 @@ for (const [name, code] of [['ENGINE', engine], ['LAYOUTS', layouts], ['EXPERIME
   page = page.replace(mark, () => code);
 }
 writeFileSync(new URL('./index.html', import.meta.url), page);
-console.log(`index.html kész (${(page.length / 1024).toFixed(0)} kB)`);
+// service worker: a verzió az oldal tartalmából (új kiadásnál a tabletek maguktól frissülnek)
+const { createHash } = await import('node:crypto');
+const version = createHash('sha256').update(page).digest('hex').slice(0, 12);
+writeFileSync(new URL('./sw.js', import.meta.url), read('./src/sw.template.js').replace('__VERSION__', version));
+console.log(`index.html kész (${(page.length / 1024).toFixed(0)} kB), sw.js verzió: ${version}`);

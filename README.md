@@ -4,6 +4,14 @@ Interaktív, IC nélküli áramkör-kísérletek gyerekeknek, a **Boffin I 300**
 
 **Kipróbálható itt:** https://nimmerfroh.github.io/boffin-fekete-doboz-nelkul/
 
+## Telepítés a tabletre (offline is működik)
+
+Nyisd meg a fenti címet, aztán:
+- **iPad / iPhone (Safari):** Megosztás gomb → *Főképernyőhöz adás*.
+- **Android (Chrome):** menü (⋮) → *Alkalmazás telepítése* vagy *Hozzáadás a kezdőképernyőhöz*.
+
+Egyszeri megnyitás után internet nélkül is fut. Új kiadásnál magától frissül, amikor legközelebb van net.
+
 ## Miért?
 
 A készletek integrált áramkörei (zene-, riasztó-, „űrháborús” IC) fekete dobozok: bepattintod, és szól, de nem derül ki, hogyan. Ezek a kísérletek csak egyszerű, érthető alkatrészekből (ellenállás, kondenzátor, LED, tranzisztor) építkeznek. Az utolsó kísérletben a gyerek maga építi meg, ami egy hangot adó IC-ben történik.
@@ -42,6 +50,7 @@ node --test           # a kísérletek ellenőrzése szimulációval (tests/*.te
 - `src/layouts.js`: a kísérletek elrendezése a rácson
 - `src/app.js`: felület, szövegek, animáció, hang
 - `index.html`: a kész, önálló oldal (ezt szolgálja ki a GitHub Pages)
+- `sw.js`, `manifest.webmanifest`, `icons/`: offline működés és telepíthető webapp (a `sw.js`-t a build készíti a `src/sw.template.js`-ből)
 
 ## Licenc
 
