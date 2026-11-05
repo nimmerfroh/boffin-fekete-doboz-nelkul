@@ -36,7 +36,7 @@ test('minden kísérlet megépíthető a három doboz alkatrészeiből', () => {
   for (const k of Object.values(E.KITS)) for (const [p, n] of Object.entries(k.parts)) have[p] = (have[p] || 0) + n;
   for (const [name, lay] of Object.entries({ ...L, sound: SOUND })) {
     const need = {};
-    for (const p of lay) need[p.p] = (need[p.p] || 0) + 1;
+    for (const p of lay) if (!E.PARTS[p.p].virtual) need[p.p] = (need[p.p] || 0) + 1;
     for (const [p, n] of Object.entries(need)) assert.ok((have[p] || 0) >= n, `${name}: ${p} kell ${n}, van ${have[p] || 0}`);
   }
 });

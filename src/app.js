@@ -170,14 +170,45 @@ const S = {
 const STAGES = ['Hozzávalók', 'Építés', 'Tippelj', 'Próbáld ki', 'Miért?'];
 
 // ---------- felolvasás ----------
-let huVoice = null;
-function pickVoice() { try { const vs = speechSynthesis.getVoices(); huVoice = vs.find((v) => /^hu/i.test(v.lang)) || null; } catch (e) { /* nincs beszédszintézis */ } }
+let huVoice = null, voicesLoaded = false;
+function pickVoice() {
+  try {
+    const vs = speechSynthesis.getVoices();
+    if (vs.length) voicesLoaded = true;
+    // magyar hang: előnyben a természetes (online) hangok, pl. Edge „Microsoft Noémi Online”
+    const hu = vs.filter((v) => /^hu(-|_|$)/i.test(v.lang));
+    huVoice = hu.find((v) => /natural|online/i.test(v.name)) || hu[0] || null;
+  } catch (e) { /* nincs beszédszintézis */ }
+}
 try { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; } catch (e) { /* nincs */ }
+function voiceHelp() {
+  const ua = navigator.userAgent;
+  if (/iPad|iPhone|Macintosh/.test(ua) && 'ontouchend' in document) return 'iPaden: Beállítások → Kisegítő lehetőségek → Felolvasott tartalom → Hangok → Magyar, ott tölts le egy hangot.';
+  if (/Android/.test(ua)) return 'Androidon: Beállítások → Rendszer → Nyelvek → Szövegfelolvasó → Google beszédszolgáltatások → Hangadatok telepítése → Magyar.';
+  if (/Edg\//.test(ua)) return 'Edge-ben a magyar hangok (Noémi, Tamás) általában maguktól megjelennek; ha nem, frissítsd az oldalt.';
+  if (/Windows/.test(ua)) return 'Windowson a legegyszerűbb a Microsoft Edge böngésző: abban van beépített magyar hang (Noémi, Tamás). Vagy: Gépház → Idő és nyelv → Beszéd → Hang hozzáadása → Magyar.';
+  if (/Mac/.test(ua)) return 'Macen: Rendszerbeállítások → Kisegítő lehetőségek → Felolvasott tartalom → Rendszerhang → Hangok kezelése → Magyar.';
+  return 'Ehhez a böngészőhöz telepíteni kell egy magyar felolvasóhangot, vagy próbáld Microsoft Edge-ben, abban van beépített magyar hang.';
+}
+function noVoiceNotice() {
+  if (S.voiceWarned) return; S.voiceWarned = true;
+  const box = document.createElement('div'); box.className = 'voicewarn'; box.setAttribute('role', 'status');
+  box.innerHTML = '<b>Ezen az eszközön nincs magyar felolvasóhang.</b> Idegen nyelvű hanggal nem olvasunk fel, mert az érthetetlen lenne. <span></span> <button class="mini">Rendben</button>';
+  box.querySelector('span').textContent = voiceHelp();
+  box.querySelector('button').onclick = () => box.remove();
+  document.querySelector('.wrap').insertBefore(box, document.querySelector('.exps'));
+}
 function speak(text) {
   try {
+    if (!huVoice) { pickVoice(); }
+    if (!huVoice) {
+      // a hanglista néha késve töltődik be: egyszer még megvárjuk
+      if (!voicesLoaded) { setTimeout(() => { pickVoice(); if (huVoice) speak(text); else noVoiceNotice(); }, 700); return; }
+      noVoiceNotice(); return;
+    }
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text.replace(/µF/g, ' mikrofarád').replace(/kΩ/g, ' kiloohm').replace(/Ω/g, ' ohm').replace(/mA/g, ' milliamper').replace(/ V\b/g, ' volt'));
-    u.lang = 'hu-HU'; if (huVoice) u.voice = huVoice; u.rate = S.age === 'k' ? 0.92 : 1;
+    u.lang = huVoice.lang || 'hu-HU'; u.voice = huVoice; u.rate = S.age === 'k' ? 0.92 : 1;
     speechSynthesis.speak(u);
   } catch (e) { /* nincs beszédszintézis */ }
 }
@@ -481,7 +512,9 @@ function frame(ts) {
     const simT = dtR * ex.sim.scale;
     let n = Math.min(400, Math.max(1, Math.round(simT / ex.sim.dt)));
     const dt = simT / n;
-    if (dt > 0) for (let i = 0; i < n; i++) S.sim.step(dt);
+    // időkeret: ha a számítás nem fér bele egy képkockába, a szimuláció inkább lemarad, de a felület nem fagy be
+    const t0 = performance.now();
+    if (dt > 0) for (let i = 0; i < n; i++) { S.sim.step(dt); if (performance.now() - t0 > 12) break; }
     S.wc = S.sim.wireCurrents();
   }
   if (R) {

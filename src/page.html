@@ -172,6 +172,9 @@ svg.board { display: block; width: 100%; height: auto; min-width: 520px; touch-a
 .popover b { font-family: var(--font-display); font-size: 19px; display: block; }
 .popover p { margin: 4px 0 0; }
 .popover .x { position: absolute; top: 4px; right: 4px; width: 36px; height: 36px; border: 0; background: transparent; cursor: pointer; font-size: 20px; color: var(--muted); }
+/* figyelmeztetés, ha nincs magyar felolvasóhang */
+.voicewarn { background: color-mix(in srgb, var(--spark) 18%, var(--surface)); border: 1px solid color-mix(in srgb, var(--spark) 50%, var(--line)); border-radius: 14px; padding: 10px 14px; font-size: 15px; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.voicewarn b { font-weight: 700; }
 /* keskeny nézetben az építési lépés a rács alatt is látszik */
 .buildbar { display: none; flex-direction: column; gap: 8px; width: 100%; }
 .buildbar p { margin: 0; font-size: 18px; font-weight: 700; }

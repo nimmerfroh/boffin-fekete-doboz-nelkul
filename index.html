@@ -172,6 +172,9 @@ svg.board { display: block; width: 100%; height: auto; min-width: 520px; touch-a
 .popover b { font-family: var(--font-display); font-size: 19px; display: block; }
 .popover p { margin: 4px 0 0; }
 .popover .x { position: absolute; top: 4px; right: 4px; width: 36px; height: 36px; border: 0; background: transparent; cursor: pointer; font-size: 20px; color: var(--muted); }
+/* figyelmeztetés, ha nincs magyar felolvasóhang */
+.voicewarn { background: color-mix(in srgb, var(--spark) 18%, var(--surface)); border: 1px solid color-mix(in srgb, var(--spark) 50%, var(--line)); border-radius: 14px; padding: 10px 14px; font-size: 15px; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.voicewarn b { font-weight: 700; }
 /* keskeny nézetben az építési lépés a rács alatt is látszik */
 .buildbar { display: none; flex-direction: column; gap: 8px; width: 100%; }
 .buildbar p { margin: 0; font-size: 18px; font-weight: 700; }
@@ -271,17 +274,33 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
     Q1: { kind: 'pnp', name: 'PNP tranzisztor', short: 'Q1' },
     Q2: { kind: 'npn', name: 'NPN tranzisztor', short: 'Q2' },
     Q4: { kind: 'photo', name: 'Fototranzisztor', short: 'Q4' },
-    L1: { kind: 'lamp', R: 16, name: 'Izzó (2,5 V)', short: 'L1' },
+    L1: { kind: 'lamp', R: 16, Inom: 0.2, name: 'Izzó (2,5 V)', short: 'L1' },
+    L2: { kind: 'lamp', R: 20, Inom: 0.3, name: 'Izzó (6 V)', short: 'L2' },
+    RV: { kind: 'pot', R: 50000, name: 'Állítható ellenállás (50 kΩ)', short: 'RV' },
+    M6: { kind: 'meter', name: 'Mérőműszer', short: 'M6' },
+    M1: { kind: 'motor', name: 'Motor', short: 'M1' },
+    M4: { kind: 'motor', name: 'Átlátszó motor', short: 'M4' },
+    TP: { kind: 'obj', virtual: true, name: 'Vizsgált tárgy', short: '?' },
     SP: { kind: 'spk', R: 8, name: 'Hangszóró', short: 'SP' },
     J1: { kind: 'jumper', name: 'Átkötő kábel (fekete)', short: 'J', color: 'black' },
     J2: { kind: 'jumper', name: 'Átkötő kábel (piros)', short: 'J', color: 'red' },
+    J4: { kind: 'jumper', name: 'Átkötő kábel (kék)', short: 'J', color: 'blue' },
   };
+
+  // A mérőműszer (M6) méréshatárai: belső ellenállás és végkitérés (áram).
+  const METER = {
+    '5V': { R: 10000, fs: 0.5e-3, label: '5 V' },
+    '0.5mA': { R: 200, fs: 0.5e-3, label: '0,5 mA' },
+    '50mA': { R: 2, fs: 50e-3, label: '50 mA' },
+  };
+  // Motor: belső ellenállás, EMF-állandó, súrlódás, tehetetlenség (kb. 3000/perc 3 V-on, üresjárásban ~60 mA).
+  const MOTOR = { Rm: 5, Ke: 0.0085, b: 1.6e-6, Tc: 0.0085 * 0.025, J: 3e-6, wHand: 120 };
 
   // Melyik dobozban hány darab van (a hivatalos alkatrészlisták alapján).
   const KITS = {
-    '300': { name: 'Boffin I 300', parts: { J1: 1, J2: 1, W1: 6, W2: 9, W3: 4, W4: 2, W5: 1, W6: 1, W7: 1, B1: 2, S1: 1, S2: 1, R1: 1, R2: 1, R3: 1, R4: 1, R5: 1, D1: 1, D2: 1, C1: 1, C2: 1, C3: 1, C4: 1, C5: 1, Q1: 1, Q2: 1, Q4: 1, L1: 1, SP: 1 } },
-    light: { name: 'Boffin II Light', parts: { J1: 1, J2: 1, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, B1: 2, S1: 1, S2: 1, R1: 1, R3: 1, R5: 1, D1: 1, C2: 1, C4: 1, Q1: 1, Q2: 1, Q4: 1, SP: 1 } },
-    home: { name: 'Boffin II My Home', parts: { W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, S1: 1, S2: 1, R3: 1, C5: 1, Q2: 1, Q4: 1 } },
+    '300': { name: 'Boffin I 300', parts: { J1: 1, J2: 1, W1: 6, W2: 9, W3: 4, W4: 2, W5: 1, W6: 1, W7: 1, B1: 2, S1: 1, S2: 1, R1: 1, R2: 1, R3: 1, R4: 1, R5: 1, RV: 1, D1: 1, D2: 1, C1: 1, C2: 1, C3: 1, C4: 1, C5: 1, Q1: 1, Q2: 1, Q4: 1, L1: 1, L2: 1, SP: 1, M1: 1 } },
+    light: { name: 'Boffin II Light', parts: { J1: 1, J2: 1, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, B1: 2, S1: 1, S2: 1, R1: 1, R3: 1, R5: 1, RV: 1, D1: 1, C2: 1, C4: 1, Q1: 1, Q2: 1, Q4: 1, SP: 1, M1: 1 } },
+    home: { name: 'Boffin II My Home', parts: { J1: 1, J2: 1, J4: 2, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, S1: 1, S2: 1, R3: 1, C5: 1, Q2: 1, Q4: 1, M4: 1, M6: 1 } },
   };
 
   function postKey(r, c) { return r + ',' + c; }
@@ -302,6 +321,13 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
     }
     if (def.kind === 'wire') {
       for (let i = 0; i < def.n; i++) snaps.push({ r: r0 + dr * i, c: c0 + dc * i, term: 'w' + i });
+    } else if (def.kind === 'pot') {
+      // két vége 2 egységre, a csúszka középen, a haladási irányhoz képest balra (lefelé haladva jobbra)
+      const pr = -dc, pc = dr;
+      snaps.push({ r: r0, c: c0, term: 'a' });
+      snaps.push({ r: r0 + 2 * dr, c: c0 + 2 * dc, term: 'b' });
+      snaps.push({ r: r0 + dr + pr, c: c0 + dc + pc, term: 'w' });
+      body.push({ r: r0 + dr, c: c0 + dc });
     } else if (def.kind === 'npn' || def.kind === 'pnp') {
       // a két szélső snap (NPN: kollektor, emitter; PNP: emitter, kollektor) 2 egységre,
       // a bázis középen, a haladási irányhoz képest jobbra fordítva (pl. lefelé -> balra).
@@ -430,6 +456,8 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
     this.nl = { ...nl0, nets, elements };
     this.layout = layout;
     const bat = elements.find((e) => e.def.kind === 'bat' && e.t.b >= 0);
+    const vs = Math.max(3, elements.filter((e) => e.def.kind === 'bat').reduce((a, e) => a + e.def.V, 0));
+    this.vLo = -vs - 1; this.vHi = 2 * vs + 1;
     this.ground = bat ? bat.t.b : 0;
     const map = new Array(nets).fill(-1); let n = 0;
     for (let k = 0; k < nets; k++) if (k !== this.ground) map[k] = n++;
@@ -440,14 +468,38 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
     this.rhs = new Float64Array(n);
     this.time = 0;
     this.light = opts.light != null ? opts.light : 0.8;
-    this.switches = {}; this.capV = {}; this.cur = {}; this.jx = {};
+    this.switches = {}; this.capV = {}; this.cur = {}; this.jx = {}; this.pot = {}; this.meter = {}; this.motor = {}; this.obj = {};
     for (const e of elements) {
       if (e.def.kind === 'sw') this.switches[e.id] = false;
       if (e.def.kind === 'cap') this.capV[e.id] = (opts.capInit && opts.capInit[e.id]) || 0;
       if (e.def.kind === 'npn' || e.def.kind === 'pnp') this.jx[e.id] = { vbe: 0, vbc: 0 };
       if (e.def.kind === 'led') this.jx[e.id] = { vd: 0 };
+      if (e.def.kind === 'pot') this.pot[e.id] = (opts.pot && opts.pot[e.id] != null) ? opts.pot[e.id] : 0.5;
+      if (e.def.kind === 'meter') this.meter[e.id] = (opts.meter && opts.meter[e.id]) || '50mA';
+      if (e.def.kind === 'motor') this.motor[e.id] = { w: 0, hand: 0 };
+      if (e.def.kind === 'obj') this.obj[e.id] = (opts.obj && opts.obj[e.id] != null) ? opts.obj[e.id] : 1e12;
     }
   }
+
+  function potR(d, p) { p = Math.max(0, Math.min(1, p)); return { ra: Math.max(1, d.R * p), rb: Math.max(1, d.R * (1 - p)) }; }
+
+  // A motor tengelyének mozgása (explicit Euler, a lépés végén). Kézi pörgetésnél a sebességet a kéz adja.
+  Sim.prototype._motorStep = function (id, i, dt) {
+    const m = this.motor[id];
+    if (m.hand > 0) { m.w = m.hand * MOTOR.wHand; return; }
+    const T = MOTOR.Ke * i;
+    if (Math.abs(m.w) < 1 && Math.abs(T) <= MOTOR.Tc) { m.w = 0; return; }
+    const fr = MOTOR.b * m.w + MOTOR.Tc * Math.sign(m.w || T);
+    const w2 = m.w + (T - fr) / MOTOR.J * dt;
+    m.w = (m.w !== 0 && Math.sign(w2) !== Math.sign(m.w) && Math.abs(T) <= MOTOR.Tc) ? 0 : w2;
+  };
+  // A mérőműszer kitérése: 0..1 a végkitérésig (1 felett: túlcsordulás), és a kijelzett érték.
+  Sim.prototype.meterReading = function (id) {
+    const r = METER[this.meter[id]]; const i = this.cur[id] || 0;
+    const frac = i / r.fs;
+    const value = this.meter[id] === '5V' ? i * r.R : i;
+    return { frac, value, range: this.meter[id], unit: this.meter[id] === '5V' ? 'V' : 'A' };
+  };
 
   Sim.prototype.nodeV = function (net) {
     if (net < 0) return NaN;
@@ -501,11 +553,20 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
         row(E, -(Ic + Ib), -(a_c + a_b), -(b_c + b_b));
         continue;
       }
+      if (d.kind === 'pot') {
+        const { ra, rb } = potR(d, this.pot[e.id]);
+        if (t.a >= 0 && t.w >= 0) stampG(I(t.a), I(t.w), 1 / ra);
+        if (t.w >= 0 && t.b >= 0) stampG(I(t.w), I(t.b), 1 / rb);
+        continue;
+      }
       if (t.a < 0 || t.b < 0) continue;
       const a = I(t.a), b = I(t.b);
       const u = vv(t.a) - vv(t.b);
       switch (d.kind) {
         case 'res': case 'lamp': case 'spk': stampG(a, b, 1 / d.R); break;
+        case 'meter': stampG(a, b, 1 / METER[this.meter[e.id]].R); break;
+        case 'obj': stampG(a, b, 1 / Math.max(0.05, this.obj[e.id])); break;
+        case 'motor': { const g = 1 / MOTOR.Rm; stampG(a, b, g); stampI(a, b, -MOTOR.Ke * this.motor[e.id].w * g); break; }
         case 'sw': stampG(a, b, this.switches[e.id] ? 20 : 1e-10); break;
         case 'bat': { const g = 1 / d.Rint; stampG(a, b, g); stampI(a, b, -d.V * g); break; }
         case 'cap': { const g = d.C / dt; stampG(a, b, g); stampI(a, b, -g * capV[e.id]); break; }
@@ -518,9 +579,11 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
         }
         case 'photo': {
           const Iph = 1e-7 + 4e-3 * Math.pow(Math.max(0, Math.min(1, this.light)), 1.6);
+          // sima modell: pozitív feszültségen telítődő áram, negatívon lineáris folytatás;
+          // a 0 V-nál az érték és a meredekség is folytonos, így a Newton-iteráció nem ugrál
           let i, g;
           if (u >= 0) { const ex = Math.exp(-u / 0.12); i = Iph * (1 - ex); g = Iph * ex / 0.12; }
-          else { i = 0; g = 0; }
+          else { g = Iph / 0.12; i = g * u; }
           g += 1e-9; i += 1e-9 * u;
           stampG(a, b, g); stampI(a, b, i - g * u); break;
         }
@@ -553,14 +616,27 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
 
   Sim.prototype._newton = function (dt) {
     const v = this.v, x = this.vnew;
-    for (let it = 0; it < 80; it++) {
+    // csomópontonkénti „bizalmi sugár”: ha egy csomópont lépésének iránya megfordul, a sugár feleződik
+    if (!this.trust || this.trust.length !== this.n) { this.trust = new Float64Array(this.n); this.lastD = new Float64Array(this.n); }
+    const tr = this.trust, ld = this.lastD; tr.fill(1); ld.fill(0);
+    for (let it = 0; it < 50; it++) {
       const limited = this._load(v, dt, this.capV);
       this._solveInto(x);
       let conv = !limited;
+      // csillapítás csomópontonként: egy iterációban egy csomópont legfeljebb 1 V-ot mozdulhat
+      // (különben pl. egy áramforrásszerű elem miatt a megoldás két hamis érték között ugrálhat).
+      // Csomópontonként korlátozunk, hogy egy elszálló csomópont ne fogja vissza a többit.
       for (let k = 0; k < this.n; k++) {
         if (!isFinite(x[k])) return false;
-        if (Math.abs(x[k] - v[k]) > 1e-6 + 1e-4 * Math.abs(x[k])) conv = false;
-        v[k] = x[k];
+        let d = x[k] - v[k];
+        if (it > 0) {
+          if (d * ld[k] < 0 && Math.abs(d) > 0.05) tr[k] = Math.max(0.02, tr[k] * 0.5);
+          if (Math.abs(d) > tr[k]) { d = Math.sign(d) * tr[k]; conv = false; }
+        }
+        ld[k] = d;
+        if (Math.abs(d) > 1e-6 + 1e-4 * Math.abs(x[k])) conv = false;
+        // fizikai korlát: ezekben az áramkörökben egy csomópont sem lehet messze a tápfeszültségen kívül
+        v[k] = Math.max(this.vLo, Math.min(this.vHi, v[k] + d));
       }
       if (conv && it > 0) return true;
     }
@@ -579,16 +655,26 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
         this.cur[e.id] = { C: Ic, B: Ib, E: -(Ic + Ib) };
         continue;
       }
-      if (t.a < 0 || t.b < 0) { this.cur[e.id] = 0; continue; }
+      if (d.kind === 'pot') {
+        const { ra, rb } = potR(d, this.pot[e.id]);
+        const va = this.nodeV(t.a), vb = this.nodeV(t.b), vw = this.nodeV(t.w);
+        const iaw = t.a >= 0 && t.w >= 0 ? (va - vw) / ra : 0, iwb = t.w >= 0 && t.b >= 0 ? (vw - vb) / rb : 0;
+        this.cur[e.id] = { a: iaw, w: iwb - iaw, b: -iwb };
+        continue;
+      }
+      if (t.a < 0 || t.b < 0) { this.cur[e.id] = 0; if (d.kind === 'motor') this._motorStep(e.id, 0, dt); continue; }
       const u = this.nodeV(t.a) - this.nodeV(t.b);
       let i = 0;
       switch (d.kind) {
         case 'res': case 'lamp': case 'spk': i = u / d.R; break;
+        case 'meter': i = u / METER[this.meter[e.id]].R; break;
+        case 'obj': i = u / Math.max(0.05, this.obj[e.id]); break;
+        case 'motor': i = (u - MOTOR.Ke * this.motor[e.id].w) / MOTOR.Rm; this._motorStep(e.id, i, dt); break;
         case 'sw': i = u * (this.switches[e.id] ? 20 : 1e-10); break;
         case 'bat': i = (u - d.V) / d.Rint; break;
         case 'cap': i = d.C / dt * (u - this.capV[e.id]); this.capV[e.id] = u; break;
         case 'led': i = d.Is * (safeExp(u / (d.n * VT)) - 1); break;
-        case 'photo': { const Iph = 1e-7 + 4e-3 * Math.pow(Math.max(0, Math.min(1, this.light)), 1.6); i = u >= 0 ? Iph * (1 - Math.exp(-u / 0.12)) + 1e-9 * u : 1e-9 * u; break; }
+        case 'photo': { const Iph = 1e-7 + 4e-3 * Math.pow(Math.max(0, Math.min(1, this.light)), 1.6); i = (u >= 0 ? Iph * (1 - Math.exp(-u / 0.12)) : Iph * u / 0.12) + 1e-9 * u; break; }
       }
       this.cur[e.id] = i;
     }
@@ -606,7 +692,7 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
     const snap = this._snap();
     if (this._newton(dt)) { this._commit(dt); this.converged = true; return true; }
     this._restore(snap);
-    if (depth >= 10) { this._newton(dt); this._commit(dt); this.converged = false; return false; }
+    if (depth >= 5) { this._newton(dt); this._commit(dt); this.converged = false; return false; }
     const a = this.step(dt / 2, depth + 1);
     const b = this.step(dt / 2, depth + 1);
     return a && b;
@@ -677,7 +763,7 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
     return s;
   }
 
-  const api = { PARTS, KITS, ROWS, DIRS, geometry, checkBuild, buildNetlist, Sim, ascii, postName, parsePost };
+  const api = { PARTS, KITS, METER, MOTOR, ROWS, DIRS, geometry, checkBuild, buildNetlist, Sim, ascii, postName, parsePost };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.BoffinEngine = api;
 })(typeof window !== 'undefined' ? window : globalThis);
 
@@ -762,6 +848,131 @@ L.flash = [
   { p: 'J1', at: 'D5', to: 'E4', id: 'J1' },
   { p: 'J2', at: 'D1', to: 'E8', id: 'J2' },
 ];
+
+
+// ---- 1. fázis: A–C fejezet ----
+
+// Vezet vagy nem vezet? A vizsgált tárgy (TP) a két átkötő kábel szabad vége között van.
+L.conduct = [
+  { p: 'W5', at: 'B4', dir: 'r', id: 'Wp' },
+  { p: 'M6', at: 'B2', dir: 'd' },
+  { p: 'R1', at: 'F2', dir: 'r' },
+  { p: 'D1', at: 'F5', dir: 'r' },
+  { p: 'W3', at: 'D8', dir: 'd', id: 'Wr' },
+  { p: 'TP', at: 'D3', dir: 'r' },
+  { p: 'W3', at: 'D2', dir: 'd', id: 'Wl' },
+  { p: 'W2', at: 'F4', dir: 'r', id: 'Wa' },
+  { p: 'W2', at: 'F7', dir: 'r', id: 'Wb' },
+  { p: 'B1', at: 'B8', dir: 'd' },
+  { p: 'J2', at: 'B4', to: 'D5' },
+  { p: 'J1', at: 'B2', to: 'D3' },
+];
+
+// Soros izzók (a párhuzamos változat külön elrendezés).
+L.series = [
+  { p: 'W5', at: 'B4', dir: 'r' },
+  { p: 'W3', at: 'B2', dir: 'd' },
+  { p: 'W2', at: 'D4', dir: 'r', id: 'W2a' },
+  { p: 'W2', at: 'D7', dir: 'r', id: 'W2b' },
+  { p: 'S1', at: 'B4', dir: 'l' },
+  { p: 'L1', at: 'D2', dir: 'r' },
+  { p: 'L2', at: 'D5', dir: 'r' },
+  { p: 'B1', at: 'B8', dir: 'd' },
+];
+L.parallel = [
+  { p: 'W4', at: 'B3', dir: 'r', id: 'Wp' },
+  { p: 'W2', at: 'B8', dir: 'r', id: 'Wb' },
+  { p: 'W7', at: 'D3', dir: 'r', id: 'Wn' },
+  { p: 'L1', at: 'B3', dir: 'd' },
+  { p: 'L2', at: 'B5', dir: 'd' },
+  { p: 'S1', at: 'B6', dir: 'r' },
+  { p: 'B1', at: 'B9', dir: 'd' },
+];
+
+// Fényerő-szabályzó: az RV-t változtatható ellenállásként használjuk (a vége és a csúszka között).
+L.dimmer = [
+  { p: 'W5', at: 'B4', dir: 'r', id: 'Wp' },
+  { p: 'RV', at: 'B2', dir: 'd' },
+  { p: 'M6', at: 'F8', dir: 'u' },
+  { p: 'W2', at: 'E3', dir: 'd', id: 'Wx' },
+  { p: 'W3', at: 'F5', dir: 'r', id: 'Wy' },
+  { p: 'S1', at: 'B4', dir: 'l' },
+  { p: 'B1', at: 'B8', dir: 'd' },
+  { p: 'R1', at: 'C3', dir: 'd' },
+  { p: 'D1', at: 'F3', dir: 'r' },
+  { p: 'W2', at: 'F7', dir: 'r', id: 'Wl' },
+];
+
+// A motor mint áramfejlesztő: elem nélkül, kézzel pörgetve.
+L.generator = [
+  { p: 'M1', at: 'C3', dir: 'r' },
+  { p: 'M6', at: 'E3', dir: 'r' },
+  { p: 'W3', at: 'C3', dir: 'd', id: 'Wa' },
+  { p: 'W3', at: 'C5', dir: 'd', id: 'Wb' },
+];
+
+// Kondenzátor mint mini akkumulátor.
+L.capbat = [
+  { p: 'W5', at: 'B2', dir: 'r', id: 'Wx' },
+  { p: 'W5', at: 'D2', dir: 'r', id: 'Wn' },
+  { p: 'D1', at: 'B8', dir: 'd' },
+  { p: 'B1', at: 'B9', dir: 'd' },
+  { p: 'S2', at: 'A5', dir: 'r' },
+  { p: 'C5', at: 'B2', dir: 'd', id: 'C5a' },
+  { p: 'C5', at: 'B3', dir: 'd', id: 'C5b' },
+  { p: 'M6', at: 'B4', dir: 'd' },
+  { p: 'R2', at: 'B6', dir: 'r' },
+  { p: 'W4', at: 'D6', dir: 'r', id: 'Wl' },
+  { p: 'W2', at: 'A5', dir: 'd', id: 'Ws' },
+  { p: 'J1', at: 'A7', to: 'B9' },
+];
+
+// Motor sebességszabályzó: RV feszültségosztó + két tranzisztor (Darlington) + motor.
+L.motorspeed = [
+  { p: 'W7', at: 'A3', dir: 'r', id: 'Wp' },
+  { p: 'W6', at: 'G4', dir: 'r', id: 'Wn' },
+  { p: 'W2', at: 'B4', dir: 'r', id: 'Wb' },
+  { p: 'W1', at: 'C3', id: 'Wr' },
+  { p: 'W1', at: 'C6', id: 'Ws1' },
+  { p: 'W1', at: 'B7', id: 'Ws2' },
+  { p: 'M1', at: 'C8', dir: 'd' },
+  { p: 'W3', at: 'C9', dir: 'd', id: 'Wc' },
+  { p: 'RV', at: 'A3', dir: 'd' },
+  { p: 'Q2', at: 'A6', dir: 'd', id: 'Q2a' },
+  { p: 'Q2', at: 'A8', dir: 'd', id: 'Q2b' },
+  { p: 'W3', at: 'E8', dir: 'd', id: 'Lm' },
+  { p: 'S1', at: 'A9', dir: 'd' },
+  { p: 'B1', at: 'E9', dir: 'd' },
+  { p: 'J1', at: 'C6', to: 'B7' },
+  { p: 'J2', at: 'C3', to: 'G4' },
+];
+
+// Érintőkapcsoló: az ujj (TP) köti össze a C3 és az E3 pontot; két tranzisztor egymás után.
+L.touch = [
+  { p: 'W7', at: 'A3', dir: 'r', id: 'Wp' },
+  { p: 'W2', at: 'G8', dir: 'r', id: 'Wn' },
+  { p: 'W2', at: 'B3', dir: 'd', id: 'Wt' },
+  { p: 'W3', at: 'B6', dir: 'd', id: 'Wc' },
+  { p: 'W2', at: 'F6', dir: 'r', id: 'We' },
+  { p: 'W3', at: 'C9', dir: 'd', id: 'Wbat' },
+  { p: 'R2', at: 'E3', dir: 'r' },
+  { p: 'D1', at: 'C8', dir: 'd' },
+  { p: 'W2', at: 'A3', dir: 'd', id: 'Lt' },
+  { p: 'W2', at: 'A6', dir: 'd', id: 'Lc' },
+  { p: 'Q2', at: 'D6', dir: 'd', id: 'Q2a' },
+  { p: 'Q2', at: 'E8', dir: 'd', id: 'Q2b' },
+  { p: 'R1', at: 'A8', dir: 'd' },
+  { p: 'S1', at: 'A9', dir: 'd' },
+  { p: 'B1', at: 'E9', dir: 'd' },
+  { p: 'TP', at: 'C3', dir: 'd' },
+];
+
+// Vízjelző: ugyanaz, mint az érintőkapcsoló, csak a két érintési pontról átkötő kábel megy a pohár vízbe.
+L.water = L.touch.filter((p) => p.p !== 'TP').concat([
+  { p: 'TP', at: 'E1', dir: 'd' },
+  { p: 'J2', at: 'C3', to: 'E1' },
+  { p: 'J1', at: 'E3', to: 'G1' },
+]);
 
 module.exports = L;
 
@@ -941,14 +1152,45 @@ const S = {
 const STAGES = ['Hozzávalók', 'Építés', 'Tippelj', 'Próbáld ki', 'Miért?'];
 
 // ---------- felolvasás ----------
-let huVoice = null;
-function pickVoice() { try { const vs = speechSynthesis.getVoices(); huVoice = vs.find((v) => /^hu/i.test(v.lang)) || null; } catch (e) { /* nincs beszédszintézis */ } }
+let huVoice = null, voicesLoaded = false;
+function pickVoice() {
+  try {
+    const vs = speechSynthesis.getVoices();
+    if (vs.length) voicesLoaded = true;
+    // magyar hang: előnyben a természetes (online) hangok, pl. Edge „Microsoft Noémi Online”
+    const hu = vs.filter((v) => /^hu(-|_|$)/i.test(v.lang));
+    huVoice = hu.find((v) => /natural|online/i.test(v.name)) || hu[0] || null;
+  } catch (e) { /* nincs beszédszintézis */ }
+}
 try { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; } catch (e) { /* nincs */ }
+function voiceHelp() {
+  const ua = navigator.userAgent;
+  if (/iPad|iPhone|Macintosh/.test(ua) && 'ontouchend' in document) return 'iPaden: Beállítások → Kisegítő lehetőségek → Felolvasott tartalom → Hangok → Magyar, ott tölts le egy hangot.';
+  if (/Android/.test(ua)) return 'Androidon: Beállítások → Rendszer → Nyelvek → Szövegfelolvasó → Google beszédszolgáltatások → Hangadatok telepítése → Magyar.';
+  if (/Edg\//.test(ua)) return 'Edge-ben a magyar hangok (Noémi, Tamás) általában maguktól megjelennek; ha nem, frissítsd az oldalt.';
+  if (/Windows/.test(ua)) return 'Windowson a legegyszerűbb a Microsoft Edge böngésző: abban van beépített magyar hang (Noémi, Tamás). Vagy: Gépház → Idő és nyelv → Beszéd → Hang hozzáadása → Magyar.';
+  if (/Mac/.test(ua)) return 'Macen: Rendszerbeállítások → Kisegítő lehetőségek → Felolvasott tartalom → Rendszerhang → Hangok kezelése → Magyar.';
+  return 'Ehhez a böngészőhöz telepíteni kell egy magyar felolvasóhangot, vagy próbáld Microsoft Edge-ben, abban van beépített magyar hang.';
+}
+function noVoiceNotice() {
+  if (S.voiceWarned) return; S.voiceWarned = true;
+  const box = document.createElement('div'); box.className = 'voicewarn'; box.setAttribute('role', 'status');
+  box.innerHTML = '<b>Ezen az eszközön nincs magyar felolvasóhang.</b> Idegen nyelvű hanggal nem olvasunk fel, mert az érthetetlen lenne. <span></span> <button class="mini">Rendben</button>';
+  box.querySelector('span').textContent = voiceHelp();
+  box.querySelector('button').onclick = () => box.remove();
+  document.querySelector('.wrap').insertBefore(box, document.querySelector('.exps'));
+}
 function speak(text) {
   try {
+    if (!huVoice) { pickVoice(); }
+    if (!huVoice) {
+      // a hanglista néha késve töltődik be: egyszer még megvárjuk
+      if (!voicesLoaded) { setTimeout(() => { pickVoice(); if (huVoice) speak(text); else noVoiceNotice(); }, 700); return; }
+      noVoiceNotice(); return;
+    }
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text.replace(/µF/g, ' mikrofarád').replace(/kΩ/g, ' kiloohm').replace(/Ω/g, ' ohm').replace(/mA/g, ' milliamper').replace(/ V\b/g, ' volt'));
-    u.lang = 'hu-HU'; if (huVoice) u.voice = huVoice; u.rate = S.age === 'k' ? 0.92 : 1;
+    u.lang = huVoice.lang || 'hu-HU'; u.voice = huVoice; u.rate = S.age === 'k' ? 0.92 : 1;
     speechSynthesis.speak(u);
   } catch (e) { /* nincs beszédszintézis */ }
 }
@@ -1252,7 +1494,9 @@ function frame(ts) {
     const simT = dtR * ex.sim.scale;
     let n = Math.min(400, Math.max(1, Math.round(simT / ex.sim.dt)));
     const dt = simT / n;
-    if (dt > 0) for (let i = 0; i < n; i++) S.sim.step(dt);
+    // időkeret: ha a számítás nem fér bele egy képkockába, a szimuláció inkább lemarad, de a felület nem fagy be
+    const t0 = performance.now();
+    if (dt > 0) for (let i = 0; i < n; i++) { S.sim.step(dt); if (performance.now() - t0 > 12) break; }
     S.wc = S.sim.wireCurrents();
   }
   if (R) {
