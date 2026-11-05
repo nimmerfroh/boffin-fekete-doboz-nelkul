@@ -533,10 +533,12 @@ function frame(ts) {
     for (const fl of R.flows) {
       let I = live ? curOf(fl) : 0;
       const a = Math.abs(I);
+      // a pöttyök már egészen kis áramnál is látszanak (lassan), hogy a pici bázisáram se tűnjön el;
+      // a sebesség az áram logaritmusával nő
       let v = 0;
-      if (a > 2e-5) v = Math.sign(I) * Math.min(190, 38 * Math.log10(a / 2e-5));
+      if (a > 5e-7) v = Math.sign(I) * Math.min(190, 6 + 30 * Math.log10(a / 5e-7));
       fl.phase += v * dtR;
-      const show = a > 2e-5;
+      const show = a > 5e-7;
       const n = fl.dots.length; const sp = fl.L / n;
       for (let k = 0; k < n; k++) {
         const d = fl.dots[k];
@@ -549,7 +551,7 @@ function frame(ts) {
       if (!it) continue;
       const c = live ? S.sim.cur[it.id] : 0;
       for (const gl of it.glows) {
-        if (gl.type === 'led') { const a = Math.abs(c || 0); const b = a > 1e-5 && c > 0 ? Math.min(1, Math.log10(a / 1e-5) / 3) : 0; gl.el.setAttribute('opacity', (b * 0.85).toFixed(2)); gl.lens.setAttribute('opacity', b.toFixed(2)); }
+        if (gl.type === 'led') { const a = Math.abs(c || 0); const b = c > 0 ? Math.min(1, Math.sqrt(a / 0.01)) : 0; /* 10 mA: teljes fény, 0,3 mA: épp pislákol */ gl.el.setAttribute('opacity', (b * 0.85).toFixed(2)); gl.lens.setAttribute('opacity', b.toFixed(2)); }
         else if (gl.type === 'lamp') { const b = Math.min(1, Math.abs(c || 0) / 0.15); gl.el.setAttribute('opacity', (b * 0.9).toFixed(2)); }
         else if (gl.type === 'spk') { const b = Math.min(1, Math.abs(c || 0) / 0.02); gl.el.setAttribute('opacity', (b * 0.9).toFixed(2)); gl.el.setAttribute('r', 18 + b * 8); }
         else if (gl.type === 'mic') { const p = live ? S.sim.mic[it.id] || 0 : 0; gl.el.setAttribute('opacity', (p * 0.9).toFixed(2)); gl.el.setAttribute('r', 16 + p * 9); }

@@ -1455,8 +1455,8 @@ const EXPS = [
     ],
     why: {
       k: 'A lámpa mindig az elemből kapja az áramot. A tranzisztor olyan, mint egy csap: amíg nyitva van, folyik az áram a lámpába. A gomb megtölti a kondenzátort, ez a kis vödör. A vödörből egy kevés csöpög a csap karjára, és nyitva tartja. Ha kiürül, a csap elzáródik, és a lámpa elalszik.',
-      m: 'A gomb megnyomásakor a kondenzátor feltöltődik. Elengedés után az ellenálláson keresztül lassan kiürül, és közben nyitva tartja a tranzisztort. A LED áramát közben végig az elem adja, ezért kell, hogy az S1 be legyen kapcsolva. A kondenzátorból csak egy kicsi áram jön, a tranzisztor ennek sokszorosát engedi át az elemből a LED-be. Kisebb kondenzátor hamarabb kiürül. Nagyobb ellenálláson lassabban folyik ki, de kevesebb áram jut a tranzisztorra, ezért halványabb.',
-      n: 'A LED-áram végig az elemből folyik a kollektoron át. A C5-ből csak a bázisáram jön, ezt a tranzisztor kb. β-szorosra erősíti. τ = R·C = 5,1 kΩ · 470 µF ≈ 2,4 s. A LED addig ég teljes fénnyel, amíg a bázisáram elég a telítéshez, utána fokozatosan halványul; a szimulációban kb. 5 s teljes fény, utána lassú halványulás. 100 µF-tal τ ≈ 0,5 s. 100 kΩ-mal τ ≈ 47 s, de a bázisáram csak kb. 23 µA, így a LED-áram a tranzisztor erősítésén múlik. A valódi tranzisztoroknál ez darabonként eltér.',
+      m: 'A gomb megnyomásakor a kondenzátor feltöltődik. Elengedés után az ellenálláson keresztül lassan kiürül, és közben nyitva tartja a tranzisztort. A LED áramát közben végig az elem adja, ezért kell, hogy az S1 be legyen kapcsolva. A kondenzátorból csak egy kicsi áram jön, a tranzisztor ennek sokszorosát engedi át az elemből a LED-be. Kisebb kondenzátor hamarabb kiürül. Nagyobb ellenálláson lassabban folyik ki, de kevesebb áram jut a tranzisztorra, ezért halványabb. A végén a lámpa még sokáig halványan pislákol: a kondenzátor kb. 0,6 V-nál már alig ad áramot, ezért nagyon lassan ürül ki teljesen. Sötét szobában a valódi készleten is látszik.',
+      n: 'A LED-áram végig az elemből folyik a kollektoron át. A C5-ből csak a bázisáram jön, ezt a tranzisztor kb. β-szorosra erősíti. τ = R·C = 5,1 kΩ · 470 µF ≈ 2,4 s. A LED addig ég teljes fénnyel, amíg a bázisáram elég a telítéshez, utána fokozatosan halványul; a szimulációban kb. 5 s teljes fény, utána lassú halványulás. 100 µF-tal τ ≈ 0,5 s. 100 kΩ-mal τ ≈ 47 s, de a bázisáram csak kb. 23 µA, így a LED-áram a tranzisztor erősítésén múlik. A valódi tranzisztoroknál ez darabonként eltér. A C5 kb. 0,6 V alatt már alig ad bázisáramot (a bázis–emitter dióda exponenciális), ezért a kisülés a végén nagyon lelassul: 10 s után a bázisáram kb. 10 µA (LED 1,6 mA), 20 s után kb. 2 µA (LED 0,26 mA), a LED tehát fokozatosan, hosszan halványul el.',
     },
   },
   {
@@ -2656,10 +2656,12 @@ function frame(ts) {
     for (const fl of R.flows) {
       let I = live ? curOf(fl) : 0;
       const a = Math.abs(I);
+      // a pöttyök már egészen kis áramnál is látszanak (lassan), hogy a pici bázisáram se tűnjön el;
+      // a sebesség az áram logaritmusával nő
       let v = 0;
-      if (a > 2e-5) v = Math.sign(I) * Math.min(190, 38 * Math.log10(a / 2e-5));
+      if (a > 5e-7) v = Math.sign(I) * Math.min(190, 6 + 30 * Math.log10(a / 5e-7));
       fl.phase += v * dtR;
-      const show = a > 2e-5;
+      const show = a > 5e-7;
       const n = fl.dots.length; const sp = fl.L / n;
       for (let k = 0; k < n; k++) {
         const d = fl.dots[k];
@@ -2672,7 +2674,7 @@ function frame(ts) {
       if (!it) continue;
       const c = live ? S.sim.cur[it.id] : 0;
       for (const gl of it.glows) {
-        if (gl.type === 'led') { const a = Math.abs(c || 0); const b = a > 1e-5 && c > 0 ? Math.min(1, Math.log10(a / 1e-5) / 3) : 0; gl.el.setAttribute('opacity', (b * 0.85).toFixed(2)); gl.lens.setAttribute('opacity', b.toFixed(2)); }
+        if (gl.type === 'led') { const a = Math.abs(c || 0); const b = c > 0 ? Math.min(1, Math.sqrt(a / 0.01)) : 0; /* 10 mA: teljes fény, 0,3 mA: épp pislákol */ gl.el.setAttribute('opacity', (b * 0.85).toFixed(2)); gl.lens.setAttribute('opacity', b.toFixed(2)); }
         else if (gl.type === 'lamp') { const b = Math.min(1, Math.abs(c || 0) / 0.15); gl.el.setAttribute('opacity', (b * 0.9).toFixed(2)); }
         else if (gl.type === 'spk') { const b = Math.min(1, Math.abs(c || 0) / 0.02); gl.el.setAttribute('opacity', (b * 0.9).toFixed(2)); gl.el.setAttribute('r', 18 + b * 8); }
         else if (gl.type === 'mic') { const p = live ? S.sim.mic[it.id] || 0 : 0; gl.el.setAttribute('opacity', (p * 0.9).toFixed(2)); gl.el.setAttribute('r', 16 + p * 9); }

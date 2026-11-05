@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Offline működés: az oldal, az ikonok és a betűtípusok a gyorsítótárba kerülnek.
 // A VERSION-t a build szkript tölti ki az oldal tartalmából, így új kiadásnál a régi gyorsítótár törlődik.
-const VERSION = '53c9e9e54cf8';
+const VERSION = 'd21774e234a3';
 const CACHE = 'fdn-' + VERSION;
 const CORE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/icon.svg'];
 
