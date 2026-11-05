@@ -39,6 +39,7 @@ const ABOUT = {
   mic: ['Mikrofon', 'Szénmikrofon: a hang összenyomja a belsejét, és ettől megváltozik az ellenállása (csendben kb. 1 kΩ, fújásra kb. 10 kΩ).'],
   motor: ['Motor', 'Az áram forgatja. Fordítva is működik: ha te forgatod, áramot termel.'],
   obj: ['Vizsgált tárgy', 'Ez nincs a dobozban: ide érnek a kábelvégek vagy az ujjad.'],
+  fiber: ['Üvegszálas kábel', 'Vékony üvegszál, amiben a fény a kanyarokban is továbbhalad. A végein lévő tartók a LED-re és a fototranzisztorra illeszthetők.'],
   jumper: ['Átkötő kábel', 'Hajlékony vezeték két távoli pont között. A végét a pont tetején lévő patentra csíptesd.'],
 };
 const KIT_ORDER = ['300', 'light', 'home'];
@@ -119,7 +120,9 @@ function sayBlock(text, opts) {
 
 // ---------- geometria a rajzhoz ----------
 const G = 66, OX = 52, OY = 46;
-const px = (c) => OX + (c - 1) * G, py = (r) => OY + r * G;
+const BLOCK = OY * 2 + 6 * G + 30; // egy rács magassága + hézag
+const px = (c) => OX + (c - 1) * G, py = (r) => OY + (r % E.BOARD_ROWS) * G + Math.floor(r / E.BOARD_ROWS) * BLOCK;
+const boardsOf = (layout) => (layout.some((pl) => E.geometry(pl).snaps.some((q) => q.r >= E.BOARD_ROWS)) ? 2 : 1);
 const LOFF = 5;
 const lvOff = (L) => (L > 1 ? -(L - 1) * LOFF : 0);
 
@@ -163,6 +166,16 @@ function drawPart(parent, pl, level, contacts, opts) {
     return out;
   }
 
+  if (def.kind === 'fiber') {
+    const [x1, y1] = pts[0], [x2, y2] = pts[1];
+    const d = `M${x1},${y1} C${x1 + 150},${y1 + 40} ${x2 + 150},${y2 - 40} ${x2},${y2}`;
+    svgEl('path', { d, fill: 'none', stroke: '#8FD3F4', 'stroke-width': 9, 'stroke-linecap': 'round', opacity: 0.55 }, g);
+    const core = svgEl('path', { d, fill: 'none', stroke: '#FFF6C9', 'stroke-width': 3, 'stroke-linecap': 'round', opacity: 0 }, g);
+    svgEl('circle', { cx: x1, cy: y1, r: 13, fill: 'rgba(255,255,255,.55)', stroke: '#7FB9D6', 'stroke-width': 2 }, g);
+    svgEl('circle', { cx: x2, cy: y2, r: 13, fill: '#1E2227', stroke: '#7FB9D6', 'stroke-width': 2 }, g);
+    out.fiber = { core };
+    return out;
+  }
   if (def.kind === 'wire') {
     const [x1, y1] = pts[0], [x2, y2] = pts[pts.length - 1];
     if (pts.length === 1) {
@@ -351,22 +364,26 @@ function drawBoard(layout, opts) {
   opts = opts || {};
   board.innerHTML = '';
   const hasJ = layout.some((p) => P[p.p].kind === 'jumper');
-  const W = OX * 2 + 9 * G + 10, H = OY * 2 + 6 * G + (hasJ ? 70 : 14);
+  const nb = boardsOf(layout);
+  const W = OX * 2 + 9 * G + 10, H = nb * BLOCK - 30 + 14 + (hasJ ? 56 : 0);
   board.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  const defs = svgEl('defs', {}, board);
-  defs.innerHTML = '<radialGradient id="gl"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>';
-  svgEl('rect', { x: 8, y: 8, width: W - 16, height: H - 16, rx: 18, fill: 'var(--board)', stroke: 'var(--board-edge)', 'stroke-width': 2 }, board);
   const grid = svgEl('g', {}, board);
-  for (let c = 1; c <= 10; c++) {
-    svgEl('line', { x1: px(c), y1: py(0) - 22, x2: px(c), y2: py(6) + 22, stroke: 'var(--board-edge)', 'stroke-width': 1 }, grid);
-    const t = svgEl('text', { x: px(c), y: 26, 'text-anchor': 'middle', 'font-size': 14, 'font-weight': 700, fill: 'var(--label)' }, grid); t.textContent = c;
-  }
-  for (let r = 0; r < 7; r++) {
-    svgEl('line', { x1: px(1) - 22, y1: py(r), x2: px(10) + 22, y2: py(r), stroke: 'var(--board-edge)', 'stroke-width': 1 }, grid);
-    const t = svgEl('text', { x: 22, y: py(r) + 5, 'text-anchor': 'middle', 'font-size': 14, 'font-weight': 700, fill: 'var(--label)' }, grid); t.textContent = E.ROWS[r];
-  }
   const posts = svgEl('g', {}, board);
-  for (let r = 0; r < 7; r++) for (let c = 1; c <= 10; c++) svgEl('circle', { cx: px(c), cy: py(r), r: 4.5, fill: 'var(--post)', 'data-post': E.ROWS[r] + c }, posts);
+  for (let b = 0; b < nb; b++) {
+    const y0 = b * BLOCK;
+    svgEl('rect', { x: 8, y: 8 + y0, width: W - 16, height: OY * 2 + 6 * G - 2 + (hasJ && b === nb - 1 ? 56 : 0), rx: 18, fill: 'var(--board)', stroke: 'var(--board-edge)', 'stroke-width': 2 }, grid);
+    for (let c = 1; c <= 10; c++) {
+      svgEl('line', { x1: px(c), y1: py(b * E.BOARD_ROWS) - 22, x2: px(c), y2: py(b * E.BOARD_ROWS + 6) + 22, stroke: 'var(--board-edge)', 'stroke-width': 1 }, grid);
+      const t = svgEl('text', { x: px(c), y: 26 + y0, 'text-anchor': 'middle', 'font-size': 14, 'font-weight': 700, fill: 'var(--label)' }, grid); t.textContent = c;
+    }
+    for (let r = 0; r < 7; r++) {
+      const R = b * E.BOARD_ROWS + r;
+      svgEl('line', { x1: px(1) - 22, y1: py(R), x2: px(10) + 22, y2: py(R), stroke: 'var(--board-edge)', 'stroke-width': 1 }, grid);
+      const t = svgEl('text', { x: 22, y: py(R) + 5, 'text-anchor': 'middle', 'font-size': 14, 'font-weight': 700, fill: 'var(--label)' }, grid); t.textContent = E.ROWS[r];
+      for (let c = 1; c <= 10; c++) svgEl('circle', { cx: px(c), cy: py(R), r: 4.5, fill: 'var(--post)', 'data-post': E.postName(R, c) }, posts);
+    }
+    if (nb > 1) { const t = svgEl('text', { x: W - 22, y: y0 + OY * 2 + 6 * G - 6, 'text-anchor': 'end', 'font-size': 13, 'font-weight': 800, fill: 'var(--muted)' }, grid); t.textContent = (b + 1) + '. rács'; }
+  }
 
   const upto = opts.upto != null ? opts.upto : layout.length - 1;
   const shown = layout.slice(0, upto + 1);
@@ -375,7 +392,8 @@ function drawBoard(layout, opts) {
   const items = [];
   // szint szerint rajzolunk, az átkötő kábelek a végén
   const order = shown.map((pl, i) => i).sort((a, b) => {
-    const la = P[shown[a].p].kind === 'jumper' ? 99 : chk.levels[a], lb = P[shown[b].p].kind === 'jumper' ? 99 : chk.levels[b];
+    const top = (k) => (k === 'jumper' || k === 'fiber' ? 99 : null);
+    const la = top(P[shown[a].p].kind) || chk.levels[a], lb = top(P[shown[b].p].kind) || chk.levels[b];
     return la - lb || a - b;
   });
   for (const i of order) {
@@ -384,7 +402,7 @@ function drawBoard(layout, opts) {
     if (opts.highlight === i) it.g.classList.add('hl');
     if (opts.dimBefore != null && i < opts.dimBefore) it.g.style.opacity = 0.72;
     // szintjelző a manuálhoz hasonlóan
-    if (opts.showLevels && P[shown[i].p].kind !== 'jumper') {
+    if (opts.showLevels && P[shown[i].p].kind !== 'jumper' && P[shown[i].p].kind !== 'fiber') {
       const geo = E.geometry(shown[i]); const s = geo.snaps[0]; const o = lvOff(chk.levels[i]);
       const bx = px(s.c) + o + 13, by = py(s.r) + o - 13;
       svgEl('circle', { cx: bx, cy: by, r: 9, fill: 'var(--ink)' }, it.g);
@@ -450,7 +468,8 @@ function startSim() {
   if (prevSw) for (const k in S.sim.switches) if (k in prevSw) S.sim.switches[k] = prevSw[k];
   S.wc = null;
   S.posts = new Map();
-  S.sim.nl.chk.contacts.forEach((cs) => cs.forEach((s) => { if (s.connected) S.posts.set(E.ROWS[s.r] + s.c, S.sim.nl.postNet(s.r, s.c)); }));
+  S.sim.nl.chk.contacts.forEach((cs) => cs.forEach((s) => { if (s.connected) S.posts.set(E.postName(s.r, s.c), S.sim.nl.postNet(s.r, s.c)); }));
+  S.sim.fiberOn = S.ctl.fiberOn !== false;
 }
 
 function curOf(fl) {
@@ -510,6 +529,7 @@ function frame(ts) {
       if (it.knob) { const pv = live ? S.sim.pot[it.id] : (S.ctl.pot[it.id] != null ? S.ctl.pot[it.id] : 0.5); const an = (-135 + 270 * pv) * Math.PI / 180; it.knob.el.setAttribute('x2', (it.knob.cx + 12 * Math.sin(an)).toFixed(1)); it.knob.el.setAttribute('y2', (it.knob.cy - 12 * Math.cos(an)).toFixed(1)); }
       if (it.meter) { const fr = live ? S.sim.meterReading(it.id).frac : 0; const an = Math.max(-0.08, Math.min(1.08, fr)) * 110 - 55; it.meter.needle.setAttribute('transform', `rotate(${an.toFixed(1)} 0 4)`); it.meter.needle.setAttribute('stroke', Math.abs(fr) > 1.05 ? '#E0201A' : '#C2413A'); }
       if (it.fan) { const w = live ? S.sim.motor[it.id].w : 0; it.fan.a += Math.sign(w) * Math.min(Math.abs(w), 300) * 0.06 * dtR * 57.3; it.fan.el.setAttribute('transform', `rotate(${(it.fan.a % 360).toFixed(1)})`); it.fan.el.style.opacity = Math.abs(w) > 150 ? 0.55 : 1; }
+      if (it.fiber) { const lk = live && S.sim.links[0]; const b = lk && S.sim.fiberOn ? Math.min(1, Math.max(0, S.sim.cur[lk.led] || 0) / 0.01) : 0; it.fiber.core.setAttribute('opacity', (b * 0.95).toFixed(2)); }
       if (it.objLabel) { const nm = S.ctl.objName[it.id] || '?'; if (it.objLabel.textContent !== nm) it.objLabel.textContent = nm; }
       if (it.capBar) { const vC = live ? S.sim.capV[it.id] || 0 : 0; it.capBar.el.setAttribute('width', (Math.min(1, Math.abs(vC) / 3) * it.capBar.w).toFixed(1)); }
       if (it.isSwitch) {
@@ -536,8 +556,10 @@ function ensureAC() {
 }
 const tick0 = () => new Promise((r) => setTimeout(r, 0));
 async function buildLoop() {
-  const lay = currentLayout(); const sr = S.ac.sampleRate; const dt = 1 / sr;
-  const sim = new E.Sim(lay, { pot: S.ctl.pot }); sim.switches.S1 = true;
+  // mindig 48 kHz-en számolunk (a gyors rezgőkörökhöz ennyi kell), a böngésző igazítja át az eszköz mintavételéhez
+  const lay = currentLayout(); const sr = 48000; const dt = 1 / sr;
+  const sim = new E.Sim(lay, { pot: S.ctl.pot, light: S.light }); for (const k in sim.switches) if (P[sim.nl.elements.find((e) => e.id === k).p].mode === 'slide') sim.switches[k] = true;
+  sim.fiberOn = S.ctl.fiberOn !== false;
   const total = Math.round(sr * 0.045); const samples = new Float32Array(total);
   for (let i = 0; i < total; i++) { sim.step(dt); samples[i] = sim.cur.SP || 0; if (i % 600 === 0) await tick0(); }
   const tail = samples.subarray(Math.round(sr * 0.02)); let m = 0; for (const x of tail) m += x; m /= tail.length;
@@ -585,11 +607,13 @@ async function setSound(on) {
   const ac = ensureAC(); if (!ac) { S.soundOn = false; renderControls(); return; }
   const cfg = audioCfg();
   if (cfg.type === 'loop') {
-    if (!S.audio || S.audio.key !== JSON.stringify(currentLayout())) {
+    const akey = JSON.stringify(currentLayout()) + (S.ctl.fiberOn === false ? '|sötét' : '');
+    if (!S.audio || S.audio.key !== akey) {
       S.audioBusy = true; renderControls();
       const res = await buildLoop(); S.audioBusy = false;
-      if (!res) { S.soundOn = false; renderControls(); return; }
-      S.audio = { key: JSON.stringify(currentLayout()), ...res };
+      if (!res) { S.audio = null; S.audioSilent = true; renderControls(); return; }
+      S.audioSilent = false;
+      S.audio = { key: akey, ...res };
     }
     if (!S.soundOn) return;
     const src = ac.createBufferSource(); src.buffer = S.audio.buf; src.loop = true;
@@ -607,7 +631,7 @@ async function setSound(on) {
   }
   renderControls();
 }
-function syncSoundGate() { if (S.audio && S.audio.gain) S.audio.gain.gain.value = S.sim && S.sim.switches.S1 ? 0.35 : 0; }
+function syncSoundGate() { if (S.audio && S.audio.gain) S.audio.gain.gain.value = S.sim && Object.keys(S.sim.switches).filter((k) => /^S1/.test(k)).every((k) => S.sim.switches[k]) ? 0.35 : 0; }
 function playClick() {
   const ac = S.ac; if (!ac) return;
   if (!S.clickBuf) {
@@ -714,6 +738,16 @@ function renderControls() {
       const up = () => { if (cover.classList.contains('down')) { S.light = keep; inp.value = keep; cover.classList.remove('down'); } };
       cover.addEventListener('pointerdown', down); cover.addEventListener('pointerup', up); cover.addEventListener('pointerleave', up); cover.addEventListener('pointercancel', up);
       box.append(cover);
+    } else if (typeof c === 'object' && c.toggle) {
+      const b = document.createElement('button'); b.className = 'ctrl'; b.setAttribute('aria-pressed', String(!!S.sim.switches[c.toggle]));
+      b.innerHTML = '<span class="knob"></span> <span></span>'; b.lastChild.textContent = c.label || c.toggle;
+      b.onclick = () => { S.sim.switches[c.toggle] = !S.sim.switches[c.toggle]; b.setAttribute('aria-pressed', String(S.sim.switches[c.toggle])); syncSoundGate(); };
+      box.append(b);
+    } else if (typeof c === 'object' && c.fiber) {
+      const b = document.createElement('button'); b.className = 'ctrl'; b.setAttribute('aria-pressed', String(S.sim.fiberOn));
+      b.innerHTML = '<span class="knob"></span> Fény a kábelben';
+      b.onclick = () => { S.ctl.fiberOn = S.sim.fiberOn = !S.sim.fiberOn; b.setAttribute('aria-pressed', String(S.sim.fiberOn)); if (S.soundOn) setSound(true); };
+      box.append(b);
     } else if (typeof c === 'object' && c.mic) {
       const b = document.createElement('button'); b.className = 'ctrl hold'; b.textContent = 'Fújj bele!';
       const down = (e) => { e.preventDefault(); S.micBlow = true; b.classList.add('down'); };
@@ -781,7 +815,7 @@ function renderControls() {
       box.append(b);
     } else if (c === 'sound') {
       const b = document.createElement('button'); b.className = 'ctrl'; b.setAttribute('aria-pressed', String(S.soundOn));
-      b.innerHTML = '<span class="knob"></span> ' + (S.audioBusy ? 'Hang készül…' : 'Hang' + (S.audio && S.soundOn ? ' · kb. ' + Math.round(S.audio.freq) + ' Hz' : ''));
+      b.innerHTML = '<span class="knob"></span> ' + (S.audioBusy ? 'Hang készül…' : 'Hang' + (S.soundOn && S.audioSilent ? ' · most csend' : S.audio && S.soundOn ? ' · kb. ' + Math.round(S.audio.freq) + ' Hz' : ''));
       b.disabled = !!S.audioBusy;
       b.onclick = () => setSound(!S.soundOn);
       box.append(b);
@@ -878,9 +912,11 @@ function miniIcon(p) {
 // ---------- építési lépések szövege ----------
 function stepText(pl, level, layout) {
   const def = P[pl.p]; const geo = E.geometry(pl);
-  const pn = (s) => E.ROWS[s.r] + s.c;
+  const nbd = layout ? boardsOf(layout) : 1;
+  const pn = (s) => { const n = E.postName(s.r, s.c); if (nbd < 2) return n; const m = /^(\d):(.*)$/.exec(n); return m ? m[1] + '. rács ' + m[2] : '1. rács ' + n; };
   const lv = level === 1 ? 'közvetlenül a rácsra (1. szint)' : 'a már lerakott alkatrészek tetejére (' + level + '. szint)';
   const ex = EXPS[S.exp];
+  if (def.kind === 'fiber') return `Húzd rá az üvegszálas kábel átlátszó tartóját a LED-re (${pn(geo.snaps[0])}), a fekete tartót a fototranzisztorra (${pn(geo.snaps[1])}), és dugd be a kábel két végét a tartókba. A Light dobozban találod.`;
   const virtPosts = new Set();
   for (const q of layout || []) if (P[q.p].virtual) for (const sn of E.geometry(q).snaps) virtPosts.add(pn(sn));
   const jcol = { red: 'a piros', black: 'a fekete', blue: 'a kék' };

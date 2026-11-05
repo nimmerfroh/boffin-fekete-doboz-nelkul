@@ -225,3 +225,26 @@ test('F. hangra villogó LED: csendben sötét, erős hangra (fújásra) kigyull
     assert.ok(led(0) < 1e-5, `β=${bf} csend`); assert.ok(led(1) > 0.008, `β=${bf} fújás`);
   });
 });
+
+test('F. fénytávíró: üvegszállal a vevő szól, elzárt fénynél csend és nincs áram, β = 80…300', () => {
+  for (const bf of [80, 300]) withBeta(bf, () => {
+    const s = new E.Sim(lay('lightlink'), { light: 0.6 }); s.switches.S1 = true; s.switches.S1b = true;
+    assert.equal(s.links.length, 1);
+    const f = freqOf(lay('lightlink'), { light: 0.6 }, (x) => { x.switches.S1b = true; });
+    assert.ok(f > 1500 && f < 3500, `β=${bf}: ${f} Hz`);
+    const off = (x) => { x.switches.S1b = true; x.fiberOn = false; };
+    assert.equal(freqOf(lay('lightlink'), { light: 0.6 }, off), 0);
+    const q = new E.Sim(lay('lightlink'), { light: 0.9 }); off(q); q.switches.S1 = true; run(q, 0.005, 1 / 48000);
+    assert.ok(Math.abs(q.cur.SP) < 0.002, `nyugalmi áram ${q.cur.SP}`);
+  });
+});
+
+test('a rezgőkörök 44,1 és 48 kHz-es lépésközzel is maguktól elindulnak', () => {
+  for (const sr of [44100, 48000]) for (const id of ['sound', 'lightlink', 'organ']) {
+    const s = new E.Sim(lay(id), { light: 0.85, pot: { RV: 0.3 } });
+    for (const k in s.switches) s.switches[k] = true;
+    const dt = 1 / sr; let on = false, edges = 0;
+    for (let i = 0, n = Math.round(0.03 / dt); i < n; i++) { s.step(dt); const now = Math.abs(s.cur.SP) > 0.01; if (now && !on) edges++; on = now; }
+    assert.ok(edges > 5, `${id} @ ${sr} Hz: ${edges} él`);
+  }
+});

@@ -302,6 +302,7 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
     J1: { kind: 'jumper', name: 'Átkötő kábel (fekete)', short: 'J', color: 'black' },
     J2: { kind: 'jumper', name: 'Átkötő kábel (piros)', short: 'J', color: 'red' },
     J4: { kind: 'jumper', name: 'Átkötő kábel (kék)', short: 'J', color: 'blue' },
+    FC: { kind: 'fiber', name: 'Üvegszálas kábel (két tartóval)', short: 'FC' },
   };
 
   // A mérőműszer (M6) méréshatárai: belső ellenállás és végkitérés (áram).
@@ -316,13 +317,19 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
   // Melyik dobozban hány darab van (a hivatalos alkatrészlisták alapján).
   const KITS = {
     '300': { name: 'Boffin I 300', parts: { J1: 1, J2: 1, W1: 6, W2: 9, W3: 4, W4: 2, W5: 1, W6: 1, W7: 1, B1: 2, S1: 1, S2: 1, R1: 1, R2: 1, R3: 1, R4: 1, R5: 1, RV: 1, D1: 1, D2: 1, C1: 1, C2: 1, C3: 1, C4: 1, C5: 1, Q1: 1, Q2: 1, Q4: 1, L1: 1, L2: 1, SP: 1, M1: 1, X1: 1 } },
-    light: { name: 'Boffin II Light', parts: { J1: 1, J2: 1, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, B1: 2, S1: 1, S2: 1, R1: 1, R3: 1, R5: 1, RV: 1, D1: 1, C2: 1, C4: 1, Q1: 1, Q2: 1, Q4: 1, SP: 1, M1: 1, X1: 1 } },
+    light: { name: 'Boffin II Light', parts: { J1: 1, J2: 1, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, B1: 2, S1: 1, S2: 1, R1: 1, R3: 1, R5: 1, RV: 1, D1: 1, C2: 1, C4: 1, Q1: 1, Q2: 1, Q4: 1, SP: 1, M1: 1, X1: 1, FC: 1 } },
     home: { name: 'Boffin II My Home', parts: { J1: 1, J2: 1, J4: 2, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, S1: 1, S2: 1, R3: 1, C5: 1, Q2: 1, Q4: 1, M4: 1, M6: 1 } },
   };
 
   function postKey(r, c) { return r + ',' + c; }
-  function postName(r, c) { return ROWS[r] + c; }
-  function parsePost(s) { return [ROWS.indexOf(s[0]), parseInt(s.slice(1), 10)]; }
+  // Több rács: a második rács sorai 10-zel eltolva ("2:A3" -> 10. sor). Így az ellenőrzés és a
+  // kapcsolásszámítás változatlan, csak a rajz és az elnevezés tud a rácsokról.
+  const BOARD_ROWS = 10;
+  function postName(r, c) { const b = Math.floor(r / BOARD_ROWS); return (b ? (b + 1) + ':' : '') + ROWS[r % BOARD_ROWS] + c; }
+  function parsePost(s) {
+    let b = 0; const m = /^(\d+):(.*)$/.exec(s); if (m) { b = parseInt(m[1], 10) - 1; s = m[2]; }
+    return [ROWS.indexOf(s[0]) + b * BOARD_ROWS, parseInt(s.slice(1), 10)];
+  }
 
   // Egy elhelyezés geometriája: snapek (terminálok) és a test által takart pontok.
   function geometry(pl) {
@@ -331,10 +338,10 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
     const [dr, dc] = DIRS[pl.dir || 'r'];
     const snaps = []; // {r,c,term}
     const body = [];  // takart, snap nélküli pontok
-    if (def.kind === 'jumper') {
+    if (def.kind === 'jumper' || def.kind === 'fiber') {
       const [r1, c1] = parsePost(pl.to);
       snaps.push({ r: r0, c: c0, term: 'a' }); snaps.push({ r: r1, c: c1, term: 'b' });
-      return { snaps, body, jumper: true };
+      return { snaps, body, jumper: def.kind === 'jumper', fiber: def.kind === 'fiber' };
     }
     if (def.kind === 'wire') {
       for (let i = 0; i < def.n; i++) snaps.push({ r: r0 + dr * i, c: c0 + dc * i, term: 'w' + i });
@@ -377,6 +384,7 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
     layout.forEach((pl, idx) => {
       const g = geometry(pl);
       const id = pl.id || pl.p;
+      if (g.fiber) { levels.push(0); contacts.push(g.snaps.map((s2) => ({ ...s2, connected: false }))); return; }
       if (g.jumper) {
         const cs = g.snaps.map((s) => {
           const h = height.get(postKey(s.r, s.c)) || 0;
@@ -386,7 +394,7 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
         levels.push(0); contacts.push(cs); return;
       }
       for (const s of g.snaps.concat(g.body)) {
-        if (s.r < 0 || s.r > 6 || s.c < 1 || s.c > 10) errors.push(`${id}: lelóg a rácsról (${s.r},${s.c})`);
+        if (s.r < 0 || s.r % BOARD_ROWS > 6 || s.r >= 2 * BOARD_ROWS || s.c < 1 || s.c > 10) errors.push(`${id}: lelóg a rácsról (${s.r},${s.c})`);
       }
       let top = 0;
       for (const s of g.snaps) top = Math.max(top, height.get(postKey(s.r, s.c)) || 0);
@@ -438,7 +446,7 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
     const elements = [];
     layout.forEach((pl, i) => {
       const def = PARTS[pl.p];
-      if (def.kind === 'wire' || def.kind === 'jumper') return;
+      if (def.kind === 'wire' || def.kind === 'jumper' || def.kind === 'fiber') return;
       const t = {};
       for (const s of chk.contacts[i]) t[s.term] = s.connected ? postNet(s.r, s.c) : -1;
       elements.push({ idx: i, id: pl.id || pl.p, p: pl.p, def, t, pl });
@@ -463,6 +471,10 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
     opts = opts || {};
     const nl0 = opts.netlist || buildNetlist(layout);
     const elements = []; let nets = nl0.nets;
+    // több rácsnál (külön elemmel) a negatív pólusokat egy közös földre kötjük: áram nem folyik rajta,
+    // csak a lebegő áramkör feszültségeit rögzíti (stabilabb számítás)
+    const bats = nl0.elements.filter((e) => e.def.kind === 'bat' && e.t.b >= 0);
+    for (let k = 1; k < bats.length; k++) if (bats[k].t.b !== bats[0].t.b && !nl0.elements.some((e) => e.t.a === bats[k].t.a && e.t.b === bats[0].t.b)) elements.push({ idx: -1, id: '#gnd' + k, p: 'RS', def: { kind: 'res', R: 1 }, t: { a: bats[k].t.b, b: bats[0].t.b }, internal: true });
     for (const e of nl0.elements) {
       if (e.def.kind === 'led' && e.t.a >= 0 && e.t.b >= 0) {
         const mid = nets++;
@@ -472,6 +484,16 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
     }
     this.nl = { ...nl0, nets, elements };
     this.layout = layout;
+    // üvegszálas kábel: a LED fénye a kábel másik végén lévő fototranzisztorra jut
+    this.links = []; this.fiberOn = true;
+    for (const pl of layout || []) {
+      if (PARTS[pl.p].kind !== 'fiber') continue;
+      const [ra, ca] = parsePost(pl.at), [rb, cb] = parsePost(pl.to);
+      const hit = (e, r, c) => { const g = geometry(e.pl); return g.snaps.concat(g.body).some((q) => q.r === r && q.c === c); };
+      const led = nl0.elements.find((e) => e.def.kind === 'led' && hit(e, ra, ca));
+      const ph = nl0.elements.find((e) => e.def.kind === 'photo' && hit(e, rb, cb));
+      if (led && ph) this.links.push({ led: led.id, photo: ph.id, k: pl.k != null ? pl.k : 0.35 });
+    }
     const bat = elements.find((e) => e.def.kind === 'bat' && e.t.b >= 0);
     const vs = Math.max(3, elements.filter((e) => e.def.kind === 'bat').reduce((a, e) => a + e.def.V, 0));
     this.vLo = -vs - 1; this.vHi = 2 * vs + 1;
@@ -488,7 +510,9 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
     this.switches = {}; this.capV = {}; this.cur = {}; this.jx = {}; this.pot = {}; this.meter = {}; this.motor = {}; this.obj = {}; this.mic = {};
     for (const e of elements) {
       if (e.def.kind === 'sw') this.switches[e.id] = false;
-      if (e.def.kind === 'cap') this.capV[e.id] = (opts.capInit && opts.capInit[e.id]) || 0;
+      // a kondenzátorok kezdőfeszültségében néhány mV eltérés: a valódi áramkörökben a zaj és az
+      // alkatrész-eltérések mindig kibillentik a szimmetrikus rezgőköröket, a szimulációban ez pótolja őket
+      if (e.def.kind === 'cap') this.capV[e.id] = (opts.capInit && opts.capInit[e.id] != null) ? opts.capInit[e.id] : jitter(e.id);
       if (e.def.kind === 'npn' || e.def.kind === 'pnp') this.jx[e.id] = { vbe: 0, vbc: 0 };
       if (e.def.kind === 'led') this.jx[e.id] = { vd: 0 };
       if (e.def.kind === 'pot') this.pot[e.id] = (opts.pot && opts.pot[e.id] != null) ? opts.pot[e.id] : 0.5;
@@ -501,6 +525,11 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
 
   // szénmikrofon: csendben kb. 1 kΩ, erős hangnyomásra (fújás) kb. 10 kΩ
   function micR(p) { return 1000 + 9000 * Math.max(0, Math.min(1, p || 0)); }
+  // determinisztikus, a hasonló nevekre is jól szóródó eltérés (FNV-1a hash), ±10 mV
+  function jitter(id) {
+    let h = 2166136261; for (const ch of String(id)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
+    return ((h % 2001) / 1000 - 1) * 0.01;
+  }
   function potR(d, p) { p = Math.max(0, Math.min(1, p)); return { ra: Math.max(1, d.R * p), rb: Math.max(1, d.R * (1 - p)) }; }
 
   // A motor tengelyének mozgása (explicit Euler, a lépés végén). Kézi pörgetésnél a sebességet a kéz adja.
@@ -519,6 +548,16 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
     const frac = i / r.fs;
     const value = this.meter[id] === '5V' ? i * r.R : i;
     return { frac, value, range: this.meter[id], unit: this.meter[id] === '5V' ? 'V' : 'A' };
+  };
+
+  // A fototranzisztort érő fény: környezeti fény, vagy ha üvegszál köti egy LED-hez, annak fénye
+  // (a kábeltartó a környezeti fény nagy részét kitakarja).
+  Sim.prototype.photoLight = function (id) {
+    const lk = this.links.find((l) => l.photo === id);
+    if (!lk) return this.light;
+    // a kábel fekete tartója a fototranzisztoron marad; ha a kábelben nem jut fény (elzárva), csak a szórt fény marad
+    const I = this.fiberOn ? Math.max(0, this.cur[lk.led] || 0) : 0;
+    return 0.08 * this.light + lk.k * Math.min(1.2, I / 0.01);
   };
 
   Sim.prototype.nodeV = function (net) {
@@ -599,7 +638,7 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
           stampG(a, b, g); stampI(a, b, id - g * vd); break;
         }
         case 'photo': {
-          const Iph = 1e-7 + 4e-3 * Math.pow(Math.max(0, Math.min(1, this.light)), 1.6);
+          const Iph = 1e-7 + 4e-3 * Math.pow(Math.max(0, Math.min(1, this.photoLight(e.id))), 1.6);
           // sima modell: pozitív feszültségen telítődő áram, negatívon lineáris folytatás;
           // a 0 V-nál az érték és a meredekség is folytonos, így a Newton-iteráció nem ugrál
           let i, g;
@@ -696,7 +735,7 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
         case 'bat': i = (u - d.V) / d.Rint; break;
         case 'cap': i = d.C / dt * (u - this.capV[e.id]); this.capV[e.id] = u; break;
         case 'led': i = d.Is * (safeExp(u / (d.n * VT)) - 1); break;
-        case 'photo': { const Iph = 1e-7 + 4e-3 * Math.pow(Math.max(0, Math.min(1, this.light)), 1.6); i = (u >= 0 ? Iph * (1 - Math.exp(-u / 0.12)) : Iph * u / 0.12) + 1e-9 * u; break; }
+        case 'photo': { const Iph = 1e-7 + 4e-3 * Math.pow(Math.max(0, Math.min(1, this.photoLight(e.id))), 1.6); i = (u >= 0 ? Iph * (1 - Math.exp(-u / 0.12)) : Iph * u / 0.12) + 1e-9 * u; break; }
       }
       this.cur[e.id] = i;
     }
@@ -772,20 +811,21 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
 
   // ASCII rajz (teszteléshez)
   function ascii(layout) {
-    const g = []; for (let r = 0; r < 7; r++) { g.push(new Array(11).fill(' . ')); }
+    const nb = layout.some((pl) => geometry(pl).snaps.some((q) => q.r >= BOARD_ROWS)) ? 2 : 1;
+    const g = []; for (let r = 0; r < nb * BOARD_ROWS; r++) { g.push(new Array(11).fill(' . ')); }
     const chk = checkBuild(layout);
     layout.forEach((pl, i) => {
       const geo = geometry(pl); const id = (pl.id || pl.p).padEnd(3).slice(0, 3);
-      if (geo.jumper) return;
+      if (geo.jumper || geo.fiber) return;
       for (const s of geo.snaps) g[s.r] && (g[s.r][s.c] = id);
       for (const b of geo.body) if (!b.side && g[b.r]) g[b.r][b.c] = id.toLowerCase();
     });
     let s = '    ' + Array.from({ length: 10 }, (_, i) => String(i + 1).padStart(2).padEnd(3)).join('') + '\n';
-    for (let r = 0; r < 7; r++) s += ' ' + ROWS[r] + '  ' + g[r].slice(1).join('') + '\n';
+    for (let r = 0; r < nb * BOARD_ROWS; r++) { if (r % BOARD_ROWS > 6) { if (r % BOARD_ROWS === 7) s += '   --- ' + (Math.floor(r / BOARD_ROWS) + 2) + '. rács ---\n'; continue; } s += ' ' + ROWS[r % BOARD_ROWS] + '  ' + g[r].slice(1).join('') + '\n'; }
     return s;
   }
 
-  const api = { PARTS, KITS, METER, MOTOR, ROWS, DIRS, geometry, checkBuild, buildNetlist, Sim, ascii, postName, parsePost };
+  const api = { PARTS, KITS, METER, MOTOR, ROWS, BOARD_ROWS, DIRS, geometry, checkBuild, buildNetlist, Sim, ascii, postName, parsePost };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.BoffinEngine = api;
 })(typeof window !== 'undefined' ? window : globalThis);
 
@@ -1114,6 +1154,28 @@ L.shadow = L.siren.map((p) => (p.p === 'C5' ? { ...p, p: 'Q4' } : p.p === 'S2' ?
 
 // Hangra villogó LED: az éjjeli lámpa, a fototranzisztor helyén mikrofonnal.
 L.clap = L.night.map((p) => (p.p === 'Q4' ? { ...p, p: 'X1' } : p.p === 'R3' ? { ...p, p: 'R4' } : p));
+
+// ---- 2. fázis: fénytávíró (két rács, üvegszálas kábel) ----
+
+// Gyors villogó (adó): a villogó 0,1 µF-os kondenzátorokkal, két LED-del.
+L.fast = L.flash.map((p) => (p.p === 'C4' ? { ...p, p: 'C2' } : p));
+
+// Fénytávíró: az 1. rácson a gyors villogó (adó), a 2. rácson a vevő; az üvegszál a D1 LED-ről a Q4-re viszi a fényt.
+L.lightlink = L.fast.concat([
+  { p: 'W6', at: '2:A2', dir: 'r', id: 'Wp2' },
+  { p: 'W6', at: '2:G2', dir: 'r', id: 'Wn2' },
+  { p: 'W3', at: '2:C2', dir: 'd', id: 'Wb2' },
+  { p: 'W3', at: '2:C7', dir: 'd', id: 'Ws2' },
+  { p: 'Q2', at: '2:C5', dir: 'd', id: 'Q2c' },
+  { p: 'Q4', at: '2:A2', dir: 'd' },
+  { p: 'R4', at: '2:E2', dir: 'd' },
+  { p: 'W3', at: '2:D2', dir: 'r', id: 'Lb2' },
+  { p: 'SP', at: '2:A5', dir: 'd' },
+  { p: 'W3', at: '2:E5', dir: 'd', id: 'Le2' },
+  { p: 'S1', at: '2:A7', dir: 'd', id: 'S1b' },
+  { p: 'B1', at: '2:E7', dir: 'd', id: 'B1b' },
+  { p: 'FC', at: 'D4', to: '2:B2' },
+]);
 
 module.exports = L;
 
@@ -1705,6 +1767,33 @@ const EXPS = [
     },
   },
 
+  {
+    id: 'lightlink', chapter: 'F', title: 'Fénytávíró', tag: 'A hang fénnyel utazik egy üvegszálon',
+    layout: LAY.lightlink, sim: { dt: 0.000005, scale: 1 / 1000 }, slow: 1000,
+    controls: ['S1', { toggle: 'S1b', label: 'S1 (vevő)' }, { fiber: true }, 'sound'],
+    intro: {
+      k: 'Két rács, két áramkör, és nincs köztük vezeték! Az egyik nagyon gyorsan villog, a fény egy üvegszálon átmegy a másikhoz, és az megszólal.',
+      m: 'Az 1. rácson egy nagyon gyors villogó van, olyan gyors, hogy a szemed nem látja. A D1 LED fényét egy üvegszálas kábel viszi át a 2. rács fototranzisztorára. A vevő a fény villogásából hangot csinál.',
+      n: 'Optikai átvitel: az adó egy kb. 2,5 kHz-es astabil multivibrátor, a D1 LED fénye üvegszálon jut a vevő fototranzisztorára (Q4). A Q4 árama vezérli a Q2c tranzisztort, ami a hangszórót hajtja. A két áramkör elektromosan teljesen független.',
+    },
+    guess: {
+      q: { k: 'Ha letakarod a kábelt, hogy ne menjen át a fény, mi lesz a hanggal?', m: 'Mi történik a hanggal, ha elzárod a fényt a kábelben?', n: 'Mit hallasz, ha megszakítod az optikai összeköttetést?' },
+      opts: [['Elhallgat', 'off'], ['Ugyanúgy szól', 'sound']], right: 0,
+      after: { k: 'Igen! A hangot a fény viszi, fény nélkül csend van.', m: 'A vevő csak a fényből tudja, mit kell szólnia. Fény nélkül nincs mit felerősítenie.', n: 'A két áramkört csak a fény köti össze; megszakítva a vevő kimenete nyugalomba áll.' },
+    },
+    variants: [],
+    hint: {
+      k: 'Kapcsold be mindkét kapcsolót és a hangot! Aztán kapcsold ki a „Fény a kábelben” gombot.',
+      m: 'Kapcsold be mindkét S1-et és a hangot. A valódi áramkörön szakítsd meg a fényt, például húzd ki a kábelt a tartóból. A „Fény a kábelben” kapcsolóval itt is kipróbálhatod. Ki- és bekapcsolgatva morzejeleket küldhetsz!',
+      n: 'Figyeld a fototranzisztor áramát a mérőn, és hasonlítsd össze az adó LED-jének áramával. A kijelzés 1000× lassított.',
+    },
+    why: {
+      k: 'A LED olyan gyorsan villog, hogy nem látod. A kis fekete szem a kábel másik végén látja, és minden villanásnál meglöki a hangszórót. A sok gyors lökésből lesz a hang.',
+      m: 'A hang rezgés. Az adó ezt a rezgést fényvillogássá alakítja. Az üvegszál a fényt a kanyarokban is továbbviszi. A vevő a villogást visszaalakítja árammá, és a hangszóró megszólal. Az internet is nagyrészt így utazik: üvegszálakban, fényvillanásokként. A Light dobozban lévő infravevő IC (U24) is fényjeleket fog, csak láthatatlan infravörös fénnyel.',
+      n: 'A Q4 fotoárama a D1 fényével arányos, és a Q2c-t a LED villogásának ütemében kapcsolgatja. A szimulációban kb. 2,4 kHz-es hang szól a vevőben, és ha a fényt elzárjuk, a vevő árama gyakorlatilag nulla. Az R4 (10 kΩ) levezeti a szórt fény kis áramát, hogy a vevő nyugalomban zárva maradjon. A fénycsatolást a szimuláció egyszerűsítve modellezi (a LED-áram egy része jut el a fototranzisztorig).',
+    },
+  },
+
 ];
 
 
@@ -1717,7 +1806,7 @@ const CHAPTERS = [
   { id: 'F', title: 'Fény és hang továbbítása', short: 'Továbbítás' },
   { id: 'G', title: 'A fekete dobozok kinyitása', short: 'Fekete dobozok' },
 ];
-const ORDER = ['first', 'conduct', 'series', 'dimmer', 'generator', 'capbat', 'motorspeed', 'night', 'touch', 'water', 'shadow', 'delay', 'flipflop', 'and', 'or', 'not', 'flash', 'metronome', 'sound', 'organ', 'siren', 'clap'];
+const ORDER = ['first', 'conduct', 'series', 'dimmer', 'generator', 'capbat', 'motorspeed', 'night', 'touch', 'water', 'shadow', 'delay', 'flipflop', 'and', 'or', 'not', 'flash', 'metronome', 'sound', 'organ', 'siren', 'clap', 'lightlink'];
 EXPS.sort((x, y) => ORDER.indexOf(x.id) - ORDER.indexOf(y.id));
 
 // Egy változat alkalmazása: vagy átalakítja az elrendezést, vagy egy másik elrendezésre cseréli.
@@ -1771,6 +1860,7 @@ const ABOUT = {
   mic: ['Mikrofon', 'Szénmikrofon: a hang összenyomja a belsejét, és ettől megváltozik az ellenállása (csendben kb. 1 kΩ, fújásra kb. 10 kΩ).'],
   motor: ['Motor', 'Az áram forgatja. Fordítva is működik: ha te forgatod, áramot termel.'],
   obj: ['Vizsgált tárgy', 'Ez nincs a dobozban: ide érnek a kábelvégek vagy az ujjad.'],
+  fiber: ['Üvegszálas kábel', 'Vékony üvegszál, amiben a fény a kanyarokban is továbbhalad. A végein lévő tartók a LED-re és a fototranzisztorra illeszthetők.'],
   jumper: ['Átkötő kábel', 'Hajlékony vezeték két távoli pont között. A végét a pont tetején lévő patentra csíptesd.'],
 };
 const KIT_ORDER = ['300', 'light', 'home'];
@@ -1851,7 +1941,9 @@ function sayBlock(text, opts) {
 
 // ---------- geometria a rajzhoz ----------
 const G = 66, OX = 52, OY = 46;
-const px = (c) => OX + (c - 1) * G, py = (r) => OY + r * G;
+const BLOCK = OY * 2 + 6 * G + 30; // egy rács magassága + hézag
+const px = (c) => OX + (c - 1) * G, py = (r) => OY + (r % E.BOARD_ROWS) * G + Math.floor(r / E.BOARD_ROWS) * BLOCK;
+const boardsOf = (layout) => (layout.some((pl) => E.geometry(pl).snaps.some((q) => q.r >= E.BOARD_ROWS)) ? 2 : 1);
 const LOFF = 5;
 const lvOff = (L) => (L > 1 ? -(L - 1) * LOFF : 0);
 
@@ -1895,6 +1987,16 @@ function drawPart(parent, pl, level, contacts, opts) {
     return out;
   }
 
+  if (def.kind === 'fiber') {
+    const [x1, y1] = pts[0], [x2, y2] = pts[1];
+    const d = `M${x1},${y1} C${x1 + 150},${y1 + 40} ${x2 + 150},${y2 - 40} ${x2},${y2}`;
+    svgEl('path', { d, fill: 'none', stroke: '#8FD3F4', 'stroke-width': 9, 'stroke-linecap': 'round', opacity: 0.55 }, g);
+    const core = svgEl('path', { d, fill: 'none', stroke: '#FFF6C9', 'stroke-width': 3, 'stroke-linecap': 'round', opacity: 0 }, g);
+    svgEl('circle', { cx: x1, cy: y1, r: 13, fill: 'rgba(255,255,255,.55)', stroke: '#7FB9D6', 'stroke-width': 2 }, g);
+    svgEl('circle', { cx: x2, cy: y2, r: 13, fill: '#1E2227', stroke: '#7FB9D6', 'stroke-width': 2 }, g);
+    out.fiber = { core };
+    return out;
+  }
   if (def.kind === 'wire') {
     const [x1, y1] = pts[0], [x2, y2] = pts[pts.length - 1];
     if (pts.length === 1) {
@@ -2083,22 +2185,26 @@ function drawBoard(layout, opts) {
   opts = opts || {};
   board.innerHTML = '';
   const hasJ = layout.some((p) => P[p.p].kind === 'jumper');
-  const W = OX * 2 + 9 * G + 10, H = OY * 2 + 6 * G + (hasJ ? 70 : 14);
+  const nb = boardsOf(layout);
+  const W = OX * 2 + 9 * G + 10, H = nb * BLOCK - 30 + 14 + (hasJ ? 56 : 0);
   board.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  const defs = svgEl('defs', {}, board);
-  defs.innerHTML = '<radialGradient id="gl"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>';
-  svgEl('rect', { x: 8, y: 8, width: W - 16, height: H - 16, rx: 18, fill: 'var(--board)', stroke: 'var(--board-edge)', 'stroke-width': 2 }, board);
   const grid = svgEl('g', {}, board);
-  for (let c = 1; c <= 10; c++) {
-    svgEl('line', { x1: px(c), y1: py(0) - 22, x2: px(c), y2: py(6) + 22, stroke: 'var(--board-edge)', 'stroke-width': 1 }, grid);
-    const t = svgEl('text', { x: px(c), y: 26, 'text-anchor': 'middle', 'font-size': 14, 'font-weight': 700, fill: 'var(--label)' }, grid); t.textContent = c;
-  }
-  for (let r = 0; r < 7; r++) {
-    svgEl('line', { x1: px(1) - 22, y1: py(r), x2: px(10) + 22, y2: py(r), stroke: 'var(--board-edge)', 'stroke-width': 1 }, grid);
-    const t = svgEl('text', { x: 22, y: py(r) + 5, 'text-anchor': 'middle', 'font-size': 14, 'font-weight': 700, fill: 'var(--label)' }, grid); t.textContent = E.ROWS[r];
-  }
   const posts = svgEl('g', {}, board);
-  for (let r = 0; r < 7; r++) for (let c = 1; c <= 10; c++) svgEl('circle', { cx: px(c), cy: py(r), r: 4.5, fill: 'var(--post)', 'data-post': E.ROWS[r] + c }, posts);
+  for (let b = 0; b < nb; b++) {
+    const y0 = b * BLOCK;
+    svgEl('rect', { x: 8, y: 8 + y0, width: W - 16, height: OY * 2 + 6 * G - 2 + (hasJ && b === nb - 1 ? 56 : 0), rx: 18, fill: 'var(--board)', stroke: 'var(--board-edge)', 'stroke-width': 2 }, grid);
+    for (let c = 1; c <= 10; c++) {
+      svgEl('line', { x1: px(c), y1: py(b * E.BOARD_ROWS) - 22, x2: px(c), y2: py(b * E.BOARD_ROWS + 6) + 22, stroke: 'var(--board-edge)', 'stroke-width': 1 }, grid);
+      const t = svgEl('text', { x: px(c), y: 26 + y0, 'text-anchor': 'middle', 'font-size': 14, 'font-weight': 700, fill: 'var(--label)' }, grid); t.textContent = c;
+    }
+    for (let r = 0; r < 7; r++) {
+      const R = b * E.BOARD_ROWS + r;
+      svgEl('line', { x1: px(1) - 22, y1: py(R), x2: px(10) + 22, y2: py(R), stroke: 'var(--board-edge)', 'stroke-width': 1 }, grid);
+      const t = svgEl('text', { x: 22, y: py(R) + 5, 'text-anchor': 'middle', 'font-size': 14, 'font-weight': 700, fill: 'var(--label)' }, grid); t.textContent = E.ROWS[r];
+      for (let c = 1; c <= 10; c++) svgEl('circle', { cx: px(c), cy: py(R), r: 4.5, fill: 'var(--post)', 'data-post': E.postName(R, c) }, posts);
+    }
+    if (nb > 1) { const t = svgEl('text', { x: W - 22, y: y0 + OY * 2 + 6 * G - 6, 'text-anchor': 'end', 'font-size': 13, 'font-weight': 800, fill: 'var(--muted)' }, grid); t.textContent = (b + 1) + '. rács'; }
+  }
 
   const upto = opts.upto != null ? opts.upto : layout.length - 1;
   const shown = layout.slice(0, upto + 1);
@@ -2107,7 +2213,8 @@ function drawBoard(layout, opts) {
   const items = [];
   // szint szerint rajzolunk, az átkötő kábelek a végén
   const order = shown.map((pl, i) => i).sort((a, b) => {
-    const la = P[shown[a].p].kind === 'jumper' ? 99 : chk.levels[a], lb = P[shown[b].p].kind === 'jumper' ? 99 : chk.levels[b];
+    const top = (k) => (k === 'jumper' || k === 'fiber' ? 99 : null);
+    const la = top(P[shown[a].p].kind) || chk.levels[a], lb = top(P[shown[b].p].kind) || chk.levels[b];
     return la - lb || a - b;
   });
   for (const i of order) {
@@ -2116,7 +2223,7 @@ function drawBoard(layout, opts) {
     if (opts.highlight === i) it.g.classList.add('hl');
     if (opts.dimBefore != null && i < opts.dimBefore) it.g.style.opacity = 0.72;
     // szintjelző a manuálhoz hasonlóan
-    if (opts.showLevels && P[shown[i].p].kind !== 'jumper') {
+    if (opts.showLevels && P[shown[i].p].kind !== 'jumper' && P[shown[i].p].kind !== 'fiber') {
       const geo = E.geometry(shown[i]); const s = geo.snaps[0]; const o = lvOff(chk.levels[i]);
       const bx = px(s.c) + o + 13, by = py(s.r) + o - 13;
       svgEl('circle', { cx: bx, cy: by, r: 9, fill: 'var(--ink)' }, it.g);
@@ -2182,7 +2289,8 @@ function startSim() {
   if (prevSw) for (const k in S.sim.switches) if (k in prevSw) S.sim.switches[k] = prevSw[k];
   S.wc = null;
   S.posts = new Map();
-  S.sim.nl.chk.contacts.forEach((cs) => cs.forEach((s) => { if (s.connected) S.posts.set(E.ROWS[s.r] + s.c, S.sim.nl.postNet(s.r, s.c)); }));
+  S.sim.nl.chk.contacts.forEach((cs) => cs.forEach((s) => { if (s.connected) S.posts.set(E.postName(s.r, s.c), S.sim.nl.postNet(s.r, s.c)); }));
+  S.sim.fiberOn = S.ctl.fiberOn !== false;
 }
 
 function curOf(fl) {
@@ -2242,6 +2350,7 @@ function frame(ts) {
       if (it.knob) { const pv = live ? S.sim.pot[it.id] : (S.ctl.pot[it.id] != null ? S.ctl.pot[it.id] : 0.5); const an = (-135 + 270 * pv) * Math.PI / 180; it.knob.el.setAttribute('x2', (it.knob.cx + 12 * Math.sin(an)).toFixed(1)); it.knob.el.setAttribute('y2', (it.knob.cy - 12 * Math.cos(an)).toFixed(1)); }
       if (it.meter) { const fr = live ? S.sim.meterReading(it.id).frac : 0; const an = Math.max(-0.08, Math.min(1.08, fr)) * 110 - 55; it.meter.needle.setAttribute('transform', `rotate(${an.toFixed(1)} 0 4)`); it.meter.needle.setAttribute('stroke', Math.abs(fr) > 1.05 ? '#E0201A' : '#C2413A'); }
       if (it.fan) { const w = live ? S.sim.motor[it.id].w : 0; it.fan.a += Math.sign(w) * Math.min(Math.abs(w), 300) * 0.06 * dtR * 57.3; it.fan.el.setAttribute('transform', `rotate(${(it.fan.a % 360).toFixed(1)})`); it.fan.el.style.opacity = Math.abs(w) > 150 ? 0.55 : 1; }
+      if (it.fiber) { const lk = live && S.sim.links[0]; const b = lk && S.sim.fiberOn ? Math.min(1, Math.max(0, S.sim.cur[lk.led] || 0) / 0.01) : 0; it.fiber.core.setAttribute('opacity', (b * 0.95).toFixed(2)); }
       if (it.objLabel) { const nm = S.ctl.objName[it.id] || '?'; if (it.objLabel.textContent !== nm) it.objLabel.textContent = nm; }
       if (it.capBar) { const vC = live ? S.sim.capV[it.id] || 0 : 0; it.capBar.el.setAttribute('width', (Math.min(1, Math.abs(vC) / 3) * it.capBar.w).toFixed(1)); }
       if (it.isSwitch) {
@@ -2268,8 +2377,10 @@ function ensureAC() {
 }
 const tick0 = () => new Promise((r) => setTimeout(r, 0));
 async function buildLoop() {
-  const lay = currentLayout(); const sr = S.ac.sampleRate; const dt = 1 / sr;
-  const sim = new E.Sim(lay, { pot: S.ctl.pot }); sim.switches.S1 = true;
+  // mindig 48 kHz-en számolunk (a gyors rezgőkörökhöz ennyi kell), a böngésző igazítja át az eszköz mintavételéhez
+  const lay = currentLayout(); const sr = 48000; const dt = 1 / sr;
+  const sim = new E.Sim(lay, { pot: S.ctl.pot, light: S.light }); for (const k in sim.switches) if (P[sim.nl.elements.find((e) => e.id === k).p].mode === 'slide') sim.switches[k] = true;
+  sim.fiberOn = S.ctl.fiberOn !== false;
   const total = Math.round(sr * 0.045); const samples = new Float32Array(total);
   for (let i = 0; i < total; i++) { sim.step(dt); samples[i] = sim.cur.SP || 0; if (i % 600 === 0) await tick0(); }
   const tail = samples.subarray(Math.round(sr * 0.02)); let m = 0; for (const x of tail) m += x; m /= tail.length;
@@ -2317,11 +2428,13 @@ async function setSound(on) {
   const ac = ensureAC(); if (!ac) { S.soundOn = false; renderControls(); return; }
   const cfg = audioCfg();
   if (cfg.type === 'loop') {
-    if (!S.audio || S.audio.key !== JSON.stringify(currentLayout())) {
+    const akey = JSON.stringify(currentLayout()) + (S.ctl.fiberOn === false ? '|sötét' : '');
+    if (!S.audio || S.audio.key !== akey) {
       S.audioBusy = true; renderControls();
       const res = await buildLoop(); S.audioBusy = false;
-      if (!res) { S.soundOn = false; renderControls(); return; }
-      S.audio = { key: JSON.stringify(currentLayout()), ...res };
+      if (!res) { S.audio = null; S.audioSilent = true; renderControls(); return; }
+      S.audioSilent = false;
+      S.audio = { key: akey, ...res };
     }
     if (!S.soundOn) return;
     const src = ac.createBufferSource(); src.buffer = S.audio.buf; src.loop = true;
@@ -2339,7 +2452,7 @@ async function setSound(on) {
   }
   renderControls();
 }
-function syncSoundGate() { if (S.audio && S.audio.gain) S.audio.gain.gain.value = S.sim && S.sim.switches.S1 ? 0.35 : 0; }
+function syncSoundGate() { if (S.audio && S.audio.gain) S.audio.gain.gain.value = S.sim && Object.keys(S.sim.switches).filter((k) => /^S1/.test(k)).every((k) => S.sim.switches[k]) ? 0.35 : 0; }
 function playClick() {
   const ac = S.ac; if (!ac) return;
   if (!S.clickBuf) {
@@ -2446,6 +2559,16 @@ function renderControls() {
       const up = () => { if (cover.classList.contains('down')) { S.light = keep; inp.value = keep; cover.classList.remove('down'); } };
       cover.addEventListener('pointerdown', down); cover.addEventListener('pointerup', up); cover.addEventListener('pointerleave', up); cover.addEventListener('pointercancel', up);
       box.append(cover);
+    } else if (typeof c === 'object' && c.toggle) {
+      const b = document.createElement('button'); b.className = 'ctrl'; b.setAttribute('aria-pressed', String(!!S.sim.switches[c.toggle]));
+      b.innerHTML = '<span class="knob"></span> <span></span>'; b.lastChild.textContent = c.label || c.toggle;
+      b.onclick = () => { S.sim.switches[c.toggle] = !S.sim.switches[c.toggle]; b.setAttribute('aria-pressed', String(S.sim.switches[c.toggle])); syncSoundGate(); };
+      box.append(b);
+    } else if (typeof c === 'object' && c.fiber) {
+      const b = document.createElement('button'); b.className = 'ctrl'; b.setAttribute('aria-pressed', String(S.sim.fiberOn));
+      b.innerHTML = '<span class="knob"></span> Fény a kábelben';
+      b.onclick = () => { S.ctl.fiberOn = S.sim.fiberOn = !S.sim.fiberOn; b.setAttribute('aria-pressed', String(S.sim.fiberOn)); if (S.soundOn) setSound(true); };
+      box.append(b);
     } else if (typeof c === 'object' && c.mic) {
       const b = document.createElement('button'); b.className = 'ctrl hold'; b.textContent = 'Fújj bele!';
       const down = (e) => { e.preventDefault(); S.micBlow = true; b.classList.add('down'); };
@@ -2513,7 +2636,7 @@ function renderControls() {
       box.append(b);
     } else if (c === 'sound') {
       const b = document.createElement('button'); b.className = 'ctrl'; b.setAttribute('aria-pressed', String(S.soundOn));
-      b.innerHTML = '<span class="knob"></span> ' + (S.audioBusy ? 'Hang készül…' : 'Hang' + (S.audio && S.soundOn ? ' · kb. ' + Math.round(S.audio.freq) + ' Hz' : ''));
+      b.innerHTML = '<span class="knob"></span> ' + (S.audioBusy ? 'Hang készül…' : 'Hang' + (S.soundOn && S.audioSilent ? ' · most csend' : S.audio && S.soundOn ? ' · kb. ' + Math.round(S.audio.freq) + ' Hz' : ''));
       b.disabled = !!S.audioBusy;
       b.onclick = () => setSound(!S.soundOn);
       box.append(b);
@@ -2610,9 +2733,11 @@ function miniIcon(p) {
 // ---------- építési lépések szövege ----------
 function stepText(pl, level, layout) {
   const def = P[pl.p]; const geo = E.geometry(pl);
-  const pn = (s) => E.ROWS[s.r] + s.c;
+  const nbd = layout ? boardsOf(layout) : 1;
+  const pn = (s) => { const n = E.postName(s.r, s.c); if (nbd < 2) return n; const m = /^(\d):(.*)$/.exec(n); return m ? m[1] + '. rács ' + m[2] : '1. rács ' + n; };
   const lv = level === 1 ? 'közvetlenül a rácsra (1. szint)' : 'a már lerakott alkatrészek tetejére (' + level + '. szint)';
   const ex = EXPS[S.exp];
+  if (def.kind === 'fiber') return `Húzd rá az üvegszálas kábel átlátszó tartóját a LED-re (${pn(geo.snaps[0])}), a fekete tartót a fototranzisztorra (${pn(geo.snaps[1])}), és dugd be a kábel két végét a tartókba. A Light dobozban találod.`;
   const virtPosts = new Set();
   for (const q of layout || []) if (P[q.p].virtual) for (const sn of E.geometry(q).snaps) virtPosts.add(pn(sn));
   const jcol = { red: 'a piros', black: 'a fekete', blue: 'a kék' };

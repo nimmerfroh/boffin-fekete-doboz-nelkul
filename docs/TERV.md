@@ -40,8 +40,8 @@ Minden kísérletre igaz:
 - ✅ Sziréna
 
 ### F) Fény és hang továbbítása
-- Fénytávíró (villogó LED → fototranzisztor → hangszóró)
-- Mikrofon-erősítő (a tablet mikrofonjával is)
+- ✅ Fénytávíró (két rács: gyors villogó → üvegszál → fototranzisztor → hangszóró)
+- Mikrofon-erősítő → a G fejezetbe került (az U4 erősítő IC párja)
 - ✅ Hangra villogó LED (fújás gomb vagy a tablet mikrofonja)
 
 ### G) A fekete dobozok kinyitása

@@ -49,6 +49,7 @@
     J1: { kind: 'jumper', name: 'Átkötő kábel (fekete)', short: 'J', color: 'black' },
     J2: { kind: 'jumper', name: 'Átkötő kábel (piros)', short: 'J', color: 'red' },
     J4: { kind: 'jumper', name: 'Átkötő kábel (kék)', short: 'J', color: 'blue' },
+    FC: { kind: 'fiber', name: 'Üvegszálas kábel (két tartóval)', short: 'FC' },
   };
 
   // A mérőműszer (M6) méréshatárai: belső ellenállás és végkitérés (áram).
@@ -63,13 +64,19 @@
   // Melyik dobozban hány darab van (a hivatalos alkatrészlisták alapján).
   const KITS = {
     '300': { name: 'Boffin I 300', parts: { J1: 1, J2: 1, W1: 6, W2: 9, W3: 4, W4: 2, W5: 1, W6: 1, W7: 1, B1: 2, S1: 1, S2: 1, R1: 1, R2: 1, R3: 1, R4: 1, R5: 1, RV: 1, D1: 1, D2: 1, C1: 1, C2: 1, C3: 1, C4: 1, C5: 1, Q1: 1, Q2: 1, Q4: 1, L1: 1, L2: 1, SP: 1, M1: 1, X1: 1 } },
-    light: { name: 'Boffin II Light', parts: { J1: 1, J2: 1, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, B1: 2, S1: 1, S2: 1, R1: 1, R3: 1, R5: 1, RV: 1, D1: 1, C2: 1, C4: 1, Q1: 1, Q2: 1, Q4: 1, SP: 1, M1: 1, X1: 1 } },
+    light: { name: 'Boffin II Light', parts: { J1: 1, J2: 1, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, B1: 2, S1: 1, S2: 1, R1: 1, R3: 1, R5: 1, RV: 1, D1: 1, C2: 1, C4: 1, Q1: 1, Q2: 1, Q4: 1, SP: 1, M1: 1, X1: 1, FC: 1 } },
     home: { name: 'Boffin II My Home', parts: { J1: 1, J2: 1, J4: 2, W1: 3, W2: 6, W3: 3, W4: 1, W5: 1, W6: 1, S1: 1, S2: 1, R3: 1, C5: 1, Q2: 1, Q4: 1, M4: 1, M6: 1 } },
   };
 
   function postKey(r, c) { return r + ',' + c; }
-  function postName(r, c) { return ROWS[r] + c; }
-  function parsePost(s) { return [ROWS.indexOf(s[0]), parseInt(s.slice(1), 10)]; }
+  // Több rács: a második rács sorai 10-zel eltolva ("2:A3" -> 10. sor). Így az ellenőrzés és a
+  // kapcsolásszámítás változatlan, csak a rajz és az elnevezés tud a rácsokról.
+  const BOARD_ROWS = 10;
+  function postName(r, c) { const b = Math.floor(r / BOARD_ROWS); return (b ? (b + 1) + ':' : '') + ROWS[r % BOARD_ROWS] + c; }
+  function parsePost(s) {
+    let b = 0; const m = /^(\d+):(.*)$/.exec(s); if (m) { b = parseInt(m[1], 10) - 1; s = m[2]; }
+    return [ROWS.indexOf(s[0]) + b * BOARD_ROWS, parseInt(s.slice(1), 10)];
+  }
 
   // Egy elhelyezés geometriája: snapek (terminálok) és a test által takart pontok.
   function geometry(pl) {
@@ -78,10 +85,10 @@
     const [dr, dc] = DIRS[pl.dir || 'r'];
     const snaps = []; // {r,c,term}
     const body = [];  // takart, snap nélküli pontok
-    if (def.kind === 'jumper') {
+    if (def.kind === 'jumper' || def.kind === 'fiber') {
       const [r1, c1] = parsePost(pl.to);
       snaps.push({ r: r0, c: c0, term: 'a' }); snaps.push({ r: r1, c: c1, term: 'b' });
-      return { snaps, body, jumper: true };
+      return { snaps, body, jumper: def.kind === 'jumper', fiber: def.kind === 'fiber' };
     }
     if (def.kind === 'wire') {
       for (let i = 0; i < def.n; i++) snaps.push({ r: r0 + dr * i, c: c0 + dc * i, term: 'w' + i });
@@ -124,6 +131,7 @@
     layout.forEach((pl, idx) => {
       const g = geometry(pl);
       const id = pl.id || pl.p;
+      if (g.fiber) { levels.push(0); contacts.push(g.snaps.map((s2) => ({ ...s2, connected: false }))); return; }
       if (g.jumper) {
         const cs = g.snaps.map((s) => {
           const h = height.get(postKey(s.r, s.c)) || 0;
@@ -133,7 +141,7 @@
         levels.push(0); contacts.push(cs); return;
       }
       for (const s of g.snaps.concat(g.body)) {
-        if (s.r < 0 || s.r > 6 || s.c < 1 || s.c > 10) errors.push(`${id}: lelóg a rácsról (${s.r},${s.c})`);
+        if (s.r < 0 || s.r % BOARD_ROWS > 6 || s.r >= 2 * BOARD_ROWS || s.c < 1 || s.c > 10) errors.push(`${id}: lelóg a rácsról (${s.r},${s.c})`);
       }
       let top = 0;
       for (const s of g.snaps) top = Math.max(top, height.get(postKey(s.r, s.c)) || 0);
@@ -185,7 +193,7 @@
     const elements = [];
     layout.forEach((pl, i) => {
       const def = PARTS[pl.p];
-      if (def.kind === 'wire' || def.kind === 'jumper') return;
+      if (def.kind === 'wire' || def.kind === 'jumper' || def.kind === 'fiber') return;
       const t = {};
       for (const s of chk.contacts[i]) t[s.term] = s.connected ? postNet(s.r, s.c) : -1;
       elements.push({ idx: i, id: pl.id || pl.p, p: pl.p, def, t, pl });
@@ -210,6 +218,10 @@
     opts = opts || {};
     const nl0 = opts.netlist || buildNetlist(layout);
     const elements = []; let nets = nl0.nets;
+    // több rácsnál (külön elemmel) a negatív pólusokat egy közös földre kötjük: áram nem folyik rajta,
+    // csak a lebegő áramkör feszültségeit rögzíti (stabilabb számítás)
+    const bats = nl0.elements.filter((e) => e.def.kind === 'bat' && e.t.b >= 0);
+    for (let k = 1; k < bats.length; k++) if (bats[k].t.b !== bats[0].t.b && !nl0.elements.some((e) => e.t.a === bats[k].t.a && e.t.b === bats[0].t.b)) elements.push({ idx: -1, id: '#gnd' + k, p: 'RS', def: { kind: 'res', R: 1 }, t: { a: bats[k].t.b, b: bats[0].t.b }, internal: true });
     for (const e of nl0.elements) {
       if (e.def.kind === 'led' && e.t.a >= 0 && e.t.b >= 0) {
         const mid = nets++;
@@ -219,6 +231,16 @@
     }
     this.nl = { ...nl0, nets, elements };
     this.layout = layout;
+    // üvegszálas kábel: a LED fénye a kábel másik végén lévő fototranzisztorra jut
+    this.links = []; this.fiberOn = true;
+    for (const pl of layout || []) {
+      if (PARTS[pl.p].kind !== 'fiber') continue;
+      const [ra, ca] = parsePost(pl.at), [rb, cb] = parsePost(pl.to);
+      const hit = (e, r, c) => { const g = geometry(e.pl); return g.snaps.concat(g.body).some((q) => q.r === r && q.c === c); };
+      const led = nl0.elements.find((e) => e.def.kind === 'led' && hit(e, ra, ca));
+      const ph = nl0.elements.find((e) => e.def.kind === 'photo' && hit(e, rb, cb));
+      if (led && ph) this.links.push({ led: led.id, photo: ph.id, k: pl.k != null ? pl.k : 0.35 });
+    }
     const bat = elements.find((e) => e.def.kind === 'bat' && e.t.b >= 0);
     const vs = Math.max(3, elements.filter((e) => e.def.kind === 'bat').reduce((a, e) => a + e.def.V, 0));
     this.vLo = -vs - 1; this.vHi = 2 * vs + 1;
@@ -235,7 +257,9 @@
     this.switches = {}; this.capV = {}; this.cur = {}; this.jx = {}; this.pot = {}; this.meter = {}; this.motor = {}; this.obj = {}; this.mic = {};
     for (const e of elements) {
       if (e.def.kind === 'sw') this.switches[e.id] = false;
-      if (e.def.kind === 'cap') this.capV[e.id] = (opts.capInit && opts.capInit[e.id]) || 0;
+      // a kondenzátorok kezdőfeszültségében néhány mV eltérés: a valódi áramkörökben a zaj és az
+      // alkatrész-eltérések mindig kibillentik a szimmetrikus rezgőköröket, a szimulációban ez pótolja őket
+      if (e.def.kind === 'cap') this.capV[e.id] = (opts.capInit && opts.capInit[e.id] != null) ? opts.capInit[e.id] : jitter(e.id);
       if (e.def.kind === 'npn' || e.def.kind === 'pnp') this.jx[e.id] = { vbe: 0, vbc: 0 };
       if (e.def.kind === 'led') this.jx[e.id] = { vd: 0 };
       if (e.def.kind === 'pot') this.pot[e.id] = (opts.pot && opts.pot[e.id] != null) ? opts.pot[e.id] : 0.5;
@@ -248,6 +272,11 @@
 
   // szénmikrofon: csendben kb. 1 kΩ, erős hangnyomásra (fújás) kb. 10 kΩ
   function micR(p) { return 1000 + 9000 * Math.max(0, Math.min(1, p || 0)); }
+  // determinisztikus, a hasonló nevekre is jól szóródó eltérés (FNV-1a hash), ±10 mV
+  function jitter(id) {
+    let h = 2166136261; for (const ch of String(id)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
+    return ((h % 2001) / 1000 - 1) * 0.01;
+  }
   function potR(d, p) { p = Math.max(0, Math.min(1, p)); return { ra: Math.max(1, d.R * p), rb: Math.max(1, d.R * (1 - p)) }; }
 
   // A motor tengelyének mozgása (explicit Euler, a lépés végén). Kézi pörgetésnél a sebességet a kéz adja.
@@ -266,6 +295,16 @@
     const frac = i / r.fs;
     const value = this.meter[id] === '5V' ? i * r.R : i;
     return { frac, value, range: this.meter[id], unit: this.meter[id] === '5V' ? 'V' : 'A' };
+  };
+
+  // A fototranzisztort érő fény: környezeti fény, vagy ha üvegszál köti egy LED-hez, annak fénye
+  // (a kábeltartó a környezeti fény nagy részét kitakarja).
+  Sim.prototype.photoLight = function (id) {
+    const lk = this.links.find((l) => l.photo === id);
+    if (!lk) return this.light;
+    // a kábel fekete tartója a fototranzisztoron marad; ha a kábelben nem jut fény (elzárva), csak a szórt fény marad
+    const I = this.fiberOn ? Math.max(0, this.cur[lk.led] || 0) : 0;
+    return 0.08 * this.light + lk.k * Math.min(1.2, I / 0.01);
   };
 
   Sim.prototype.nodeV = function (net) {
@@ -346,7 +385,7 @@
           stampG(a, b, g); stampI(a, b, id - g * vd); break;
         }
         case 'photo': {
-          const Iph = 1e-7 + 4e-3 * Math.pow(Math.max(0, Math.min(1, this.light)), 1.6);
+          const Iph = 1e-7 + 4e-3 * Math.pow(Math.max(0, Math.min(1, this.photoLight(e.id))), 1.6);
           // sima modell: pozitív feszültségen telítődő áram, negatívon lineáris folytatás;
           // a 0 V-nál az érték és a meredekség is folytonos, így a Newton-iteráció nem ugrál
           let i, g;
@@ -443,7 +482,7 @@
         case 'bat': i = (u - d.V) / d.Rint; break;
         case 'cap': i = d.C / dt * (u - this.capV[e.id]); this.capV[e.id] = u; break;
         case 'led': i = d.Is * (safeExp(u / (d.n * VT)) - 1); break;
-        case 'photo': { const Iph = 1e-7 + 4e-3 * Math.pow(Math.max(0, Math.min(1, this.light)), 1.6); i = (u >= 0 ? Iph * (1 - Math.exp(-u / 0.12)) : Iph * u / 0.12) + 1e-9 * u; break; }
+        case 'photo': { const Iph = 1e-7 + 4e-3 * Math.pow(Math.max(0, Math.min(1, this.photoLight(e.id))), 1.6); i = (u >= 0 ? Iph * (1 - Math.exp(-u / 0.12)) : Iph * u / 0.12) + 1e-9 * u; break; }
       }
       this.cur[e.id] = i;
     }
@@ -519,19 +558,20 @@
 
   // ASCII rajz (teszteléshez)
   function ascii(layout) {
-    const g = []; for (let r = 0; r < 7; r++) { g.push(new Array(11).fill(' . ')); }
+    const nb = layout.some((pl) => geometry(pl).snaps.some((q) => q.r >= BOARD_ROWS)) ? 2 : 1;
+    const g = []; for (let r = 0; r < nb * BOARD_ROWS; r++) { g.push(new Array(11).fill(' . ')); }
     const chk = checkBuild(layout);
     layout.forEach((pl, i) => {
       const geo = geometry(pl); const id = (pl.id || pl.p).padEnd(3).slice(0, 3);
-      if (geo.jumper) return;
+      if (geo.jumper || geo.fiber) return;
       for (const s of geo.snaps) g[s.r] && (g[s.r][s.c] = id);
       for (const b of geo.body) if (!b.side && g[b.r]) g[b.r][b.c] = id.toLowerCase();
     });
     let s = '    ' + Array.from({ length: 10 }, (_, i) => String(i + 1).padStart(2).padEnd(3)).join('') + '\n';
-    for (let r = 0; r < 7; r++) s += ' ' + ROWS[r] + '  ' + g[r].slice(1).join('') + '\n';
+    for (let r = 0; r < nb * BOARD_ROWS; r++) { if (r % BOARD_ROWS > 6) { if (r % BOARD_ROWS === 7) s += '   --- ' + (Math.floor(r / BOARD_ROWS) + 2) + '. rács ---\n'; continue; } s += ' ' + ROWS[r % BOARD_ROWS] + '  ' + g[r].slice(1).join('') + '\n'; }
     return s;
   }
 
-  const api = { PARTS, KITS, METER, MOTOR, ROWS, DIRS, geometry, checkBuild, buildNetlist, Sim, ascii, postName, parsePost };
+  const api = { PARTS, KITS, METER, MOTOR, ROWS, BOARD_ROWS, DIRS, geometry, checkBuild, buildNetlist, Sim, ascii, postName, parsePost };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.BoffinEngine = api;
 })(typeof window !== 'undefined' ? window : globalThis);

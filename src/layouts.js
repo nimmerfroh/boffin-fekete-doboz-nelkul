@@ -320,4 +320,26 @@ L.shadow = L.siren.map((p) => (p.p === 'C5' ? { ...p, p: 'Q4' } : p.p === 'S2' ?
 // Hangra villogó LED: az éjjeli lámpa, a fototranzisztor helyén mikrofonnal.
 L.clap = L.night.map((p) => (p.p === 'Q4' ? { ...p, p: 'X1' } : p.p === 'R3' ? { ...p, p: 'R4' } : p));
 
+// ---- 2. fázis: fénytávíró (két rács, üvegszálas kábel) ----
+
+// Gyors villogó (adó): a villogó 0,1 µF-os kondenzátorokkal, két LED-del.
+L.fast = L.flash.map((p) => (p.p === 'C4' ? { ...p, p: 'C2' } : p));
+
+// Fénytávíró: az 1. rácson a gyors villogó (adó), a 2. rácson a vevő; az üvegszál a D1 LED-ről a Q4-re viszi a fényt.
+L.lightlink = L.fast.concat([
+  { p: 'W6', at: '2:A2', dir: 'r', id: 'Wp2' },
+  { p: 'W6', at: '2:G2', dir: 'r', id: 'Wn2' },
+  { p: 'W3', at: '2:C2', dir: 'd', id: 'Wb2' },
+  { p: 'W3', at: '2:C7', dir: 'd', id: 'Ws2' },
+  { p: 'Q2', at: '2:C5', dir: 'd', id: 'Q2c' },
+  { p: 'Q4', at: '2:A2', dir: 'd' },
+  { p: 'R4', at: '2:E2', dir: 'd' },
+  { p: 'W3', at: '2:D2', dir: 'r', id: 'Lb2' },
+  { p: 'SP', at: '2:A5', dir: 'd' },
+  { p: 'W3', at: '2:E5', dir: 'd', id: 'Le2' },
+  { p: 'S1', at: '2:A7', dir: 'd', id: 'S1b' },
+  { p: 'B1', at: '2:E7', dir: 'd', id: 'B1b' },
+  { p: 'FC', at: 'D4', to: '2:B2' },
+]);
+
 module.exports = L;

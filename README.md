@@ -15,7 +15,7 @@ A készletek integrált áramkörei (zene-, riasztó-, „űrháborús” IC) fe
 **C) Érzékelők:** éjjeli lámpa · érintőkapcsoló · vízjelző · árnyékriasztó
 **D) Idő, memória, döntés:** késleltetett lámpa · emlékező lámpa (flip-flop) · kódzár (ÉS) · bármelyik gomb (VAGY) · fordító (NEM)
 **E) Rezgések és hangok:** villogó · metronóm · hang a villogóból · elektronikus hangszer · sziréna
-**F) Fény és hang továbbítása:** hangra villogó LED (a tablet mikrofonjával is)
+**F) Fény és hang továbbítása:** hangra villogó LED (a tablet mikrofonjával is) · fénytávíró (két rács, üvegszál)
 
 A további fejezetek tervét lásd: [docs/TERV.md](docs/TERV.md).
 
