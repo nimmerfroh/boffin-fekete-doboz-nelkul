@@ -12,20 +12,20 @@ Minden kísérletre igaz:
 
 ### A) Áram és alkatrészek
 - ✅ Az első áramkör
-- Vezet vagy nem vezet? (vizsgált tárgy két átkötő kábel között)
-- Soros és párhuzamos izzók
-- Fényerő-szabályzó (állítható ellenállás, mérőműszer)
+- ✅ Vezet vagy nem vezet? (vizsgált tárgy két átkötő kábel között)
+- ✅ Soros és párhuzamos izzók
+- ✅ Fényerő-szabályzó (állítható ellenállás, mérőműszer)
 
 ### B) Energia és mozgás
-- A motor mint áramfejlesztő (kézzel pörgetve, mérőműszerrel)
-- Kondenzátor mint mini akkumulátor
-- Motor sebességszabályzó (állítható ellenállás + tranzisztor)
+- ✅ A motor mint áramfejlesztő (kézzel pörgetve, mérőműszerrel)
+- ✅ Kondenzátor mint mini akkumulátor
+- ✅ Motor sebességszabályzó (állítható ellenállás + tranzisztor)
 
 ### C) Érzékelők: a tranzisztor mint kapcsoló
 - ✅ Éjjeli lámpa
-- Érintőkapcsoló (két tranzisztor egymás után)
-- Vízjelző
-- Fénysorompó-riasztó
+- ✅ Érintőkapcsoló (két tranzisztor egymás után)
+- ✅ Vízjelző
+- Fénysorompó-riasztó (a 2. fázisban, a rezgőkörök után)
 
 ### D) Idő, memória, döntés
 - ✅ Késleltetett lámpa

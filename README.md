@@ -10,11 +10,13 @@ A készletek integrált áramkörei (zene-, riasztó-, „űrháborús” IC) fe
 
 ## Kísérletek
 
-1. **Az első áramkör:** elem, kapcsoló, ellenállás és LED; a LED csak egy irányba vezet.
-2. **Éjjeli lámpa:** sötétben magától kigyullad (fototranzisztor és tranzisztor).
-3. **Késleltetett lámpa:** gombnyomás után még ég egy darabig (kondenzátor és tranzisztor).
-4. **Villogó:** két tranzisztor felváltva kapcsolgatja egymást (astabil multivibrátor).
-5. **Hang a villogóból:** ugyanaz a villogó ezerszer kisebb kondenzátorral, így hangot ad. A képernyő ezerszeres lassítással mutatja.
+**A) Áram és alkatrészek:** az első áramkör · vezet vagy nem vezet? · soros és párhuzamos izzók · fényerő-szabályzó
+**B) Energia és mozgás:** a motor mint áramfejlesztő · kondenzátor mint akkumulátor · motor sebességszabályzó
+**C) Érzékelők:** éjjeli lámpa · érintőkapcsoló · vízjelző
+**D) Idő, memória, döntés:** késleltetett lámpa
+**E) Rezgések és hangok:** villogó · hang a villogóból
+
+A további fejezetek tervét lásd: [docs/TERV.md](docs/TERV.md).
 
 Minden kísérlet menete: hozzávalók (melyik dobozból), lépésenkénti építés a valódi A–G × 1–10-es rácson, tippelés, élő szimuláció (látható áram, kapcsolók, alkatrészcsere), magyarázat. A szövegek három szinten (5, 7 és 11 éveseknek) érhetők el, felolvasással.
 

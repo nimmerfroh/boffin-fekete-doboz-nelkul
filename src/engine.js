@@ -248,7 +248,7 @@
   // A motor tengelyének mozgása (explicit Euler, a lépés végén). Kézi pörgetésnél a sebességet a kéz adja.
   Sim.prototype._motorStep = function (id, i, dt) {
     const m = this.motor[id];
-    if (m.hand > 0) { m.w = m.hand * MOTOR.wHand; return; }
+    if (m.hand !== 0) { m.w = m.hand * MOTOR.wHand; return; }
     const T = MOTOR.Ke * i;
     if (Math.abs(m.w) < 1 && Math.abs(T) <= MOTOR.Tc) { m.w = 0; return; }
     const fr = MOTOR.b * m.w + MOTOR.Tc * Math.sign(m.w || T);

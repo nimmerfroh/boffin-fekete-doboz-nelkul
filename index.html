@@ -78,8 +78,15 @@ button { font: inherit; color: inherit; }
 .iconbtn { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; min-height: 44px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 15px; }
 .iconbtn[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
 
-/* kísérletválasztó */
-.exps { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(170px, 1fr); gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+/* fejezetek és kísérletválasztó */
+.exps { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.chaps { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+.chap { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; min-height: 44px; padding: 4px 14px 4px 5px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 15px; }
+.chap i { font-style: normal; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); font-family: var(--font-display); font-weight: 800; font-size: 17px; }
+.chap small { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.chap[aria-selected="true"] { border-color: var(--accent); }
+.chap[aria-selected="true"] i { background: var(--accent); color: var(--accent-ink); }
+.exprow { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(170px, 1fr); gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
 .exp { text-align: left; border: 2px solid transparent; background: var(--surface); border-radius: var(--r); padding: 10px 12px; cursor: pointer; display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: center; min-height: 64px; box-shadow: 0 1px 0 var(--line); }
 .exp .num { grid-row: span 2; width: 34px; height: 34px; border-radius: 10px; background: var(--surface-2); display: grid; place-items: center; font-family: var(--font-display); font-weight: 800; font-size: 20px; color: var(--muted); }
 .exp b { font-family: var(--font-display); font-size: 18px; font-weight: 800; line-height: 1.1; }
@@ -111,7 +118,12 @@ svg.board { display: block; width: 100%; height: auto; min-width: 520px; touch-a
 .ctrl[aria-pressed="true"] .knob::after { transform: translateX(16px); }
 .lightctl { display: flex; align-items: center; gap: 10px; border: 2px solid var(--line); background: var(--surface-2); border-radius: 14px; padding: 6px 14px; min-height: 52px; flex: 1 1 260px; }
 .lightctl input { flex: 1; accent-color: var(--spark); min-width: 0; height: 30px; }
-.lightctl label { font-weight: 700; font-size: 15px; }
+.lightctl label { font-weight: 700; font-size: 15px; white-space: nowrap; }
+.meterctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; border: 2px solid var(--line); background: var(--surface-2); border-radius: 14px; padding: 6px 12px; min-height: 52px; }
+.meterctl .mlabel { font-weight: 700; font-size: 15px; }
+.meterctl .seg button { min-height: 38px; padding: 4px 10px; }
+.mread { font-variant-numeric: tabular-nums; font-size: 17px; min-width: 7ch; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
 
 /* panel */
 .panel { padding: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
@@ -486,7 +498,7 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
   // A motor tengelyének mozgása (explicit Euler, a lépés végén). Kézi pörgetésnél a sebességet a kéz adja.
   Sim.prototype._motorStep = function (id, i, dt) {
     const m = this.motor[id];
-    if (m.hand > 0) { m.w = m.hand * MOTOR.wHand; return; }
+    if (m.hand !== 0) { m.w = m.hand * MOTOR.wHand; return; }
     const T = MOTOR.Ke * i;
     if (Math.abs(m.w) < 1 && Math.abs(T) <= MOTOR.Tc) { m.w = 0; return; }
     const fr = MOTOR.b * m.w + MOTOR.Tc * Math.sign(m.w || T);
@@ -982,25 +994,11 @@ window.BOFFIN_LAYOUTS = module.exports;
 <script>
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Fekete doboz nélkül – Copyright (C) 2026 Nimmerfroh Károly
-(function () {
+// A kísérletek leírása: fejezet, elrendezés, vezérlők, szövegek három korosztálynak.
+// Szintek: k = 5 éves, m = 7 éves, n = 11 éves.
+(function (root) {
 'use strict';
-const E = window.BoffinEngine, P = E.PARTS, LAY = window.BOFFIN_LAYOUTS;
-const $ = (s, r) => (r || document).querySelector(s);
-const NS = 'http://www.w3.org/2000/svg';
-const svgEl = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
-const store = {
-  get(k, d) { try { const v = localStorage.getItem('fdn:' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
-  set(k, v) { try { localStorage.setItem('fdn:' + k, JSON.stringify(v)); } catch (e) { /* nincs tárhely */ } },
-};
-
-// ---------- segédek a magyar szövegekhez ----------
-const art = (w) => (/^[AEIOUÁÉÍÓÖŐÚÜŰaeiouáéíóöőúüűF]/.test(w) && !/^F[a-z]/.test(w) ? 'az ' : 'a ') + w; // F betű: "ef" -> az F3
-const artNum = (n) => (n === 1 || n === 5 ? 'az ' : 'a ');
-const wireName = (n) => n + '-' + ({ 1: 'es', 2: 'es', 3: 'as', 4: 'es', 5: 'ös', 6: 'os', 7: 'es' })[n];
-const fmtA = (i) => { const a = Math.abs(i); if (a < 1e-6) return '0 mA'; if (a < 1e-3) return (a * 1e6).toFixed(0) + ' µA'; return (a * 1e3).toFixed(a < 0.01 ? 1 : 0).replace('.', ',') + ' mA'; };
-const fmtV = (v) => (Math.abs(v) < 0.005 ? '0,00' : v.toFixed(2).replace('.', ',')) + ' V';
-
-// ---------- kísérletek ----------
+function define(E, LAY) {
 const swapPart = (from, to, onlyId) => (lay) => lay.map((p) => ((onlyId ? p.id === onlyId : p.p === from) ? { ...p, p: to } : p));
 const flipPart = (id) => (lay) => lay.map((p) => {
   if ((p.id || p.p) !== id) return p;
@@ -1013,7 +1011,8 @@ const SOUND_LAYOUT = LAY.flash.map((p) => (p.p === 'C4' ? { ...p, p: 'C2' } : p.
 
 const EXPS = [
   {
-    id: 'first', title: 'Az első áramkör', tag: 'Körbe kell érnie az áramnak',
+    id: 'first', chapter: 'A', hint: { k: 'Kapcsold be az S1-et! Nézd, merre mennek a sárga pöttyök: ez az áram.', m: 'Kapcsold be az S1 kapcsolót, alul vagy magán a rácson. A sárga pöttyök mutatják, merre folyik az áram.', n: 'Kapcsold be az S1-et. A pöttyök sebessége az áram nagyságát mutatja (logaritmikusan).' },
+    title: 'Az első áramkör', tag: 'Körbe kell érnie az áramnak',
     layout: LAY.first, sim: { dt: 0.001, scale: 1 }, controls: ['S1'],
     intro: {
       k: 'Az áram olyan, mint a víz, ami körbe-körbe folyik. Ha a kör zárva van, a lámpa világít.',
@@ -1037,7 +1036,8 @@ const EXPS = [
     },
   },
   {
-    id: 'night', title: 'Éjjeli lámpa', tag: 'Sötétben magától kigyullad',
+    id: 'night', chapter: 'C', hint: { k: 'Kapcsold be, aztán húzd a fényt a hold felé, vagy nyomd a „Takard le” gombot!', m: 'Kapcsold be az S1-et, és állítsd a fényt. Figyeld, mikor gyullad ki a LED.', n: 'Kapcsold be az S1-et, és a fénycsúszkával keresd meg a billenési pontot.' },
+    title: 'Éjjeli lámpa', tag: 'Sötétben magától kigyullad',
     layout: LAY.night, sim: { dt: 0.002, scale: 1 }, controls: ['S1', 'light'], light: 0.85,
     intro: {
       k: 'Ez a lámpa sötétben magától bekapcsol. A kis fekete szem figyeli, van-e fény.',
@@ -1057,7 +1057,8 @@ const EXPS = [
     },
   },
   {
-    id: 'delay', title: 'Késleltetett lámpa', tag: 'Elengeded, de még ég egy kicsit',
+    id: 'delay', chapter: 'D', hint: { k: 'Kapcsold be az S1-et, nyomd meg az S2 gombot, aztán engedd el!', m: 'Kapcsold be az S1-et, nyomd meg és engedd el az S2-t. Figyeld a kondenzátor sárga csíkját: ennyi töltés van benne.', n: 'S1 be, S2 rövid nyomás. Figyeld a C5 feszültségét és a bázisáramot a mérőn.' },
+    title: 'Késleltetett lámpa', tag: 'Elengeded, de még ég egy kicsit',
     layout: LAY.delay, sim: { dt: 0.002, scale: 1 }, controls: ['S1', 'S2'],
     intro: {
       k: 'Nyomd meg a gombot, aztán engedd el. A lámpa még egy kicsit világít, és lassan elalszik.',
@@ -1080,7 +1081,8 @@ const EXPS = [
     },
   },
   {
-    id: 'flash', title: 'Villogó', tag: 'Két tranzisztor kapcsolgatja egymást',
+    id: 'flash', chapter: 'E', hint: { k: 'Kapcsold be, és figyeld a két lámpát!', m: 'Kapcsold be az S1-et. Figyeld a két kondenzátor sárga csíkját: felváltva töltődnek.', n: 'S1 be. Figyeld a két bázisáramot: mindig csak az egyik tranzisztor vezet.' },
+    title: 'Villogó', tag: 'Két tranzisztor kapcsolgatja egymást',
     layout: LAY.flash, sim: { dt: 0.0005, scale: 1 }, controls: ['S1'],
     intro: {
       k: 'Két lámpa felváltva villog, magától. Senki nem nyomja a gombot!',
@@ -1102,7 +1104,8 @@ const EXPS = [
     },
   },
   {
-    id: 'sound', title: 'Hang a villogóból', tag: 'Nyissuk ki a fekete dobozt',
+    id: 'sound', chapter: 'E', hint: { k: 'Kapcsold be, és nyomd meg a Hang gombot! A képernyőn lelassítva látod.', m: 'Kapcsold be az S1-et és a hangot. A képernyő ezerszer lassabban mutatja, ami valójában történik.', n: 'S1 be, Hang be. A kijelzés 1000× lassított; a hang a szimulált hangszóróáramból készül.' },
+    title: 'Hang a villogóból', tag: 'Nyissuk ki a fekete dobozt',
     layout: SOUND_LAYOUT, sim: { dt: 0.000005, scale: 1 / 1000 }, controls: ['S1', 'sound'], slow: 1000,
     intro: {
       k: 'Ugyanez a villogó, csak nagyon-nagyon gyorsan. Olyan gyorsan, hogy a villogásból hang lesz!',
@@ -1123,7 +1126,264 @@ const EXPS = [
       n: 'A frekvencia fordítva arányos C-vel: 100 µF-ról 0,1 µF-ra csökkentve ezerszeres. Ha az egyik oldalt 0,02 µF-ra cseréled, az a félperiódus ötödére rövidül, a hang magasabb lesz (a szimulációban kb. 3,4 kHz). A hangot adó IC-kben ugyanilyen oszcillátor van, csak integrált formában.',
     },
   },
+  // ===================== A) Áram és alkatrészek =====================
+  {
+    id: 'conduct', chapter: 'A', title: 'Vezet vagy nem vezet?', tag: 'Mi engedi át az áramot?',
+    layout: LAY.conduct, sim: { dt: 0.002, scale: 1, meter: { M6: '50mA' }, obj: { TP: 1e12 } },
+    controls: [{ obj: 'TP', set: 'materials' }, { meter: 'M6' }],
+    intro: {
+      k: 'Megnézzük, mi engedi át az áramot. Fogd a két kábel végét a dologhoz, és figyeld a lámpát és a mutatót!',
+      m: 'A két átkötő kábel szabad végével különféle tárgyakat érintünk meg. Ha a tárgy vezeti az áramot, a kör bezárul: a LED világít, a mérőműszer kileng.',
+      n: 'Vezetőképesség-vizsgáló: a vizsgált tárgy sorba kerül a LED-del és a mérőműszerrel. A műszer érzékenyebb a LED-nél, ezért a gyengén vezető anyagokat (víz, bőr) is kimutatja.',
+    },
+    guess: {
+      q: { k: 'Melyik vezeti az áramot: a ceruza hegye vagy a papír?', m: 'Melyik vezeti az áramot: a ceruzabél (grafit) vagy a papír?', n: 'Grafit vagy papír: melyik zárja a kört?' },
+      opts: [['A ceruzabél', 'on'], ['A papír', 'off'], ['Egyik sem', 'off']], right: 0,
+      after: { k: 'Igen! A ceruza hegye vezet, a papír nem.', m: 'A grafit vezet, ezért a LED világít. A papír szigetelő: nem enged át áramot.', n: 'A grafit félfém, vezet; a papír szigetelő, gyakorlatilag végtelen ellenállású.' },
+    },
+    variants: [],
+    hint: {
+      k: 'Válassz egy tárgyat lent, és nézd: világít a lámpa? Kileng a mutató?',
+      m: 'Válassz tárgyat. Ha a mutató alig mozdul, kapcsold a műszert érzékenyebb állásba (0,5 mA).',
+      n: 'Válassz tárgyat, és váltogasd a méréshatárt. A csapvíz és a kéz árama a LED-nek kevés, de a 0,5 mA-es állásban látszik.',
+    },
+    why: {
+      k: 'Van, ami átengedi az áramot, mint a fém és a ceruza hegye. Ezek a vezetők. Van, ami nem, mint a papír és a műanyag. Ezek a szigetelők. A víz és a kezed is átenged egy kicsit, de csak nagyon keveset.',
+      m: 'A fémekben az áram könnyen halad, ezért a LED fényesen ég. A ceruzabél is vezet, csak gyengébben. A víz és a bőr nagyon kevés áramot enged át: a LED-nek ez nem elég, de az érzékeny mérőműszer megmutatja. A papír és a műanyag szigetelő. Ezért van a vezetékeken műanyag bevonat.',
+      n: 'A kör árama I = (3 V − U_LED) / (R1 + R_műszer + R_tárgy). Alufóliával kb. 11 mA, grafittal (néhány száz Ω) kb. 3 mA, csapvízzel (kb. 20 kΩ) kb. 0,07 mA, bőrrel (több száz kΩ) néhány µA. A műszer 50 mA-es állásban 50 mA-nél, 0,5 mA-es állásban már 0,5 mA-nél ér a végkitérésre: százszor érzékenyebb.',
+    },
+  },
+  {
+    id: 'series', chapter: 'A', title: 'Soros és párhuzamos izzók', tag: 'Egymás után vagy egymás mellett?',
+    layout: LAY.series, sim: { dt: 0.002, scale: 1 }, controls: ['S1'],
+    intro: {
+      k: 'Két lámpát kötünk be. Előbb egymás után, aztán egymás mellé. Melyik világít jobban?',
+      m: 'Két izzót egymás után (sorosan) kötünk. Utána átépítjük, hogy egymás mellett (párhuzamosan) legyenek. Figyeld, mennyire világítanak.',
+      n: 'Soros és párhuzamos kapcsolás összehasonlítása a 2,5 V-os (L1) és a 6 V-os (L2) izzóval, 3 V-ról.',
+    },
+    guess: {
+      q: { k: 'Két lámpa egymás után. Fényesebbek lesznek, mint egy lámpa, vagy halványabbak?', m: 'Ha két izzót egymás után kötsz, fényesebbek vagy halványabbak lesznek, mint egyetlen izzó?', n: 'Mi történik az áramerősséggel, ha két izzót sorba kötsz?' },
+      opts: [['Halványabbak', 'dim'], ['Ugyanolyanok', 'on'], ['Fényesebbek', 'on']], right: 0,
+      after: { k: 'Igen! Egymás után halványabbak, mert az áramnak mindkettőn át kell mennie.', m: 'Sorosan az áramnak mindkét izzón át kell jutnia, ez nehezebb, ezért kisebb az áram, és halványabbak.', n: 'Soros kapcsolásnál az ellenállások összeadódnak, így az áram kisebb: kb. 80 mA az egyes izzók 180 és 140 mA-e helyett.' },
+    },
+    variants: [
+      { id: 'par', label: 'Építsd át párhuzamosra', real: 'Építsd át a rajz szerint: a két izzó egymás mellé kerül, a felső és az alsó vezeték közé.', layout: 'parallel', needs: ['W7', 'W4'] },
+    ],
+    hint: {
+      k: 'Kapcsold be, és nézd, mennyire világítanak. Aztán nyomd meg lent az „Építsd át” gombot!',
+      m: 'Kapcsold be az S1-et. Utána építsd át párhuzamosra, és hasonlítsd össze.',
+      n: 'S1 be. Hasonlítsd össze az izzók áramát soros és párhuzamos kapcsolásban.',
+    },
+    why: {
+      k: 'Egymás után a két lámpa osztozik az áramon, ezért halványak. Egymás mellett mindegyik külön utat kap, ezért fényesebbek.',
+      m: 'Sorosan az áram egyetlen úton halad, és mindkét izzó fékezi. Párhuzamosan mindkét izzó a teljes elemfeszültséget kapja, és mindkettőn külön áram folyik. A lakásban is párhuzamosan vannak bekötve a lámpák, ezért nem halványodnak el, ha bekapcsolsz egy másikat. A 6 V-os izzó 3 V-on mindig halványabb a 2,5 V-osnál.',
+      n: 'Sorosan R = R1 + R2 ≈ 36 Ω, I = 3 V / 36 Ω ≈ 83 mA mindkettőn. Párhuzamosan mindkettőre 3 V jut: L1-en kb. 180 mA, L2-n kb. 140 mA folyik, az elemből összesen kb. 320 mA. Ezért fogy gyorsabban az elem párhuzamos kapcsolásnál. (A modell az izzók meleg ellenállásával számol; a valóságban hidegen kisebb.)',
+    },
+  },
+  {
+    id: 'dimmer', chapter: 'A', title: 'Fényerő-szabályzó', tag: 'Tekerd, és halványul',
+    layout: LAY.dimmer, sim: { dt: 0.002, scale: 1, meter: { M6: '50mA' }, pot: { RV: 0 } }, controls: ['S1', { pot: 'RV', label: 'Fényerő (RV)', invert: true }, { meter: 'M6' }],
+    intro: {
+      k: 'A zöld gombbal (RV) a lámpa fényét lehet állítani. A mutató megmutatja, mennyi áram folyik.',
+      m: 'Az állítható ellenállás (RV) olyan, mint egy csap: tekerve változik, mennyire fékezi az áramot. A mérőműszer (M6) mutatja az áramot.',
+      n: 'Az RV-t változtatható ellenállásként használjuk (az egyik vég és a csúszka között 0–50 kΩ). Sorba van kötve az R1-gyel, a LED-del és a mérőműszerrel.',
+    },
+    guess: {
+      q: { k: 'Ha tekered a gombot, mi lesz a lámpával?', m: 'Mi történik a LED-del, ha tekered az RV gombját?', n: 'Hogyan változik a LED árama az RV ellenállásával?' },
+      opts: [['Halványodik vagy erősödik', 'dim'], ['Csak ki-be kapcsol', 'blink'], ['Semmi', 'same']], right: 0,
+      after: { k: 'Igen! A gombbal halványítod.', m: 'Minél nagyobb az ellenállás, annál kevesebb áram jut a LED-hez, és annál halványabb.', n: 'I ≈ (3 V − U_LED) / (R1 + R_RV): 0 Ω-nál kb. 11 mA, 50 kΩ-nál kb. 0,03 mA.' },
+    },
+    variants: [],
+    hint: {
+      k: 'Kapcsold be, és húzd a gombot! Nézd a lámpát és a mutatót.',
+      m: 'Kapcsold be az S1-et, és tekerd az RV-t. Ha a mutató már alig mozdul, kapcsold a műszert 0,5 mA-re.',
+      n: 'Figyeld, hogy a fényerő nem egyenletesen változik: a gomb elején gyorsan halványul, utána alig. Miért?',
+    },
+    why: {
+      k: 'A gomb egy fékező, amit erősebbre vagy gyengébbre tudsz állítani. Erős fékezésnél kevés áram megy a lámpához, és halványabb lesz.',
+      m: 'Az ellenállás fékezi az áramot. Az RV-ben egy csúszka megy végig egy ellenálláscsíkon: ahogy tekered, hosszabb vagy rövidebb darabon kell átmennie az áramnak. Hosszabb darab, nagyobb fékezés, halványabb fény. A mérőműszer ezt számokban is mutatja.',
+      n: 'A LED-áram az ellenállással fordítottan arányos (I ≈ 1,2 V / R), ezért a gomb elején, ahol R még kicsi, nagyon gyorsan változik, utána lassan. A „lineáris” potméter így a fényerőben nem lineáris; ezért használnak a hangerőszabályzókban logaritmikus potmétert.',
+    },
+  },
+
+  // ===================== B) Energia és mozgás =====================
+  {
+    id: 'generator', chapter: 'B', title: 'A motor mint áramfejlesztő', tag: 'Pörgesd meg, és áramot ad',
+    layout: LAY.generator, sim: { dt: 0.002, scale: 1, meter: { M6: '5V' } }, controls: [{ spin: 'M1' }, { meter: 'M6' }],
+    intro: {
+      k: 'Itt nincs elem! Pörgesd meg kézzel a motort, és figyeld a mutatót.',
+      m: 'Nincs elem az áramkörben, csak egy motor és a mérőműszer. Ha a motort kézzel pörgeted, áramot termel.',
+      n: 'A motor fordítva is működik: forgatva feszültséget indukál (generátor). A mérőműszer 5 V-os állásban a motor feszültségét méri.',
+    },
+    guess: {
+      q: { k: 'Nincs elem. Ha megpörgeted a motort, megmozdul a mutató?', m: 'Elem nélkül, csak kézzel pörgetve, kileng a műszer?', n: 'Mit mér a műszer, ha a motor tengelyét kézzel forgatod?' },
+      opts: [['Igen, a motor áramot termel', 'on'], ['Nem, elem nélkül nincs áram', 'off']], right: 0,
+      after: { k: 'Igen! Ha pörgeted, a motor áramot ad.', m: 'A forgó motor áramot termel. Így működnek az erőművek generátorai és a biciklidinamó is.', n: 'Kb. 1 V-ot: a feszültség a fordulatszámmal arányos.' },
+    },
+    variants: [],
+    hint: {
+      k: 'Nyomd és tartsd a „Pörgesd meg” gombot! Aztán próbáld visszafelé is.',
+      m: 'Tartsd nyomva a „Pörgesd meg” gombot. Utána próbáld visszafelé: merre lendül a mutató?',
+      n: 'Pörgesd mindkét irányba. Visszafelé a feszültség előjele megfordul, a mutató balra akad.',
+    },
+    why: {
+      k: 'A motorban mágnes és drót van. Ha forgatod, a mágnes áramot kelt a drótban. Ez a dinamó, mint a biciklin.',
+      m: 'A motor belsejében tekercs forog egy mágnes mellett. Ha a motort elemmel hajtjuk, az áram forgatja. Ha mi forgatjuk, a mágnes kelt áramot a tekercsben. Ugyanaz az alkatrész kétféleképpen működik. Visszafelé forgatva az áram is visszafelé folyik. Egy LED-hez ez kevés lenne, annak kb. 1,8 V kell.',
+      n: 'Indukált feszültség: U = k · ω, a fordulatszámmal arányos. Kézzel kb. 1100/perc érhető el, ez kb. 1 V. A LED nyitófeszültsége kb. 1,8 V, ezért egy LED nem világítana róla, de a műszer kimutatja. Fordított forgásirányban U előjele is megfordul.',
+    },
+  },
+  {
+    id: 'capbat', chapter: 'B', title: 'Kondenzátor mint akkumulátor', tag: 'Feltöltöd, és egy kicsit kitart',
+    layout: LAY.capbat, sim: { dt: 0.002, scale: 1, meter: { M6: '5V' } }, controls: ['S2', { meter: 'M6' }],
+    intro: {
+      k: 'A két nagy kondenzátor kis tartály az áramnak. A gombbal megtöltöd, aztán figyeld, meddig világít a lámpa.',
+      m: 'Az S2 gomb nyomva tartásakor az elem feltölti a két 470 µF-os kondenzátort. Elengedés után az elem már nincs bekötve: a LED a kondenzátorokból kap áramot. A műszer a feszültségüket mutatja.',
+      n: 'Két párhuzamos 470 µF-os kondenzátor (940 µF) kisül az R2 (1 kΩ) és a LED felé. A mérőműszer 5 V-os állásban a kondenzátorok feszültségét méri.',
+    },
+    guess: {
+      q: { k: 'Feltöltöd, aztán elengeded a gombot. Mit csinál a lámpa?', m: 'Feltöltöd a kondenzátorokat, aztán elengeded az S2-t. Mi lesz a LED-del?', n: 'Mi történik a LED-del és a feszültséggel az S2 elengedése után?' },
+      opts: [['Még világít egy kicsit', 'fade'], ['Azonnal kialszik', 'off'], ['Örökké világít', 'on']], right: 0,
+      after: { k: 'Igen! A kondenzátorban maradt áram, abból világít még.', m: 'A kondenzátorok tárolták a töltést, és most átadják a LED-nek. Ahogy fogy, a LED halványul.', n: 'A kondenzátor feszültsége csökken, a LED kb. 1,6 V alatt kialszik: nagyjából 1,5–2 másodperc.' },
+    },
+    variants: [
+      { id: 'one', label: 'Csak egy kondenzátorral', real: 'Vedd ki az egyik 470 µF-os kondenzátort (a B3–D3 közöttit). Rövidebb vagy hosszabb ideig világít majd?', apply: (lay) => lay.filter((p) => p.id !== 'C5b') },
+    ],
+    hint: {
+      k: 'Nyomd meg és tartsd az S2 gombot, aztán engedd el, és figyeld a lámpát!',
+      m: 'Tartsd nyomva az S2-t pár másodpercig, aztán engedd el. Figyeld a mutatót: ennyi „töltés” van a tartályban.',
+      n: 'Töltsd fel, engedd el, és figyeld a feszültség csökkenését. Melyik feszültségnél alszik ki a LED?',
+    },
+    why: {
+      k: 'A kondenzátor olyan, mint egy kis vödör. A gombbal teletöltöd, utána a lámpa kiissza belőle az áramot. Kicsi a vödör, ezért hamar kiürül.',
+      m: 'A kondenzátor töltést tárol, mint egy nagyon kicsi akkumulátor. Sokkal kevesebbet tud, mint egy elem, de nagyon gyorsan feltölthető és kisüthető. Két kondenzátor együtt kétszer annyit tárol, mint egy.',
+      n: 'Q = C · U = 940 µF · 3 V ≈ 2,8 mC. A LED kb. 1,6 V-ig világít, addig kb. 1,3 mC töltés fogy el, nagyjából 1 mA-es átlagárammal ez másfél–két másodperc. Egy ceruzaelem kb. 2000 mAh-t, azaz 7200 C-ot tárol: több milliószor ennyit.',
+    },
+  },
+  {
+    id: 'motorspeed', chapter: 'B', title: 'Motor sebességszabályzó', tag: 'Gombbal gyorsítod a ventilátort',
+    layout: LAY.motorspeed, sim: { dt: 0.002, scale: 1, pot: { RV: 0.5 } }, controls: ['S1', { pot: 'RV', label: 'Sebesség (RV)', invert: true }],
+    intro: {
+      k: 'A gombbal a ventilátor sebességét állítod. A két piros tranzisztor segít, hogy a kicsi gomb a nagy motort is irányítsa.',
+      m: 'Az RV gombja egy kis feszültséget állít be. Ezt két tranzisztor egymás után felerősíti, hogy a motor elég áramot kapjon.',
+      n: 'Az RV feszültségosztó, a csúszkája két tranzisztorból álló Darlington-kapcsolást vezérel; a motor az emitterkörben van (emitterkövető).',
+    },
+    guess: {
+      q: { k: 'Tekered a gombot. Mi lesz a ventilátorral?', m: 'Mi történik a motorral, ha tekered az RV-t?', n: 'Hogyan függ a motor fordulatszáma a csúszka állásától?' },
+      opts: [['Gyorsul vagy lassul', 'dim'], ['Csak ki-be kapcsol', 'blink'], ['Semmi', 'same']], right: 0,
+      after: { k: 'Igen! A gombbal gyorsítod és lassítod.', m: 'A gomb a tranzisztorokon keresztül szabályozza, mennyi áram jut a motorhoz.', n: 'A motor feszültsége kb. a csúszka feszültsége mínusz 1,4 V (két bázis–emitter átmenet).' },
+    },
+    variants: [],
+    hint: {
+      k: 'Kapcsold be, és húzd a sebesség gombot!',
+      m: 'Kapcsold be az S1-et, és állítsd a sebességet. Figyeld, mikor indul el a motor.',
+      n: 'Keresd meg, melyik állásnál indul el a motor, és mekkora a legnagyobb fordulatszám.',
+    },
+    why: {
+      k: 'A gombon csak egy picike áram megy át. A tranzisztorok ebből a picike áramból nagyot csinálnak, ami már a motort is meg tudja forgatni.',
+      m: 'Az RV-n át csak nagyon kevés áram folyik, ez kevés egy motorhoz. Az első tranzisztor százszorosára erősíti, a második még százszorosára. Így a gomb nagyon kis áramával irányíthatod a motor nagy áramát. Ha a gomb túl alacsony feszültséget ad, a motor el sem indul.',
+      n: 'Darlington-kapcsolás: a teljes áramerősítés β₁·β₂ ≈ 10 000–20 000, így a csúszka árama mikroamperes, a motoré 30–60 mA. Ára a két bázis–emitter feszültség (kb. 1,4 V): a motorra legfeljebb kb. 1,6 V jut, ezért lassabb, mint közvetlenül az elemre kötve. Egy tranzisztorral az RV terhelése miatt a szabályozás csak a skála legvégén működne.',
+    },
+  },
+
+  // ===================== C) Érzékelők =====================
+  {
+    id: 'touch', chapter: 'C', title: 'Érintőkapcsoló', tag: 'Ujjal kapcsolod be',
+    layout: LAY.touch, sim: { dt: 0.002, scale: 1, obj: { TP: 1e12 } }, controls: ['S1', { touch: 'TP', R: 5e5, label: 'Érintsd meg a C3 és az E3 pontot' }],
+    intro: {
+      k: 'Ha ujjal megérinted a két pontot, kigyullad a lámpa. Pedig a kezed nem fém!',
+      m: 'Az ujjad nagyon kevés áramot vezet. Két tranzisztor egymás után ezt a picike áramot olyan erősre növeli, hogy a LED kigyullad.',
+      n: 'Érintőkapcsoló Darlington-kapcsolással: az ujj (kb. 100 kΩ–1 MΩ) és az R2 adja a bázisáramot.',
+    },
+    guess: {
+      q: { k: 'Mi lesz, ha ujjal megérinted a két pontot?', m: 'Mi történik, ha egyszerre megérinted a C3 és az E3 pontot?', n: 'Elég-e a bőr ellenállásán átfolyó áram a LED bekapcsolásához?' },
+      opts: [['Kigyullad a LED', 'on'], ['Semmi, a kéz nem vezet', 'off']], right: 0,
+      after: { k: 'Igen! A kezed egy picit vezeti az áramot, és ez elég.', m: 'A bőröd vezet egy kicsit. Ez a kis áram a tranzisztorokon keresztül felerősödik, és kigyullad a LED.', n: 'Néhány µA bázisáram β²-szerese már bőven telítésbe viszi a kimeneti tranzisztort.' },
+    },
+    variants: [],
+    hint: {
+      k: 'Kapcsold be, aztán nyomd és tartsd az „Érintsd meg” gombot!',
+      m: 'Kapcsold be az S1-et. A valódi áramkörön tedd az ujjad a C3 és az E3 pontra; itt a gombot tartsd nyomva.',
+      n: 'Nézd a mérőn a bázisáramot érintéskor: néhány µA.',
+    },
+    why: {
+      k: 'A kezed egy nagyon picit vezeti az áramot. Ez olyan kevés, hogy egy lámpa nem gyulladna ki tőle. De a két tranzisztor felnagyítja, mint egy nagyító, és a lámpa kigyullad.',
+      m: 'Az első tranzisztor a te picike áramodat kb. százszorosára erősíti. Ezt a második még százszorosára. Így tízezerszeres erősítés jön ki, és ez már elég a LED-nek. A telefonok érintőképernyője másképp működik, de ott is ilyen parányi változásokat erősítenek fel.',
+      n: 'Bázisáram ≈ (3 V − 1,4 V) / (R2 + R_bőr) ≈ 1,6 V / 500 kΩ ≈ 3 µA. β₁·β₂ ≈ 20 000-rel ez kb. 60 mA lehetne, de a LED körét az R1 kb. 11 mA-re korlátozza. Egyetlen tranzisztorral csak kb. 0,5 mA lenne: a LED alig derengene.',
+    },
+  },
+  {
+    id: 'water', chapter: 'C', title: 'Vízjelző', tag: 'Szól, ha tele a pohár',
+    layout: LAY.water, sim: { dt: 0.002, scale: 1, obj: { TP: 1e12 } }, controls: ['S1', { obj: 'TP', set: 'water' }],
+    intro: {
+      k: 'Ugyanaz az áramkör, mint az érintőkapcsoló. Most a két kábel vége egy pohárba kerül. Ha víz ér hozzá, kigyullad a lámpa.',
+      m: 'Az érintőkapcsolóból vízjelzőt csinálunk: a két érintési pontról átkötő kábel megy egy pohárba. Ha a víz eléri a kábelvégeket, a kör bezárul.',
+      n: 'Az érintőkapcsoló bemenetét két átkötő kábellel egy edénybe vezetjük; a víz ellenállása (néhány tíz kΩ) zárja a bázisáram útját.',
+    },
+    guess: {
+      q: { k: 'Ha a kábelek vége vízbe ér, mi lesz?', m: 'Mi történik, ha a két kábelvég vízbe ér?', n: 'Elég-e a csapvíz vezetése a bekapcsoláshoz?' },
+      opts: [['Kigyullad a LED', 'on'], ['Semmi', 'off']], right: 0,
+      after: { k: 'Igen! A víz vezeti az áramot.', m: 'A csapvízben oldott sók vannak, ezért vezet egy kicsit. Ez a tranzisztoroknak elég.', n: 'A csapvíz néhány tíz kΩ-ja még jobb is, mint a bőr néhány száz kΩ-ja.' },
+    },
+    variants: [],
+    hint: {
+      k: 'Kapcsold be, aztán válaszd lent: „víz a pohárban”!',
+      m: 'Kapcsold be az S1-et, és próbáld ki száraz pohárral, csapvízzel és sós vízzel.',
+      n: 'Hasonlítsd össze a bázisáramot csapvíznél és sós víznél.',
+    },
+    why: {
+      k: 'A víz egy kicsit vezeti az áramot. Ha a két kábelvég a vízbe ér, a víz összeköti őket, és a lámpa kigyullad. Így jelezheti egy gép, hogy tele van a kád.',
+      m: 'A tiszta víz alig vezet, de a csapvízben oldott ásványi sók vannak, ezek viszik az áramot. A sós víz még jobban vezet. A mosógépek és a pincék vízjelzői is ezen az elven működnek.',
+      n: 'A víz vezetését az oldott ionok adják. Csapvíznél az ellenállás a kábelvégek között jellemzően 10–100 kΩ, sós víznél ennek töredéke. A Darlington-kapcsolásnak már 1 MΩ is elég, ezért a jelző nagyon érzékeny. Egyenárammal a kábelvégek idővel korrodálnak (elektrolízis), ezért a profi érzékelők váltakozó árammal mérnek.',
+    },
+  },
+
 ];
+
+
+const CHAPTERS = [
+  { id: 'A', title: 'Áram és alkatrészek', short: 'Alapok' },
+  { id: 'B', title: 'Energia és mozgás', short: 'Energia' },
+  { id: 'C', title: 'Érzékelők', short: 'Érzékelők' },
+  { id: 'D', title: 'Idő, memória, döntés', short: 'Idő és döntés' },
+  { id: 'E', title: 'Rezgések és hangok', short: 'Rezgések' },
+  { id: 'F', title: 'Fény és hang továbbítása', short: 'Továbbítás' },
+  { id: 'G', title: 'A fekete dobozok kinyitása', short: 'Fekete dobozok' },
+];
+const ORDER = ['first', 'conduct', 'series', 'dimmer', 'generator', 'capbat', 'motorspeed', 'night', 'touch', 'water', 'delay', 'flash', 'sound'];
+EXPS.sort((x, y) => ORDER.indexOf(x.id) - ORDER.indexOf(y.id));
+
+// Egy változat alkalmazása: vagy átalakítja az elrendezést, vagy egy másik elrendezésre cseréli.
+function applyVariant(v, lay) { return v.layout ? LAY[v.layout] : v.apply(lay); }
+
+return { EXPS, CHAPTERS: CHAPTERS.filter((c) => EXPS.some((e) => e.chapter === c.id)), applyVariant };
+}
+if (typeof module !== 'undefined' && module.exports) module.exports = define; else root.BOFFIN_EXPERIMENTS = define;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Fekete doboz nélkül – Copyright (C) 2026 Nimmerfroh Károly
+(function () {
+'use strict';
+const E = window.BoffinEngine, P = E.PARTS, LAY = window.BOFFIN_LAYOUTS;
+const $ = (s, r) => (r || document).querySelector(s);
+const NS = 'http://www.w3.org/2000/svg';
+const svgEl = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('fdn:' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('fdn:' + k, JSON.stringify(v)); } catch (e) { /* nincs tárhely */ } },
+};
+
+// ---------- segédek a magyar szövegekhez ----------
+const art = (w) => (/^[AEIOUÁÉÍÓÖŐÚÜŰaeiouáéíóöőúüűF]/.test(w) && !/^F[a-z]/.test(w) ? 'az ' : 'a ') + w; // F betű: "ef" -> az F3
+const artNum = (n) => (n === 1 || n === 5 ? 'az ' : 'a ');
+const wireName = (n) => n + '-' + ({ 1: 'es', 2: 'es', 3: 'as', 4: 'es', 5: 'ös', 6: 'os', 7: 'es' })[n];
+const fmtA = (i) => { const a = Math.abs(i); if (a < 1e-6) return '0 mA'; if (a < 1e-3) return (a * 1e6).toFixed(0) + ' µA'; return (a * 1e3).toFixed(a < 0.01 ? 1 : 0).replace('.', ',') + ' mA'; };
+const fmtV = (v) => (Math.abs(v) < 0.005 ? '0,00' : v.toFixed(2).replace('.', ',')) + ' V';
+
+// ---------- kísérletek (src/experiments.js) ----------
+const { EXPS, CHAPTERS, applyVariant } = window.BOFFIN_EXPERIMENTS(E, LAY);
 
 // ---------- leírások az alkatrészekről ----------
 const ABOUT = {
@@ -1138,6 +1398,10 @@ const ABOUT = {
   photo: ['Fototranzisztor', 'Olyan tranzisztor, amit nem áram, hanem fény nyit ki.'],
   lamp: ['Izzó', 'Vékony drót, ami az áramtól felforrósodik és világít.'],
   spk: ['Hangszóró', 'Az áram változása megrezegteti a membránját, ebből lesz a hang.'],
+  pot: ['Állítható ellenállás', 'Tekerhető ellenállás: a csúszkája egy ellenálláscsíkon mozog. Három lába van: a két vége és a csúszka.'],
+  meter: ['Mérőműszer', 'Megmutatja, mennyi áram folyik (0,5 mA vagy 50 mA állás), vagy mekkora a feszültség (5 V állás).'],
+  motor: ['Motor', 'Az áram forgatja. Fordítva is működik: ha te forgatod, áramot termel.'],
+  obj: ['Vizsgált tárgy', 'Ez nincs a dobozban: ide érnek a kábelvégek vagy az ujjad.'],
   jumper: ['Átkötő kábel', 'Hajlékony vezeték két távoli pont között. A végét a pont tetején lévő patentra csíptesd.'],
 };
 const KIT_ORDER = ['300', 'light', 'home'];
@@ -1150,6 +1414,17 @@ const S = {
   done: store.get('done', {}), wc: null, soundOn: false, audio: null,
 };
 const STAGES = ['Hozzávalók', 'Építés', 'Tippelj', 'Próbáld ki', 'Miért?'];
+
+// a vezérlők állapota kísérletenként (a változatok újraindításakor is megmarad)
+function initCtl(ex) {
+  const sim = ex.sim || {};
+  const ctl = { pot: { ...(sim.pot || {}) }, meter: { ...(sim.meter || {}) }, obj: { ...(sim.obj || {}) }, objName: {} };
+  for (const c of ex.controls) {
+    if (c && c.obj) ctl.objName[c.obj] = MATERIALS[c.set][0][0];
+    if (c && c.touch) ctl.objName[c.touch] = 'érintsd';
+  }
+  return ctl;
+}
 
 // ---------- felolvasás ----------
 let huVoice = null, voicesLoaded = false;
@@ -1214,6 +1489,12 @@ const lvOff = (L) => (L > 1 ? -(L - 1) * LOFF : 0);
 const COLORS = {
   wire: '#2E63CF', res: '#F0BF2E', sw: '#3FA453', bat: '#8C96A2', cap: '#2F8F62', lamp: '#9AA3AE', spk: '#C2463E',
   npn: '#D8443B', pnp: '#3FA453', photo: '#2A2F36', ledred: '#E0453F', ledgreen: '#38B26A',
+  pot: '#3FA453', meter: '#2B3138', motor: '#AEB6BF', obj: '#7A8796',
+};
+const JUMPER_COLOR = { red: '#D13B33', black: '#22262B', blue: '#2F6FD6' };
+const MATERIALS = {
+  materials: [['semmi (levegő)', 1e12], ['alufólia', 0.1], ['ceruzabél', 300], ['sós víz', 2000], ['csapvíz', 20000], ['a kezed', 3e5], ['papír', 1e12], ['műanyag', 1e12]],
+  water: [['száraz pohár', 1e12], ['csapvíz a pohárban', 5e4], ['sós víz a pohárban', 5e3]],
 };
 
 function partColor(def) {
@@ -1237,9 +1518,9 @@ function drawPart(parent, pl, level, contacts, opts) {
     const x1 = px(a.c) + lvOff(ha), y1 = py(a.r) + lvOff(ha), x2 = px(b.c) + lvOff(hb), y2 = py(b.r) + lvOff(hb);
     const mx = (x1 + x2) / 2, my = Math.max(y1, y2) + 70 + Math.abs(x2 - x1) * 0.12;
     const d = `M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}`;
-    svgEl('path', { d, fill: 'none', stroke: def.color === 'red' ? '#D13B33' : '#22262B', 'stroke-width': 7, 'stroke-linecap': 'round' }, g);
+    svgEl('path', { d, fill: 'none', stroke: JUMPER_COLOR[def.color], 'stroke-width': 7, 'stroke-linecap': 'round' }, g);
     svgEl('path', { d, fill: 'none', stroke: 'rgba(255,255,255,.25)', 'stroke-width': 2, 'stroke-linecap': 'round' }, g);
-    for (const [x, y] of [[x1, y1], [x2, y2]]) svgEl('circle', { cx: x, cy: y, r: 8, fill: def.color === 'red' ? '#D13B33' : '#22262B', stroke: '#fff', 'stroke-width': 2 }, g);
+    for (const [x, y] of [[x1, y1], [x2, y2]]) svgEl('circle', { cx: x, cy: y, r: 8, fill: JUMPER_COLOR[def.color], stroke: '#fff', 'stroke-width': 2 }, g);
     const samp = []; for (let i = 0; i <= 24; i++) { const t = i / 24, u = 1 - t; samp.push([u * u * u * x1 + 3 * u * u * t * x1 + 3 * u * t * t * x2 + t * t * t * x2, u * u * u * y1 + 3 * u * u * t * my + 3 * u * t * t * my + t * t * t * y2]); }
     out.flows.push({ pts: samp, src: 'wire', seg: 0 });
     return out;
@@ -1267,6 +1548,21 @@ function drawPart(parent, pl, level, contacts, opts) {
   }
 
   const col = partColor(def);
+  if (def.kind === 'pot') {
+    const ia = geo.snaps.findIndex((s) => s.term === 'a'), ib = geo.snaps.findIndex((s) => s.term === 'b'), iw = geo.snaps.findIndex((s) => s.term === 'w');
+    const d = `M${pts[ia][0]},${pts[ia][1]} L${pts[ib][0]},${pts[ib][1]} L${pts[iw][0]},${pts[iw][1]} Z`;
+    svgEl('path', { d, fill: col, stroke: 'rgba(0,0,0,.28)', 'stroke-width': 34, 'stroke-linejoin': 'round' }, g);
+    svgEl('path', { d, fill: col, stroke: col, 'stroke-width': 30, 'stroke-linejoin': 'round' }, g);
+    const cx = (pts[ia][0] + pts[ib][0] + pts[iw][0]) / 3, cy = (pts[ia][1] + pts[ib][1] + pts[iw][1]) / 3;
+    svgEl('circle', { cx, cy, r: 15, fill: '#E9EEF2', stroke: '#2C6B3A', 'stroke-width': 2 }, g);
+    const knob = svgEl('line', { x1: cx, y1: cy, x2: cx, y2: cy - 12, stroke: '#2C6B3A', 'stroke-width': 3.5, 'stroke-linecap': 'round' }, g);
+    const t = svgEl('text', { x: (pts[ia][0] + pts[ib][0]) / 2, y: (pts[ia][1] + pts[ib][1]) / 2 + 4, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 800, fill: '#fff', 'font-family': 'var(--font-display)' }, g); t.textContent = 'RV';
+    geo.snaps.forEach((s, i) => svgEl('circle', { cx: pts[i][0], cy: pts[i][1], r: 8, fill: '#D9DEE4', stroke: '#5C6670', 'stroke-width': 1.5 }, g));
+    out.knob = { el: knob, cx, cy };
+    out.flows.push({ pts: [pts[ia], [cx, cy], pts[iw]], src: 'Pa' });
+    out.flows.push({ pts: [pts[iw], [cx, cy], pts[ib]], src: 'Pb' });
+    return out;
+  }
   if (def.kind === 'npn' || def.kind === 'pnp') {
     const d = `M${pts[0][0]},${pts[0][1]} L${pts[1][0]},${pts[1][1]} L${pts[2][0]},${pts[2][1]} Z`;
     svgEl('path', { d, fill: col, stroke: 'rgba(0,0,0,.28)', 'stroke-width': 34, 'stroke-linejoin': 'round' }, g);
@@ -1357,6 +1653,36 @@ function drawPart(parent, pl, level, contacts, opts) {
         label(def.short, 18, 10);
         break;
       }
+      case 'meter': {
+        label('M6', 17, 10);
+        // a számlap nem forog a testtel: képernyő-koordinátában rajzoljuk
+        const dial = svgEl('g', { transform: `translate(${cx},${cy})` }, g);
+        svgEl('path', { d: 'M-15,4 A16,16 0 0 1 15,4', fill: '#F4F1E6', stroke: '#9AA3AE', 'stroke-width': 1.5 }, dial);
+        svgEl('path', { d: 'M-15,4 A16,16 0 0 1 15,4 Z', fill: '#F4F1E6' }, dial);
+        const needle = svgEl('line', { x1: 0, y1: 4, x2: 0, y2: -11, stroke: '#C2413A', 'stroke-width': 2.2, 'stroke-linecap': 'round' }, dial);
+        svgEl('circle', { cx: 0, cy: 4, r: 2.4, fill: '#333' }, dial);
+        const pm = svgEl('text', { x: -len / 2 + 2, y: -6, 'text-anchor': 'middle', 'font-size': 15, 'font-weight': 800, fill: '#fff' }, body); pm.textContent = '+';
+        out.meter = { needle };
+        break;
+      }
+      case 'motor': {
+        svgEl('circle', { cx: 0, cy: 0, r: 15, fill: '#E3E7EB', stroke: '#6B737C', 'stroke-width': 2 }, body);
+        const pm = svgEl('text', { x: -len / 2 + 2, y: -6, 'text-anchor': 'middle', 'font-size': 15, 'font-weight': 800, fill: '#333' }, body); pm.textContent = '+';
+        const fan = svgEl('g', { transform: `translate(${cx},${cy})` }, g);
+        const blades = svgEl('g', {}, fan);
+        for (let k = 0; k < 3; k++) svgEl('path', { d: 'M0,0 C6,-8 6,-22 0,-27 C-6,-22 -6,-8 0,0 Z', fill: 'rgba(63,164,83,.82)', stroke: '#2C6B3A', 'stroke-width': 1, transform: `rotate(${k * 120})` }, blades);
+        svgEl('circle', { cx: 0, cy: 0, r: 4, fill: '#2C6B3A' }, fan);
+        out.fan = { el: blades, a: 0 };
+        break;
+      }
+      case 'obj': {
+        body.firstChild && body.removeChild(body.firstChild);
+        svgEl('rect', { x: -W / 2, y: -H / 2, width: W, height: H, rx: 14, fill: 'var(--surface)', 'fill-opacity': 0.75, stroke: 'var(--muted)', 'stroke-width': 2, 'stroke-dasharray': '6 5' }, body);
+        const t = svgEl('text', { x: cx, y: cy + 5, 'text-anchor': 'middle', 'font-size': 13, 'font-weight': 800, fill: 'var(--ink)', 'font-family': 'var(--font-display)' }, g);
+        t.textContent = '?';
+        out.objLabel = t;
+        break;
+      }
       case 'spk': {
         svgEl('circle', { cx: 0, cy: 0, r: 14, fill: '#2A2F36' }, body);
         for (let i = -8; i <= 8; i += 4) svgEl('line', { x1: i, y1: -10, x2: i, y2: 10, stroke: '#666', 'stroke-width': 1.4 }, body);
@@ -1441,6 +1767,14 @@ function drawBoard(layout, opts) {
       R.flows.push({ it, f, L, segs, dots, phase: Math.random() * 24 });
     }
   }
+  // érintőkapcsoló: a rajzon az ujj helyét is lehet nyomva tartani
+  const ex = EXPS[S.exp]; const tc = ex.controls.find((c) => c && c.touch);
+  if (tc && S.stage >= 3) for (const it of items) {
+    if (!it || it.def.kind !== 'obj') continue;
+    const down = (e) => { e.preventDefault(); if (S.sim) { S.sim.obj[tc.touch] = tc.R; S.ctl.objName[tc.touch] = 'ujj'; } };
+    const up = () => { if (S.sim) { S.sim.obj[tc.touch] = 1e12; S.ctl.objName[tc.touch] = 'érintsd'; } };
+    it.g.addEventListener('pointerdown', down); it.g.addEventListener('pointerup', up); it.g.addEventListener('pointerleave', up);
+  }
   // koppintás
   partsG.addEventListener('click', onPartClick);
   posts.addEventListener('click', onPostClick);
@@ -1460,13 +1794,13 @@ function pointAt(fl, s) {
 // ---------- szimuláció ----------
 function currentLayout() {
   const ex = EXPS[S.exp]; let lay = ex.layout;
-  for (const v of ex.variants) if (S.variants[v.id]) lay = v.apply(lay);
+  for (const v of ex.variants) if (S.variants[v.id]) lay = applyVariant(v, lay);
   return lay;
 }
 function startSim() {
   const ex = EXPS[S.exp]; const lay = currentLayout();
   const prevSw = S.sim ? { ...S.sim.switches } : null;
-  S.sim = new E.Sim(lay, { light: S.light });
+  S.sim = new E.Sim(lay, { light: S.light, pot: S.ctl.pot, meter: S.ctl.meter, obj: S.ctl.obj });
   S.simLayout = lay;
   if (prevSw) for (const k in S.sim.switches) if (k in prevSw) S.sim.switches[k] = prevSw[k];
   S.wc = null;
@@ -1480,6 +1814,8 @@ function curOf(fl) {
   const c = sim.cur[id];
   if (fl.f.src === 'C') return c ? c.C : 0;
   if (fl.f.src === 'B') return c ? c.B : 0;
+  if (fl.f.src === 'Pa') return c ? c.a : 0;
+  if (fl.f.src === 'Pb') return c ? -c.b : 0;
   return typeof c === 'number' ? c : 0;
 }
 
@@ -1524,6 +1860,10 @@ function frame(ts) {
         else if (gl.type === 'spk') { const b = Math.min(1, Math.abs(c || 0) / 0.02); gl.el.setAttribute('opacity', (b * 0.9).toFixed(2)); gl.el.setAttribute('r', 18 + b * 8); }
         else if (gl.type === 'shade') { gl.el.setAttribute('opacity', ((1 - S.light) * 0.75).toFixed(2)); }
       }
+      if (it.knob) { const pv = live ? S.sim.pot[it.id] : (S.ctl.pot[it.id] != null ? S.ctl.pot[it.id] : 0.5); const an = (-135 + 270 * pv) * Math.PI / 180; it.knob.el.setAttribute('x2', (it.knob.cx + 12 * Math.sin(an)).toFixed(1)); it.knob.el.setAttribute('y2', (it.knob.cy - 12 * Math.cos(an)).toFixed(1)); }
+      if (it.meter) { const fr = live ? S.sim.meterReading(it.id).frac : 0; const an = Math.max(-0.08, Math.min(1.08, fr)) * 110 - 55; it.meter.needle.setAttribute('transform', `rotate(${an.toFixed(1)} 0 4)`); it.meter.needle.setAttribute('stroke', Math.abs(fr) > 1.05 ? '#E0201A' : '#C2413A'); }
+      if (it.fan) { const w = live ? S.sim.motor[it.id].w : 0; it.fan.a += Math.sign(w) * Math.min(Math.abs(w), 300) * 0.06 * dtR * 57.3; it.fan.el.setAttribute('transform', `rotate(${(it.fan.a % 360).toFixed(1)})`); it.fan.el.style.opacity = Math.abs(w) > 150 ? 0.55 : 1; }
+      if (it.objLabel) { const nm = S.ctl.objName[it.id] || '?'; if (it.objLabel.textContent !== nm) it.objLabel.textContent = nm; }
       if (it.capBar) { const vC = live ? S.sim.capV[it.id] || 0 : 0; it.capBar.el.setAttribute('width', (Math.min(1, Math.abs(vC) / 3) * it.capBar.w).toFixed(1)); }
       if (it.isSwitch) {
         const on = live ? !!S.sim.switches[it.id] : false;
@@ -1531,7 +1871,7 @@ function frame(ts) {
         if (blade) blade.setAttribute('d', it.def.mode === 'press' ? (on ? 'M-30,6 L-12,6 M12,6 L30,6 M-12,6 L12,6' : 'M-30,6 L-12,6 M12,6 L30,6 M-12,-2 L12,-2') : (on ? 'M-30,6 L-12,6 M12,6 L30,6 M-12,6 L12,6' : 'M-30,6 L-12,6 M12,6 L30,6 M-12,6 L12,-6'));
       }
     }
-    if (live && fcount % 6 === 0) updateMeters();
+    if (live && fcount % 6 === 0) { updateMeters(); updateMeterRead(); }
   }
   requestAnimationFrame(frame);
 }
@@ -1590,6 +1930,7 @@ function renderControls() {
   const ex = EXPS[S.exp];
   const live = S.stage >= 3;
   const status = $('#status'); status.innerHTML = '';
+  S.meterRead = null;
   if (live) {
     const p = document.createElement('span'); p.className = 'pill live'; p.textContent = 'Élő szimuláció'; status.append(p);
     if (ex.slow) { const q = document.createElement('span'); q.className = 'pill slow'; q.textContent = ex.slow + '× lassítva'; status.append(q); }
@@ -1600,7 +1941,7 @@ function renderControls() {
   if (S.stage === 1) {
     const lay = ex.layout; const i = Math.min(S.step, lay.length - 1); const chk = E.checkBuild(lay);
     const w = document.createElement('div'); w.className = 'buildbar';
-    const t = document.createElement('p'); t.textContent = (i + 1) + '/' + lay.length + '. ' + stepText(lay[i], chk.levels[i]);
+    const t = document.createElement('p'); t.textContent = (i + 1) + '/' + lay.length + '. ' + stepText(lay[i], chk.levels[i], lay);
     const prev = document.createElement('button'); prev.className = 'btn'; prev.textContent = 'Vissza';
     prev.onclick = () => { if (S.step > 0) { S.step--; refreshBoard(); renderPanel(); renderControls(); } else goStage(0); };
     const nx = document.createElement('button'); nx.className = 'btn primary'; nx.textContent = i < lay.length - 1 ? 'Következő' : 'Kész!';
@@ -1635,6 +1976,49 @@ function renderControls() {
       const up = () => { if (cover.classList.contains('down')) { S.light = keep; inp.value = keep; cover.classList.remove('down'); } };
       cover.addEventListener('pointerdown', down); cover.addEventListener('pointerup', up); cover.addEventListener('pointerleave', up); cover.addEventListener('pointercancel', up);
       box.append(cover);
+    } else if (typeof c === 'object' && c.pot) {
+      const w = document.createElement('div'); w.className = 'lightctl';
+      const id = 'pot-' + c.pot;
+      w.innerHTML = '<label for="' + id + '"></label><input id="' + id + '" type="range" min="0" max="1" step="0.005">';
+      w.querySelector('label').textContent = c.label || c.pot;
+      const inp = w.querySelector('input'); const cur = S.sim.pot[c.pot];
+      inp.value = c.invert ? 1 - cur : cur;
+      inp.oninput = () => { const v = +inp.value; S.ctl.pot[c.pot] = S.sim.pot[c.pot] = c.invert ? 1 - v : v; };
+      box.append(w);
+    } else if (typeof c === 'object' && c.meter) {
+      const w = document.createElement('div'); w.className = 'meterctl';
+      const lab = document.createElement('span'); lab.className = 'mlabel'; lab.textContent = 'Műszer (M6):';
+      const seg = document.createElement('div'); seg.className = 'seg';
+      for (const rg of Object.keys(E.METER)) {
+        const b = document.createElement('button'); b.textContent = E.METER[rg].label; b.setAttribute('aria-pressed', String(S.sim.meter[c.meter] === rg));
+        b.onclick = () => { S.ctl.meter[c.meter] = S.sim.meter[c.meter] = rg; renderControls(); };
+        seg.append(b);
+      }
+      const read = document.createElement('b'); read.className = 'mread'; S.meterRead = { el: read, id: c.meter };
+      w.append(lab, seg, read); box.append(w);
+    } else if (typeof c === 'object' && c.spin) {
+      for (const [txt, dir] of [['Pörgesd meg!', 1], ['Visszafelé', -1]]) {
+        const b = document.createElement('button'); b.className = 'ctrl hold'; b.textContent = txt;
+        const down = (e) => { e.preventDefault(); S.sim.motor[c.spin].hand = dir; b.classList.add('down'); };
+        const up = () => { if (S.sim) S.sim.motor[c.spin].hand = 0; b.classList.remove('down'); };
+        b.addEventListener('pointerdown', down); b.addEventListener('pointerup', up); b.addEventListener('pointerleave', up); b.addEventListener('pointercancel', up);
+        box.append(b);
+      }
+    } else if (typeof c === 'object' && c.obj) {
+      const w = document.createElement('div'); w.className = 'chips';
+      for (const [name, R] of MATERIALS[c.set]) {
+        const b = document.createElement('button'); b.className = 'mini'; b.textContent = name;
+        b.setAttribute('aria-pressed', String(S.ctl.objName[c.obj] === name));
+        b.onclick = () => { S.ctl.obj[c.obj] = S.sim.obj[c.obj] = R; S.ctl.objName[c.obj] = name; renderControls(); };
+        w.append(b);
+      }
+      box.append(w);
+    } else if (typeof c === 'object' && c.touch) {
+      const b = document.createElement('button'); b.className = 'ctrl hold'; b.textContent = c.label || 'Érintsd meg';
+      const down = (e) => { e.preventDefault(); S.sim.obj[c.touch] = c.R; S.ctl.objName[c.touch] = 'ujj'; b.classList.add('down'); };
+      const up = () => { if (S.sim) S.sim.obj[c.touch] = 1e12; S.ctl.objName[c.touch] = 'érintsd'; b.classList.remove('down'); };
+      b.addEventListener('pointerdown', down); b.addEventListener('pointerup', up); b.addEventListener('pointerleave', up); b.addEventListener('pointercancel', up);
+      box.append(b);
     } else if (c === 'sound') {
       const b = document.createElement('button'); b.className = 'ctrl'; b.setAttribute('aria-pressed', String(S.soundOn));
       b.innerHTML = '<span class="knob"></span> ' + (S.audioBusy ? 'Hang készül…' : 'Hang' + (S.audio && S.soundOn ? ' · kb. ' + Math.round(S.audio.freq) + ' Hz' : ''));
@@ -1643,6 +2027,15 @@ function renderControls() {
       box.append(b);
     }
   }
+}
+
+function updateMeterRead() {
+  if (!S.meterRead || !S.sim) return;
+  const r = S.sim.meterReading(S.meterRead.id); let txt;
+  if (Math.abs(r.frac) > 1.05) txt = r.frac > 0 ? 'Túl nagy! Válts nagyobb állásra.' : 'Fordítva folyik: a mutató balra akad.';
+  else if (S.age === 'k') txt = 'Mutató: ' + Math.round(Math.max(0, r.frac) * 100) + '%';
+  else txt = r.unit === 'V' ? fmtV(r.value) : fmtA(r.value);
+  if (S.meterRead.el.textContent !== txt) S.meterRead.el.textContent = txt;
 }
 
 // ---------- mérések (11 éveseknek) ----------
@@ -1658,6 +2051,9 @@ function updateMeters() {
     if (k === 'npn' || k === 'pnp') { const c = sim.cur[e.id] || {}; rows.push([e.id + ' bázisáram', fmtA(c.B || 0)]); rows.push([e.id + ' kollektoráram', fmtA(c.C || 0)]); }
     if (k === 'cap') rows.push([e.id + ' feszültsége', fmtV(sim.capV[e.id] || 0)]);
     if (k === 'photo') rows.push([e.id + ' árama', fmtA(sim.cur[e.id] || 0)]);
+    if (k === 'meter') { const r = sim.meterReading(e.id); rows.push([e.id + ' (' + E.METER[r.range].label + ')', Math.abs(r.frac) > 1.05 ? 'túlcsordul' : (r.unit === 'V' ? fmtV(r.value) : fmtA(r.value))]); }
+    if (k === 'motor') { rows.push([e.id + ' fordulatszáma', Math.round(Math.abs(sim.motor[e.id].w) * 60 / 2 / Math.PI) + ' /perc']); rows.push([e.id + ' árama', fmtA(sim.cur[e.id] || 0)]); }
+    if (k === 'pot') { rows.push([e.id + ' csúszka', Math.round(sim.pot[e.id] * 100) + '%']); }
   }
   rows.push(['idő a szimulációban', (sim.time < 1 ? (sim.time * 1000).toFixed(1).replace('.', ',') + ' ms' : sim.time.toFixed(1).replace('.', ',') + ' s')]);
   if (meterBox.children.length !== rows.length) { meterBox.innerHTML = ''; for (const r of rows) { const d = document.createElement('div'); d.innerHTML = '<small></small><b></b>'; meterBox.append(d); } }
@@ -1700,29 +2096,53 @@ document.addEventListener('click', (e) => { const pop = $('#pop'); if (!pop.hidd
 // ---------- hozzávalók ----------
 function kitsHaving(p) { return KIT_ORDER.filter((k) => (E.KITS[k].parts[p] || 0) > 0); }
 function needList(layout) {
-  const cnt = {}; for (const pl of layout) cnt[pl.p] = (cnt[pl.p] || 0) + 1;
+  const cnt = {}; for (const pl of layout) if (!P[pl.p].virtual) cnt[pl.p] = (cnt[pl.p] || 0) + 1;
   return Object.entries(cnt).sort((a, b) => sortKey(a[0]) - sortKey(b[0])).map(([p, n]) => {
     let left = n; const src = [];
     for (const k of KIT_ORDER) { const have = E.KITS[k].parts[p] || 0; const take = Math.min(have, left); if (take > 0) { src.push([k, take]); left -= take; } }
     return { p, n, src, missing: left };
   });
 }
-function sortKey(p) { const k = P[p].kind; return ['bat', 'sw', 'res', 'led', 'cap', 'npn', 'pnp', 'photo', 'lamp', 'spk', 'jumper', 'wire'].indexOf(k) * 10 + (P[p].n || 0); }
+function sortKey(p) { const k = P[p].kind; return ['bat', 'sw', 'res', 'pot', 'led', 'cap', 'npn', 'pnp', 'photo', 'lamp', 'spk', 'motor', 'meter', 'jumper', 'wire'].indexOf(k) * 10 + (P[p].n || 0); }
 function miniIcon(p) {
   const def = P[p]; const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 58 34');
   if (def.kind === 'wire') { svgEl('rect', { x: 4, y: 11, width: 50, height: 12, rx: 6, fill: COLORS.wire }, s); const t = svgEl('text', { x: 29, y: 21, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 800, fill: '#fff' }, s); t.textContent = def.n; return s; }
-  if (def.kind === 'jumper') { svgEl('path', { d: 'M6,10 C14,34 44,34 52,10', fill: 'none', stroke: def.color === 'red' ? '#D13B33' : '#22262B', 'stroke-width': 4, 'stroke-linecap': 'round' }, s); return s; }
-  if (def.kind === 'npn' || def.kind === 'pnp') { svgEl('path', { d: 'M12,9 L46,9 L29,26 Z', fill: partColor(def), stroke: partColor(def), 'stroke-width': 10, 'stroke-linejoin': 'round' }, s); }
+  if (def.kind === 'jumper') { svgEl('path', { d: 'M6,10 C14,34 44,34 52,10', fill: 'none', stroke: JUMPER_COLOR[def.color], 'stroke-width': 4, 'stroke-linecap': 'round' }, s); return s; }
+  if (def.kind === 'npn' || def.kind === 'pnp' || def.kind === 'pot') { svgEl('path', { d: 'M12,9 L46,9 L29,26 Z', fill: partColor(def), stroke: partColor(def), 'stroke-width': 10, 'stroke-linejoin': 'round' }, s); }
   else svgEl('rect', { x: 3, y: 6, width: 52, height: 22, rx: 7, fill: partColor(def) }, s);
-  const t = svgEl('text', { x: 29, y: def.kind === 'npn' || def.kind === 'pnp' ? 19 : 21, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 800, fill: def.kind === 'res' ? '#3B2A00' : '#fff', 'font-family': 'var(--font-display)' }, s); t.textContent = def.short;
+  const t = svgEl('text', { x: 29, y: def.kind === 'npn' || def.kind === 'pnp' ? 19 : 21, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 800, fill: def.kind === 'res' || def.kind === 'motor' ? '#3B2A00' : '#fff', 'font-family': 'var(--font-display)' }, s); t.textContent = def.short;
   return s;
 }
 
 // ---------- építési lépések szövege ----------
-function stepText(pl, level) {
+function stepText(pl, level, layout) {
   const def = P[pl.p]; const geo = E.geometry(pl);
   const pn = (s) => E.ROWS[s.r] + s.c;
   const lv = level === 1 ? 'közvetlenül a rácsra (1. szint)' : 'a már lerakott alkatrészek tetejére (' + level + '. szint)';
+  const ex = EXPS[S.exp];
+  const virtPosts = new Set();
+  for (const q of layout || []) if (P[q.p].virtual) for (const sn of E.geometry(q).snaps) virtPosts.add(pn(sn));
+  const jcol = { red: 'a piros', black: 'a fekete', blue: 'a kék' };
+  if (def.kind === 'jumper') {
+    const a = pn(geo.snaps[0]), b = pn(geo.snaps[1]);
+    if (virtPosts.has(b)) return `Csatlakoztasd ${jcol[def.color]} átkötő kábel egyik végét ${art(a)} pont tetejére. A másik vége szabadon marad: ezzel fogsz hozzáérni ${ex.controls.some((c) => c && c.set === 'water') ? 'a vízhez' : 'a vizsgált tárgyhoz'}.`;
+    return `Csíptesd ${jcol[def.color]} átkötő kábel egyik végét ${art(a)} pont tetejére, a másikat ${art(b)} pont tetejére.`;
+  }
+  if (def.virtual) {
+    const a = pn(geo.snaps[0]), b = pn(geo.snaps[1]);
+    if (ex.controls.some((c) => c && c.touch)) return `Ezt nem kell lerakni: ide fogsz ujjal érinteni. Ha kész az áramkör, érintsd meg egyszerre ${art(a)} és ${art(b)} pont tetejét.`;
+    if (ex.controls.some((c) => c && c.set === 'water')) return 'Ezt nem kell lerakni: ez jelöli a poharat. Készíts elő egy poharat; a két átkötő kábel szabad vége kerül majd bele.';
+    return 'Ezt nem kell lerakni: ez jelöli a vizsgált tárgyat. Készíts elő néhány dolgot: alufóliát, ceruzát (a hegyét), egy pohár vizet, papírt, egy műanyag tárgyat.';
+  }
+  if (def.kind === 'pot') {
+    const a = geo.snaps.find((s2) => s2.term === 'a'), b = geo.snaps.find((s2) => s2.term === 'b'), w = geo.snaps.find((s2) => s2.term === 'w');
+    return `Tedd le a zöld állítható ellenállást (RV) ${lv}: a két szélső lába ${art(pn(a))} és ${art(pn(b))} pontra, a középső lába (a csúszka) ${art(pn(w))} pontra kerüljön.`;
+  }
+  if (def.kind === 'meter') {
+    const rg = ex.sim && ex.sim.meter && ex.sim.meter[pl.id || pl.p];
+    return `Tedd le a mérőműszert (M6) ${art(pn(geo.snaps[0]))} és ${art(pn(geo.snaps[1]))} pont közé, ${lv}. A + jele ${art(pn(geo.snaps[0]))} pont felé nézzen.` + (rg ? ` Állítsd a kapcsolóját ${E.METER[rg].label === '5 V' ? 'az' : 'a'} ${E.METER[rg].label} állásba.` : '');
+  }
+  if (def.kind === 'motor') return `Tedd le a motort (${def.short}) ${art(pn(geo.snaps[0]))} és ${art(pn(geo.snaps[1]))} pont közé, ${lv}. A + jele ${art(pn(geo.snaps[0]))} pontnál legyen. Tedd rá a propellert.`;
   if (def.kind === 'jumper') return `Csíptesd ${def.color === 'red' ? 'a piros' : 'a fekete'} átkötő kábel egyik végét ${art(pn(geo.snaps[0]))} pont tetejére, a másikat ${art(pn(geo.snaps[1]))} pont tetejére.`;
   if (def.kind === 'wire') {
     if (def.n === 1) return `Tegyél egy 1-es vezetéket (kis kék gombot) ${art(pn(geo.snaps[0]))} pontra, ${lv}. Ez alátét, hogy a rá kerülő alkatrész vízszintesen álljon.`;
@@ -1788,7 +2208,7 @@ function renderPanel() {
     const lvl = chk.levels[i];
     cnt.innerHTML = '<span>' + (i + 1) + '. lépés / ' + lay.length + '</span>' + (P[lay[i].p].kind === 'jumper' ? '<span>átkötés</span>' : '<span class="lvl"><i>' + lvl + '</i> szint</span>');
     const pr = el('div', 'progress'); const bar = el('div'); bar.style.width = ((i + 1) / lay.length * 100) + '%'; pr.append(bar);
-    box.append(cnt, pr, sayBlock(stepText(lay[i], lvl), { auto: true }));
+    box.append(cnt, pr, sayBlock(stepText(lay[i], lvl, lay), { auto: true }));
     const kits = kitsHaving(lay[i].p);
     if (kits.length && P[lay[i].p].kind !== 'wire') { const k = el('div', 'src'); k.style.display = 'flex'; k.style.gap = '4px'; k.style.flexWrap = 'wrap'; k.append(el('span', 'note', 'Megtalálod: ')); for (const kk of kits) k.append(el('span', 'chip k' + kk, KIT_SHORT[kk])); box.append(k); }
     body.append(box);
@@ -1815,7 +2235,7 @@ function renderPanel() {
     next('Próbáljuk ki', () => { if (q.variant) S.variants[q.variant] = false; goStage(3); });
   } else if (S.stage >= 3) {
     if (S.stage === 3) {
-      body.append(sayBlock(playHint(ex), { auto: true }));
+      body.append(sayBlock(ex.hint[S.age], { auto: true }));
       if (ex.variants.length) {
         body.append(el('h3', null, 'Kísérletezz'));
         const vs = el('div', 'vars');
@@ -1849,18 +2269,6 @@ function renderPanel() {
     if (S.age === 'n' && S.stage === 3) { body.append(el('h3', null, 'Mérőműszer')); meterBox = el('div', 'meter'); body.append(meterBox); }
   }
   panel.append(nav);
-}
-
-function playHint(ex) {
-  const k = S.age;
-  const t = {
-    first: { k: 'Kapcsold be az S1-et! Nézd, merre mennek a sárga pöttyök: ez az áram.', m: 'Kapcsold be az S1 kapcsolót, alul vagy magán a rácson. A sárga pöttyök mutatják, merre folyik az áram.', n: 'Kapcsold be az S1-et. A pöttyök sebessége az áram nagyságát mutatja (logaritmikusan).' },
-    night: { k: 'Kapcsold be, aztán húzd a fényt a hold felé, vagy nyomd a „Takard le” gombot!', m: 'Kapcsold be az S1-et, és állítsd a fényt. Figyeld, mikor gyullad ki a LED.', n: 'Kapcsold be az S1-et, és a fénycsúszkával keresd meg a billenési pontot.' },
-    delay: { k: 'Kapcsold be az S1-et, nyomd meg az S2 gombot, aztán engedd el!', m: 'Kapcsold be az S1-et, nyomd meg és engedd el az S2-t. Figyeld a kondenzátor sárga csíkját: ennyi töltés van benne.', n: 'S1 be, S2 rövid nyomás. Figyeld a C5 feszültségét és a bázisáramot a mérőn.' },
-    flash: { k: 'Kapcsold be, és figyeld a két lámpát!', m: 'Kapcsold be az S1-et. Figyeld a két kondenzátor sárga csíkját: felváltva töltődnek.', n: 'S1 be. Figyeld a két bázisáramot: mindig csak az egyik tranzisztor vezet.' },
-    sound: { k: 'Kapcsold be, és nyomd meg a Hang gombot! A képernyőn lelassítva látod.', m: 'Kapcsold be az S1-et és a hangot. A képernyő ezerszer lassabban mutatja, ami valójában történik.', n: 'S1 be, Hang be. A kijelzés 1000× lassított; a hang a szimulált hangszóróáramból készül.' },
-  };
-  return t[ex.id][k];
 }
 
 function guessIcon(kind) {
@@ -1901,20 +2309,38 @@ function markDone() { S.done[EXPS[S.exp].id] = true; store.set('done', S.done); 
 function selectExp(i) {
   if (S.soundOn) setSound(false);
   S.exp = i; S.step = 0; S.guess = null; S.variants = {}; S.sim = null; S.maxStage = 0; S.audio = null;
+  S.ctl = initCtl(EXPS[i]);
   S.light = EXPS[i].light || 0.85;
   store.set('exp', i);
   renderStrip(); goStage(0);
 }
 function renderStrip() {
   const nav = $('#exps'); nav.innerHTML = '';
+  const cur = EXPS[S.exp].chapter;
+  const chaps = el('div', 'chaps'); chaps.setAttribute('role', 'tablist'); chaps.setAttribute('aria-label', 'Fejezetek');
+  for (const c of CHAPTERS) {
+    const list = EXPS.filter((e) => e.chapter === c.id);
+    const done = list.filter((e) => S.done[e.id]).length;
+    const b = el('button', 'chap'); b.setAttribute('role', 'tab');
+    b.setAttribute('aria-selected', String(c.id === cur));
+    b.innerHTML = '<i></i><span></span><small></small>';
+    b.querySelector('i').textContent = c.id; b.querySelector('span').textContent = c.short; b.querySelector('small').textContent = done + '/' + list.length;
+    b.title = c.title;
+    b.onclick = () => { if (c.id !== cur) { const next = list.find((e) => !S.done[e.id]) || list[0]; selectExp(EXPS.indexOf(next)); } };
+    chaps.append(b);
+  }
+  const row = el('div', 'exprow');
+  let k = 0;
   EXPS.forEach((ex, i) => {
+    if (ex.chapter !== cur) return; k++;
     const b = el('button', 'exp' + (S.done[ex.id] ? ' done' : ''));
     if (i === S.exp) b.setAttribute('aria-current', 'true');
-    b.innerHTML = '<span class="num">' + (S.done[ex.id] ? '✓' : i + 1) + '</span><b></b><small></small>';
+    b.innerHTML = '<span class="num">' + (S.done[ex.id] ? '✓' : cur + k) + '</span><b></b><small></small>';
     b.querySelector('b').textContent = ex.title; b.querySelector('small').textContent = ex.tag;
     b.onclick = () => selectExp(i);
-    nav.append(b);
+    row.append(b);
   });
+  nav.append(chaps, row);
 }
 function setAge(a) {
   S.age = a; store.set('age', a);
@@ -1930,6 +2356,7 @@ $('#autoread').onclick = () => { S.autoread = !S.autoread; store.set('autoreadSe
 // ---------- indulás ----------
 S.exp = Math.min(EXPS.length - 1, store.get('exp', 0));
 S.light = EXPS[S.exp].light || 0.85;
+S.ctl = initCtl(EXPS[S.exp]);
 S.maxStage = S.stage;
 document.body.classList.add('age-' + S.age);
 document.querySelectorAll('[data-age]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.age === S.age)));
@@ -1937,7 +2364,7 @@ syncAutoread();
 renderStrip();
 goStage(Math.min(4, S.stage));
 requestAnimationFrame(frame);
-window.__app = { S, EXPS, startSim };
+window.__app = { S, EXPS, startSim, selectExp, goStage };
 })();
 
 </script>

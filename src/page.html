@@ -78,8 +78,15 @@ button { font: inherit; color: inherit; }
 .iconbtn { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; min-height: 44px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 15px; }
 .iconbtn[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
 
-/* kísérletválasztó */
-.exps { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(170px, 1fr); gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+/* fejezetek és kísérletválasztó */
+.exps { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.chaps { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+.chap { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; min-height: 44px; padding: 4px 14px 4px 5px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 15px; }
+.chap i { font-style: normal; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); font-family: var(--font-display); font-weight: 800; font-size: 17px; }
+.chap small { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.chap[aria-selected="true"] { border-color: var(--accent); }
+.chap[aria-selected="true"] i { background: var(--accent); color: var(--accent-ink); }
+.exprow { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(170px, 1fr); gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
 .exp { text-align: left; border: 2px solid transparent; background: var(--surface); border-radius: var(--r); padding: 10px 12px; cursor: pointer; display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: center; min-height: 64px; box-shadow: 0 1px 0 var(--line); }
 .exp .num { grid-row: span 2; width: 34px; height: 34px; border-radius: 10px; background: var(--surface-2); display: grid; place-items: center; font-family: var(--font-display); font-weight: 800; font-size: 20px; color: var(--muted); }
 .exp b { font-family: var(--font-display); font-size: 18px; font-weight: 800; line-height: 1.1; }
@@ -111,7 +118,12 @@ svg.board { display: block; width: 100%; height: auto; min-width: 520px; touch-a
 .ctrl[aria-pressed="true"] .knob::after { transform: translateX(16px); }
 .lightctl { display: flex; align-items: center; gap: 10px; border: 2px solid var(--line); background: var(--surface-2); border-radius: 14px; padding: 6px 14px; min-height: 52px; flex: 1 1 260px; }
 .lightctl input { flex: 1; accent-color: var(--spark); min-width: 0; height: 30px; }
-.lightctl label { font-weight: 700; font-size: 15px; }
+.lightctl label { font-weight: 700; font-size: 15px; white-space: nowrap; }
+.meterctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; border: 2px solid var(--line); background: var(--surface-2); border-radius: 14px; padding: 6px 12px; min-height: 52px; }
+.meterctl .mlabel { font-weight: 700; font-size: 15px; }
+.meterctl .seg button { min-height: 38px; padding: 4px 10px; }
+.mread { font-variant-numeric: tabular-nums; font-size: 17px; min-width: 7ch; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
 
 /* panel */
 .panel { padding: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
@@ -240,6 +252,9 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
 </script>
 <script>
 /*LAYOUTS*/
+</script>
+<script>
+/*EXPERIMENTS*/
 </script>
 <script>
 /*APP*/
