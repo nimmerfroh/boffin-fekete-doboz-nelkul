@@ -53,8 +53,9 @@ jobs:
           node main/build.mjs --out _site --channel main
           if [ "${{ steps.devtest.outcome }}" = "success" ]; then
             node dev/build.mjs --out _site/dev --channel dev
-          else
-            echo "::warning::A fejlesztői ág tesztjei nem mentek át (vagy nincs dev ág), ezért a /dev/ most kimarad."
+          elif [ -d dev ]; then
+            echo "::warning::A fejlesztői ág tesztjei nem mentek át: a /dev/ figyelmeztető sávval jelenik meg."
+            node dev/build.mjs --out _site/dev --channel dev --broken
           fi
       - uses: actions/upload-pages-artifact@v4
         with:

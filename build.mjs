@@ -11,6 +11,7 @@ import { createHash } from 'node:crypto';
 const arg = (name, def) => { const i = process.argv.indexOf('--' + name); return i > 0 ? process.argv[i + 1] : def; };
 const channel = arg('channel', 'main');
 const outDir = arg('out', null);
+const broken = process.argv.includes('--broken');   // a fejlesztői ág tesztjei elbuktak: figyelmeztető sáv
 if (!['main', 'dev'].includes(channel)) throw new Error('ismeretlen csatorna: ' + channel);
 
 const read = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
@@ -33,6 +34,7 @@ if (channel === 'dev') {
   sub('<title>Fekete doboz nélkül</title>', '<title>Fekete doboz nélkül – DEV</title>');
   sub('<meta name="theme-color" content="#2457C5">', '<meta name="theme-color" content="#C2410C">');
   sub('<h1>Fekete doboz nélkül</h1>', '<h1>Fekete doboz nélkül <span class="devtag" title="Fejlesztői változat: itt próbáljuk ki az újdonságokat, mielőtt az éles oldalra kerülnek">DEV</span></h1>');
+  if (broken) sub('<body>', '<body><div style="background:#B42318;color:#fff;padding:10px 16px;font-weight:700;text-align:center">Figyelem: ennek a fejlesztői változatnak a tesztjei nem mentek át, hibás lehet.</div>');
   sub('</style>', '.devtag { display: inline-block; vertical-align: middle; font-size: 13px; font-weight: 800; letter-spacing: .06em; color: #fff; background: #C2410C; border-radius: 8px; padding: 2px 8px; margin-left: 6px; }\n</style>');
   const m = JSON.parse(manifest);
   m.name = 'Fekete doboz nélkül – DEV'; m.short_name = 'Fekete doboz DEV'; m.theme_color = '#C2410C';
@@ -42,8 +44,11 @@ if (channel === 'dev') {
 // service worker: a verzió az oldal tartalmából (új kiadásnál a tabletek maguktól frissülnek)
 const pukiN = readdirSync(new URL('./hangok/puki/', import.meta.url)).filter((f) => /^\d\d\.mp3$/.test(f)).length;
 if (!page.includes(`const PUKI_N = ${pukiN};`)) throw new Error('az app.js PUKI_N értéke nem egyezik a hangok/puki fájlok számával: ' + pukiN);
-const version = createHash('sha256').update(page).digest('hex').slice(0, 12);
-const sw = read('./src/sw.template.js').replace('__VERSION__', version).replace('__PUKI_N__', String(pukiN)).replace('__CHANNEL__', channel);
+// a verzió az oldal, a manifest, az ikonok és a hangok tartalmából: bármelyik változik, a telepített app frissül
+const hashDir = (h, d) => { for (const f of readdirSync(new URL('./' + d + '/', import.meta.url), { recursive: true }).map(String).sort()) { try { h.update(f).update(readFileSync(new URL('./' + d + '/' + f, import.meta.url))); } catch (e) { /* könyvtár */ } } return h; };
+const version = hashDir(hashDir(createHash('sha256').update(page).update(manifest), 'icons'), 'hangok').digest('hex').slice(0, 12);
+const soundsVer = hashDir(createHash('sha256'), 'hangok').digest('hex').slice(0, 8);
+const sw = read('./src/sw.template.js').replace('__VERSION__', version).replace('__PUKI_N__', String(pukiN)).replace('__CHANNEL__', channel).replace('__SOUNDS_VER__', soundsVer);
 
 if (!outDir) {
   writeFileSync(new URL('./index.html', import.meta.url), page);
