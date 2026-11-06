@@ -87,11 +87,11 @@ function voiceHelp() {
   return 'Ehhez a böngészőhöz telepíteni kell egy magyar felolvasóhangot, vagy próbáld Microsoft Edge-ben, abban van beépített magyar hang.';
 }
 function noVoiceNotice() {
-  if (S.voiceWarned) return; S.voiceWarned = true;
+  if (S.voiceWarned || store.get('voiceOk', false)) return; S.voiceWarned = true;
   const box = document.createElement('div'); box.className = 'voicewarn'; box.setAttribute('role', 'status');
-  box.innerHTML = '<b>Ezen az eszközön nincs magyar felolvasóhang.</b> Idegen nyelvű hanggal nem olvasunk fel, mert az érthetetlen lenne. <span></span> <button class="mini">Rendben</button>';
+  box.innerHTML = '<b>Nincs magyar felolvasóhang ezen az eszközön.</b> <details><summary>Mit tehetek?</summary><span></span> (Idegen nyelvű hanggal nem olvasunk fel, mert az érthetetlen lenne.)</details> <button class="mini">Rendben</button>';
   box.querySelector('span').textContent = voiceHelp();
-  box.querySelector('button').onclick = () => box.remove();
+  box.querySelector('button').onclick = () => { box.remove(); store.set('voiceOk', true); };
   document.querySelector('.wrap').insertBefore(box, document.querySelector('.exps'));
 }
 function speak(text) {
@@ -1093,7 +1093,7 @@ function stepText(pl, level, layout) {
   const def = P[pl.p]; const geo = E.geometry(pl);
   const nbd = layout ? boardsOf(layout) : 1;
   const pn = (s) => { const n = E.postName(s.r, s.c); if (nbd < 2) return n; const m = /^(\d):(.*)$/.exec(n); return m ? m[1] + '. rács ' + m[2] : '1. rács ' + n; };
-  const lv = level === 1 ? 'közvetlenül a rácsra (1. szint)' : 'a már lerakott alkatrészek tetejére (' + level + '. szint)';
+  const lv = S.age === 'k' ? (level === 1 ? 'a rácsra' : 'a többi alkatrész tetejére') : level === 1 ? 'közvetlenül a rácsra (1. szint)' : 'a már lerakott alkatrészek tetejére (' + level + '. szint)';
   const ex = EXPS[S.exp];
   if (def.kind === 'fiber') return `Húzd rá az üvegszálas kábel átlátszó tartóját a LED-re (${pn(geo.snaps[0])}), a fekete tartót a fototranzisztorra (${pn(geo.snaps[1])}), és dugd be a kábel két végét a tartókba. A Light dobozban találod.`;
   const virtPosts = new Set();
@@ -1300,6 +1300,16 @@ function refreshBoard() {
   else drawBoard(ex.layout, { showLevels: S.stage === 0 });
   $('#boardtitle').textContent = S.stage === 1 ? 'Így rakd össze' : S.stage >= 3 ? 'Mi történik belül?' : 'A kész áramkör';
 }
+// kísérlet- vagy lépésváltáskor a munkaterület (rács + kezelőszervek + szöveg) a képernyő tetejére kerül,
+// hogy tableten egyszerre látszódjon a rács és a kapcsolók (a fejléc és a választósor fölé görgetődik)
+function focusWork() {
+  if (!S.booted) return;
+  const m = document.querySelector('.main'); if (!m) return;
+  const top = m.getBoundingClientRect().top;
+  if (Math.abs(top - 8) < 4) return;
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.scrollTo({ top: Math.max(0, scrollY + top - 8), behavior: reduce ? 'auto' : 'smooth' });
+}
 function goStage(i) {
   const prev = S.stage;
   S.stage = i; S.maxStage = Math.max(S.maxStage || 0, i);
@@ -1309,6 +1319,7 @@ function goStage(i) {
   $('#pop').hidden = true;
   store.set('stage', i);
   refreshBoard(); renderPanel(); renderControls();
+  focusWork();
 }
 function markDone() { S.done[EXPS[S.exp].id] = true; store.set('done', S.done); }
 function selectExp(i) {
@@ -1347,6 +1358,9 @@ function renderStrip() {
     row.append(b);
   });
   nav.append(chaps, row);
+  // a kiválasztott fejezet és kísérlet mindig látszódjon a vízszintesen görgethető sorokban
+  const show = (box, it) => { if (!it) return; const l = it.offsetLeft - box.offsetLeft, r = l + it.offsetWidth; if (l < box.scrollLeft || r > box.scrollLeft + box.clientWidth) box.scrollLeft = Math.max(0, l - 16); };
+  requestAnimationFrame(() => { show(chaps, chaps.querySelector('[aria-selected="true"]')); show(row, row.querySelector('[aria-current]')); });
 }
 function setAge(a) {
   S.age = a; store.set('age', a);
@@ -1388,6 +1402,7 @@ document.querySelectorAll('[data-age]').forEach((b) => b.setAttribute('aria-pres
 syncAutoread();
 renderStrip();
 goStage(Math.min(4, S.stage));
+S.booted = true;
 requestAnimationFrame(frame);
 window.__app = { S, EXPS, startSim, selectExp, goStage };
 })();

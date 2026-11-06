@@ -126,7 +126,7 @@ svg.board { display: block; width: 100%; height: auto; min-width: 520px; touch-a
 .ctrl[aria-pressed="true"] .knob { background: var(--good); }
 .ctrl[aria-pressed="true"] .knob::after { transform: translateX(16px); }
 .lightctl { display: flex; align-items: center; gap: 10px; border: 2px solid var(--line); background: var(--surface-2); border-radius: 14px; padding: 6px 14px; min-height: 52px; flex: 1 1 260px; }
-.lightctl input { flex: 1; accent-color: var(--spark); min-width: 0; height: 30px; }
+.lightctl input { flex: 1; accent-color: var(--spark); min-width: 0; height: 44px; }   /* ujjal is jól megfogható */
 .lightctl label { font-weight: 700; font-size: 15px; white-space: nowrap; }
 .lightctl:has(.tuneread) { flex-wrap: wrap; padding-block: 8px; }
 .lightctl .tuneread { flex-basis: 100%; font-size: 14px; font-weight: 700; color: var(--muted); }
@@ -206,6 +206,9 @@ svg.board { display: block; width: 100%; height: auto; min-width: 520px; touch-a
 /* figyelmeztetés, ha nincs magyar felolvasóhang */
 .voicewarn { background: color-mix(in srgb, var(--spark) 18%, var(--surface)); border: 1px solid color-mix(in srgb, var(--spark) 50%, var(--line)); border-radius: 14px; padding: 10px 14px; font-size: 15px; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
 .voicewarn b { font-weight: 700; }
+.voicewarn details { flex: 1 1 260px; } .voicewarn summary { cursor: pointer; color: var(--accent); font-weight: 700; }
+/* telefonon tömörebb fejléc: alcím nélkül, a Puki és a Felolvasás csak ikonnal */
+@media (max-width: 600px) { .brand p { display: none; } .brand h1 { font-size: 24px; } .tools .lbl { display: none; } .top { gap: 10px; } }
 /* keskeny nézetben az építési lépés a rács alatt is látszik */
 .buildbar { display: none; flex-direction: column; gap: 8px; width: 100%; }
 .buildbar p { margin: 0; font-size: 18px; font-weight: 700; }
@@ -238,13 +241,13 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
         <button data-age="m" aria-pressed="true"><span class="age">7</span> éves</button>
         <button data-age="n" aria-pressed="false"><span class="age">11</span> éves</button>
       </div>
-      <button class="iconbtn" id="puki" title="Véletlen pukihang (valódi felvételek)">
+      <button class="iconbtn" id="puki" title="Véletlen pukihang (valódi felvételek)" aria-label="Puki">
         <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 14c3-1 4-4 8-4M3 18c4 0 6-2 10-2M5 9c2 0 3-2 6-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="17" cy="11" r="2.2" fill="currentColor"/><circle cx="20.5" cy="16" r="1.6" fill="currentColor"/><circle cx="19" cy="6.5" r="1.3" fill="currentColor"/></svg>
-        Puki<span id="pukin" class="pukin"></span>
+        <span class="lbl">Puki</span><span id="pukin" class="pukin"></span>
       </button>
-      <button class="iconbtn" id="autoread" aria-pressed="false" title="Minden új szöveget felolvas">
+      <button class="iconbtn" id="autoread" aria-pressed="false" title="Minden új szöveget felolvas" aria-label="Felolvasás">
         <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        Felolvasás
+        <span class="lbl">Felolvasás</span>
       </button>
     </div>
   </header>

@@ -126,7 +126,7 @@ svg.board { display: block; width: 100%; height: auto; min-width: 520px; touch-a
 .ctrl[aria-pressed="true"] .knob { background: var(--good); }
 .ctrl[aria-pressed="true"] .knob::after { transform: translateX(16px); }
 .lightctl { display: flex; align-items: center; gap: 10px; border: 2px solid var(--line); background: var(--surface-2); border-radius: 14px; padding: 6px 14px; min-height: 52px; flex: 1 1 260px; }
-.lightctl input { flex: 1; accent-color: var(--spark); min-width: 0; height: 30px; }
+.lightctl input { flex: 1; accent-color: var(--spark); min-width: 0; height: 44px; }   /* ujjal is jól megfogható */
 .lightctl label { font-weight: 700; font-size: 15px; white-space: nowrap; }
 .lightctl:has(.tuneread) { flex-wrap: wrap; padding-block: 8px; }
 .lightctl .tuneread { flex-basis: 100%; font-size: 14px; font-weight: 700; color: var(--muted); }
@@ -206,6 +206,9 @@ svg.board { display: block; width: 100%; height: auto; min-width: 520px; touch-a
 /* figyelmeztetés, ha nincs magyar felolvasóhang */
 .voicewarn { background: color-mix(in srgb, var(--spark) 18%, var(--surface)); border: 1px solid color-mix(in srgb, var(--spark) 50%, var(--line)); border-radius: 14px; padding: 10px 14px; font-size: 15px; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
 .voicewarn b { font-weight: 700; }
+.voicewarn details { flex: 1 1 260px; } .voicewarn summary { cursor: pointer; color: var(--accent); font-weight: 700; }
+/* telefonon tömörebb fejléc: alcím nélkül, a Puki és a Felolvasás csak ikonnal */
+@media (max-width: 600px) { .brand p { display: none; } .brand h1 { font-size: 24px; } .tools .lbl { display: none; } .top { gap: 10px; } }
 /* keskeny nézetben az építési lépés a rács alatt is látszik */
 .buildbar { display: none; flex-direction: column; gap: 8px; width: 100%; }
 .buildbar p { margin: 0; font-size: 18px; font-weight: 700; }
@@ -238,13 +241,13 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
         <button data-age="m" aria-pressed="true"><span class="age">7</span> éves</button>
         <button data-age="n" aria-pressed="false"><span class="age">11</span> éves</button>
       </div>
-      <button class="iconbtn" id="puki" title="Véletlen pukihang (valódi felvételek)">
+      <button class="iconbtn" id="puki" title="Véletlen pukihang (valódi felvételek)" aria-label="Puki">
         <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 14c3-1 4-4 8-4M3 18c4 0 6-2 10-2M5 9c2 0 3-2 6-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="17" cy="11" r="2.2" fill="currentColor"/><circle cx="20.5" cy="16" r="1.6" fill="currentColor"/><circle cx="19" cy="6.5" r="1.3" fill="currentColor"/></svg>
-        Puki<span id="pukin" class="pukin"></span>
+        <span class="lbl">Puki</span><span id="pukin" class="pukin"></span>
       </button>
-      <button class="iconbtn" id="autoread" aria-pressed="false" title="Minden új szöveget felolvas">
+      <button class="iconbtn" id="autoread" aria-pressed="false" title="Minden új szöveget felolvas" aria-label="Felolvasás">
         <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        Felolvasás
+        <span class="lbl">Felolvasás</span>
       </button>
     </div>
   </header>
@@ -2702,11 +2705,11 @@ function voiceHelp() {
   return 'Ehhez a böngészőhöz telepíteni kell egy magyar felolvasóhangot, vagy próbáld Microsoft Edge-ben, abban van beépített magyar hang.';
 }
 function noVoiceNotice() {
-  if (S.voiceWarned) return; S.voiceWarned = true;
+  if (S.voiceWarned || store.get('voiceOk', false)) return; S.voiceWarned = true;
   const box = document.createElement('div'); box.className = 'voicewarn'; box.setAttribute('role', 'status');
-  box.innerHTML = '<b>Ezen az eszközön nincs magyar felolvasóhang.</b> Idegen nyelvű hanggal nem olvasunk fel, mert az érthetetlen lenne. <span></span> <button class="mini">Rendben</button>';
+  box.innerHTML = '<b>Nincs magyar felolvasóhang ezen az eszközön.</b> <details><summary>Mit tehetek?</summary><span></span> (Idegen nyelvű hanggal nem olvasunk fel, mert az érthetetlen lenne.)</details> <button class="mini">Rendben</button>';
   box.querySelector('span').textContent = voiceHelp();
-  box.querySelector('button').onclick = () => box.remove();
+  box.querySelector('button').onclick = () => { box.remove(); store.set('voiceOk', true); };
   document.querySelector('.wrap').insertBefore(box, document.querySelector('.exps'));
 }
 function speak(text) {
@@ -3708,7 +3711,7 @@ function stepText(pl, level, layout) {
   const def = P[pl.p]; const geo = E.geometry(pl);
   const nbd = layout ? boardsOf(layout) : 1;
   const pn = (s) => { const n = E.postName(s.r, s.c); if (nbd < 2) return n; const m = /^(\d):(.*)$/.exec(n); return m ? m[1] + '. rács ' + m[2] : '1. rács ' + n; };
-  const lv = level === 1 ? 'közvetlenül a rácsra (1. szint)' : 'a már lerakott alkatrészek tetejére (' + level + '. szint)';
+  const lv = S.age === 'k' ? (level === 1 ? 'a rácsra' : 'a többi alkatrész tetejére') : level === 1 ? 'közvetlenül a rácsra (1. szint)' : 'a már lerakott alkatrészek tetejére (' + level + '. szint)';
   const ex = EXPS[S.exp];
   if (def.kind === 'fiber') return `Húzd rá az üvegszálas kábel átlátszó tartóját a LED-re (${pn(geo.snaps[0])}), a fekete tartót a fototranzisztorra (${pn(geo.snaps[1])}), és dugd be a kábel két végét a tartókba. A Light dobozban találod.`;
   const virtPosts = new Set();
@@ -3915,6 +3918,16 @@ function refreshBoard() {
   else drawBoard(ex.layout, { showLevels: S.stage === 0 });
   $('#boardtitle').textContent = S.stage === 1 ? 'Így rakd össze' : S.stage >= 3 ? 'Mi történik belül?' : 'A kész áramkör';
 }
+// kísérlet- vagy lépésváltáskor a munkaterület (rács + kezelőszervek + szöveg) a képernyő tetejére kerül,
+// hogy tableten egyszerre látszódjon a rács és a kapcsolók (a fejléc és a választósor fölé görgetődik)
+function focusWork() {
+  if (!S.booted) return;
+  const m = document.querySelector('.main'); if (!m) return;
+  const top = m.getBoundingClientRect().top;
+  if (Math.abs(top - 8) < 4) return;
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.scrollTo({ top: Math.max(0, scrollY + top - 8), behavior: reduce ? 'auto' : 'smooth' });
+}
 function goStage(i) {
   const prev = S.stage;
   S.stage = i; S.maxStage = Math.max(S.maxStage || 0, i);
@@ -3924,6 +3937,7 @@ function goStage(i) {
   $('#pop').hidden = true;
   store.set('stage', i);
   refreshBoard(); renderPanel(); renderControls();
+  focusWork();
 }
 function markDone() { S.done[EXPS[S.exp].id] = true; store.set('done', S.done); }
 function selectExp(i) {
@@ -3962,6 +3976,9 @@ function renderStrip() {
     row.append(b);
   });
   nav.append(chaps, row);
+  // a kiválasztott fejezet és kísérlet mindig látszódjon a vízszintesen görgethető sorokban
+  const show = (box, it) => { if (!it) return; const l = it.offsetLeft - box.offsetLeft, r = l + it.offsetWidth; if (l < box.scrollLeft || r > box.scrollLeft + box.clientWidth) box.scrollLeft = Math.max(0, l - 16); };
+  requestAnimationFrame(() => { show(chaps, chaps.querySelector('[aria-selected="true"]')); show(row, row.querySelector('[aria-current]')); });
 }
 function setAge(a) {
   S.age = a; store.set('age', a);
@@ -4003,6 +4020,7 @@ document.querySelectorAll('[data-age]').forEach((b) => b.setAttribute('aria-pres
 syncAutoread();
 renderStrip();
 goStage(Math.min(4, S.stage));
+S.booted = true;
 requestAnimationFrame(frame);
 window.__app = { S, EXPS, startSim, selectExp, goStage };
 })();
