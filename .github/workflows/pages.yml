@@ -51,11 +51,12 @@ jobs:
       - name: A webhely összerakása
         run: |
           node main/build.mjs --out _site --channel main
+          # a fejlesztői változat hibája (teszt vagy build) ne akassza meg az éles kiadást
           if [ "${{ steps.devtest.outcome }}" = "success" ]; then
-            node dev/build.mjs --out _site/dev --channel dev
+            node dev/build.mjs --out _site/dev --channel dev || echo "::warning::A fejlesztői ág buildje elbukott, a /dev/ most kimarad."
           elif [ -d dev ]; then
             echo "::warning::A fejlesztői ág tesztjei nem mentek át: a /dev/ figyelmeztető sávval jelenik meg."
-            node dev/build.mjs --out _site/dev --channel dev --broken
+            node dev/build.mjs --out _site/dev --channel dev --broken || echo "::warning::A fejlesztői ág buildje is elbukott, a /dev/ most kimarad."
           fi
       - uses: actions/upload-pages-artifact@v4
         with:
