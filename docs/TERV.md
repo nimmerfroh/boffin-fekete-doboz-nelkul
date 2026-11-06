@@ -87,3 +87,8 @@ Minden fázis végén: tesztek, böngészős ellenőrzés, commit, push, a GitHu
 ## Munkamenet (2026. november 6-tól)
 - A fejlesztés a `dev` ágon folyik; ami ott minden teszten átment, az automatikusan kimegy a https://nimmerfroh.github.io/boffin-fekete-doboz-nelkul/dev/ címre (DEV címkével).
 - A `main` ágba (élesbe) csak akkor kerül át, ha a dev címen kipróbáltuk, és rábólintottunk.
+
+## Átnézések (2026. november 6.)
+- Két független átnézés (Codex gpt-6-astra és Claude Opus 5.5), aztán egy második kör (Opus) a javítások után.
+- Fő javítások: a szimulátor átbillenéskori nem konvergált lépései (belső tranzisztorkapacitások, adaptív lépésköz); biztonság a valódi készleten (fénytávíró vevője, mérő-túlterhelés, propeller); service worker és a két csatorna szétválasztása; hang- és mikrofonkezelés; kb. 35 kérdés és sok szám a szövegekben; a válaszok sorrendjének keverése; helyi betűtípusok; források és licencek a láblécben.
+- Szándékosan maradt: a vezetőképesség-mérésnél a 0,5 mA-es állás választható (figyelmeztetéssel), a fototranzisztor-kártyán nincs soros ellenállás (a kézikönyv szerint erős fényben kb. 1 kΩ).
