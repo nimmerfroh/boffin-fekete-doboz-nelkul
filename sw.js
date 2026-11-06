@@ -3,14 +3,15 @@
 // A VERSION-t a build szkript tölti ki az oldal, a manifest, az ikonok és a hangok tartalmából: új kiadásnál a régi tár törlődik.
 // Két csatorna van: az éles (main) a webhely gyökerében, a fejlesztői (dev) a /dev/ alatt. Mindkettő csak a saját
 // tárolóit kezeli, és az éles service worker nem nyúl a /dev/ alatti kérésekhez (annak saját service workere van).
-const VERSION = 'c15aae80b9e6';
+const VERSION = '1810ff3e866e';
 const CHANNEL = 'main';
 const PREFIX = 'fdn-' + CHANNEL + '-';
 const CACHE = PREFIX + VERSION;
 // a hangfájlok külön tárba kerülnek; a nevük a hangfájlok tartalmából képzett jel, így csak akkor töltődnek le újra, ha változtak
 const SOUNDS = 'fdn-hangok-' + CHANNEL + '-' + 'c6f00205';
 const PUKI_N = 48;
-const CORE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/icon.svg'];
+const FONTS = ['atkinson-hyperlegible-latin-400', 'atkinson-hyperlegible-latin-700', 'atkinson-hyperlegible-latin-ext-400', 'atkinson-hyperlegible-latin-ext-700', 'baloo2-latin', 'baloo2-latin-ext'].map((f) => './fonts/' + f + '.woff2');
+const CORE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/icon.svg'].concat(FONTS);
 const BASE = new URL('./', self.location).pathname;   // pl. /boffin-fekete-doboz-nelkul/ vagy …/dev/
 // a saját régi tárolóink: a csatorna korábbi verziói, és (az élesnél) a csatornák bevezetése előtti régi nevek
 const isOld = (k) => (k.startsWith(PREFIX) && k !== CACHE) || (k.startsWith('fdn-hangok-' + CHANNEL + '-') && k !== SOUNDS) || (CHANNEL === 'main' && (/^fdn-[0-9a-f]{12}$/.test(k) || k === 'fdn-hangok-1'));

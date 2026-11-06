@@ -402,3 +402,84 @@ test('nappali lámpa (PNP): fényben ég, sötétben nem', () => {
     }
   });
 });
+
+// ---- Az átnézés után: konvergencia, biztonság, a szövegek számai ----
+const OSC = [['flash', 0.0005, 1.5], ['metronome', 0.0005, 1.5], ['sound', 1 / 48000, 0.05], ['organ', 1 / 48000, 0.05], ['lightlink', 1 / 48000, 0.05], ['siren', 1 / 48000, 0.05], ['fast', 1 / 48000, 0.05]];
+test('a rezgőkörök minden lépése konvergál, és az áramok korlátosak (β = 80…300)', () => {
+  for (const [k, dt, secs] of OSC) for (const bf of [80, 150, 300]) withBeta(bf, () => {
+    const s = new E.Sim(L[k], { light: 0.85 }); for (const sw in s.switches) if (/^S1/.test(sw)) s.switches[sw] = true; if ('S2' in s.switches) s.switches.S2 = true;
+    let bad = 0, mx = 0;
+    for (let i = 0, n = Math.round(secs / dt); i < n; i++) {
+      if (!s.step(dt)) bad++;
+      for (const e of s.nl.elements) { const c = s.cur[e.id]; const v = typeof c === 'number' ? Math.abs(c) : c && c.C !== undefined ? Math.abs(c.C) : 0; if (v > mx) mx = v; }
+    }
+    assert.equal(bad, 0, `${k} β=${bf}: nem konvergált lépések`);
+    assert.ok(mx < 1, `${k} β=${bf}: abszurd áram ${mx}`);
+  });
+});
+test('a hangos rezgőkörök a beindulás után is rezegnek, és az app hangkészítője talál rezgést', () => {
+  for (const k of ['sound', 'lightlink']) for (const bf of [80, 150, 300]) for (const light of [0, 0.3, 0.85]) withBeta(bf, () => {
+    const sr = 48000, s = new E.Sim(L[k], { light }); for (const sw in s.switches) if (/^S1/.test(sw)) s.switches[sw] = true;
+    const n = Math.round(sr * 0.3), x = new Float32Array(n); for (let i = 0; i < n; i++) { s.step(1 / sr); x[i] = s.cur.SP || 0; }
+    for (const [a, b] of [[0.02, 0.045], [0.25, 0.3]]) {
+      const tail = x.subarray(Math.round(sr * a), Math.round(sr * b)); let m = 0; for (const v of tail) m += v; m /= tail.length;
+      let cr = 0; for (let i = 1; i < tail.length; i++) if (tail[i - 1] < m && tail[i] >= m) cr++;
+      assert.ok(cr >= 10, `${k} β=${bf} fény ${light}, ${a}–${b} s: ${cr} nullátmenet`);
+    }
+  });
+});
+test('biztonság: alapállásban egyik kísérlet sem terhel túl LED-et, tranzisztort, hangszórót, elemet vagy mérőt', () => {
+  const INTENTIONAL = new Set(['p_led/nor']);   // szándékos, figyelmeztetéssel bemutatott túláram (csak a képernyőn)
+  for (const ex of X.EXPS) {
+    const lays = [[ex.id, ex.layout]].concat(ex.variants.map((v) => [ex.id + '/' + v.id, X.applyVariant(v, ex.layout)]));
+    for (const [name, lay] of lays) {
+      if (INTENTIONAL.has(name)) continue;
+      const nl = E.buildNetlist(lay); const sws = nl.elements.filter((e) => e.def.kind === 'sw').map((e) => e.id);
+      const pots = nl.elements.filter((e) => e.def.kind === 'pot').map((e) => e.id);
+      for (let m = 0; m < (1 << sws.length); m++) for (const pv of (pots.length ? [0, 1] : [0])) for (const light of [0, 1]) {
+        const opts = { light, pot: {}, meter: { ...((ex.sim && ex.sim.meter) || {}) } }; pots.forEach((p) => { opts.pot[p] = pv; });
+        const s = new E.Sim(lay, opts); sws.forEach((k, i) => { s.switches[k] = !!((m >> i) & 1); });
+        for (let i = 0; i < 150; i++) {
+          s.step(0.002); if (i < 60) continue;   // a bekapcsolási tranziens (kondenzátor-töltés, motorindulás) után
+          for (const e of s.nl.elements) {
+            if (e.internal) continue; const c = s.cur[e.id];
+            if (e.def.kind === 'led') assert.ok(c <= 0.03, `${name}: ${e.id} ${c}`);
+            if (e.def.kind === 'npn' || e.def.kind === 'pnp') assert.ok(Math.abs(c.C) <= 0.2, `${name}: ${e.id} Ic ${c.C}`);
+            if (e.def.kind === 'bat') assert.ok(Math.abs(c) <= 1, `${name}: ${e.id} ${c}`);
+            if (e.def.kind === 'meter') assert.ok(Math.abs(s.meterReading(e.id).frac) <= 1.2, `${name}: ${e.id} túlterhelés ${s.meterReading(e.id).frac}`);
+          }
+        }
+      }
+    }
+  }
+});
+test('fénytávíró: nyitott vevőtartónál, szobafényben sem kap nagy egyenáramot a hangszóró', () => {
+  for (const bf of [80, 150, 300]) withBeta(bf, () => {
+    const s = new E.Sim(L.lightlink, { light: 1 }); s.photoLight = function () { return this.light; }; s.switches.S1 = false; s.switches.S1b = true;
+    run(s, 0.4, 0.002); assert.ok(Math.abs(s.cur.SP) < 0.15, `β=${bf}: ${s.cur.SP}`);
+  });
+});
+test('a szövegekben szereplő számok egyeznek a szimulációval', () => {
+  const sw = (lay, f) => lay.map((p) => f(p) || p);
+  // hang a villogóból kb. 1,6 kHz; orgona kb. 250 Hz – 3,4 kHz
+  const f = (lay, opts, prep) => { const q = new E.Sim(lay, opts || {}); q.switches.S1 = true; if (prep) prep(q); const ed = []; let on = false; for (let i = 0; i < 0.04 * 48000; i++) { q.step(1 / 48000); const n = Math.abs(q.cur.SP || 0) > 0.01; if (n && !on) ed.push(q.time); on = n; } return (ed.length - 2) / (ed[ed.length - 1] - ed[1]); };
+  const fs = f(L.sound); assert.ok(fs > 1400 && fs < 1800, 'hang ' + fs);
+  const lo = f(L.organ, { pot: { RV: 1 } }, (q) => { q.switches.S2 = true; }), hi = f(L.organ, { pot: { RV: 0 } }, (q) => { q.switches.S2 = true; });
+  assert.ok(lo > 200 && lo < 300 && hi > 3000 && hi < 3800, `orgona ${lo}–${hi}`);
+  // sziréna: nyomva a C5 kb. 0,9 V-ig töltődik
+  const sr = new E.Sim(L.siren); sr.switches.S1 = sr.switches.S2 = true; run(sr, 6, 1 / 20000); assert.ok(sr.capV.C5 > 0.8 && sr.capV.C5 < 1.0, 'sziréna C5 ' + sr.capV.C5);
+  // U23: R5 → R4 kb. 5,5-szörös
+  const fu = (R) => { const q = new E.Sim(L.ic_u23.map((p) => (p.p === 'R5' ? { ...p, p: R } : p))); q.switches.S1 = true; run(q, 0.1, 0.001); return q.ic.U23.f; };
+  const ratio = fu('R4') / fu('R5'); assert.ok(ratio > 5 && ratio < 6, 'U23 arány ' + ratio);
+  // kondenzátoros: két C5-tel kb. 1,4 s, két C4-gyel kb. 0,3 s látszik a LED
+  const tl = (lay) => { const q = new E.Sim(lay, { meter: { M6: '5V' } }); q.switches.S2 = true; run(q, 0.5, 0.001); q.switches.S2 = false; let t = 0; while (q.cur.D1 > 2e-4 && t < 10) { q.step(0.001); t += 0.001; } return t; };
+  const t5 = tl(L.capbat), t4 = tl(sw(L.capbat, (p) => (p.p === 'C5' ? { ...p, p: 'C4' } : null)));
+  assert.ok(t5 > 1.1 && t5 < 1.7 && t4 > 0.2 && t4 < 0.4, `kondenzátor ${t5} / ${t4}`);
+});
+test('a service worker előre letölti az összes betűfájlt', () => {
+  const fs = require('node:fs'); const path = require('node:path');
+  const files = fs.readdirSync(path.join(__dirname, '..', 'fonts')).filter((f) => f.endsWith('.woff2')).map((f) => f.replace('.woff2', '')).sort();
+  const sw = fs.readFileSync(path.join(__dirname, '..', 'src', 'sw.template.js'), 'utf8');
+  const list = JSON.parse(/const FONTS = (\[[^\]]*\])/.exec(sw)[1].replace(/'/g, '"')).sort();
+  assert.deepEqual(list, files);
+});

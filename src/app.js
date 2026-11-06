@@ -131,11 +131,12 @@ const LOFF = 5;
 const lvOff = (L) => (L > 1 ? -(L - 1) * LOFF : 0);
 
 const COLORS = {
-  wire: '#2E63CF', res: '#F0BF2E', sw: '#3FA453', bat: '#8C96A2', cap: '#2F8F62', lamp: '#9AA3AE', spk: '#C2463E',
-  coil: '#9AA3AE', varcap: '#3FA453', npn: '#D8443B', pnp: '#3FA453', photo: '#2A2F36', ledred: '#E0453F', ledgreen: '#38B26A',
-  pot: '#3FA453', meter: '#2B3138', motor: '#AEB6BF', obj: '#7A8796', mic: '#6B737C',
+  // a feliratok miatt elég sötét árnyalatok (fehér szöveggel legalább 4,5:1 kontraszt)
+  wire: '#2E63CF', res: '#F0BF2E', sw: '#2E8540', bat: '#66717D', cap: '#24774F', lamp: '#9AA3AE', spk: '#C2463E',
+  coil: '#9AA3AE', varcap: '#2E8540', npn: '#C2382F', pnp: '#2E8540', photo: '#2A2F36', ledred: '#C93B35', ledgreen: '#23824B',
+  pot: '#2E8540', meter: '#2B3138', motor: '#AEB6BF', obj: '#7A8796', mic: '#6B737C',
 };
-const IC_COLOR = { U1: '#4E86E8', U2: '#D8443B', U23: '#D8443B', U3: '#3FA453', U4: '#E9C535', U22: '#22262B', U24: '#F2C230', U32: '#F0D84A', U5: '#D8443B' };
+const IC_COLOR = { U1: '#2F6FD6', U2: '#C2382F', U23: '#C2382F', U3: '#2E8540', U4: '#E9C535', U22: '#22262B', U24: '#F2C230', U32: '#F0D84A', U5: '#C2382F' };
 const IC_INK = { U4: '#3B2A00', U24: '#3B2A00', U32: '#3B2A00' };
 const IC_COLORNAME = { U1: 'a kék', U2: 'a piros', U23: 'a piros', U3: 'a zöld', U4: 'a sárga', U22: 'a fekete', U24: 'a sárga', U32: 'a sárga', U5: 'a piros' };
 const IC_INNER = { music: 'hangszer + memória', alarm: 'sziréna + választó', strobe: 'villogó', war: 'rezgőkörök + számláló', amp: 'erősítő', organ: 'hangkapcsoló + számláló + 3 LED', ir: 'fényszem + szűrő', melody: 'dallam + hangszóró', radio: 'rádióerősítő + egyenirányító' };
@@ -851,6 +852,16 @@ function audioFrame(dtR) {
 }
 
 // ---------- vezérlők a rács alatt ----------
+// Nyomva tartandó gomb: érintés, egér és billentyűzet (szóköz / Enter) egyaránt; fókuszvesztéskor elenged.
+function holdify(b, down, up) {
+  let held = false;
+  const d = (e) => { if (held) return; held = true; down(e); };
+  const u = () => { if (!held) return; held = false; up(); };
+  b.addEventListener('pointerdown', d); b.addEventListener('pointerup', u); b.addEventListener('pointerleave', u); b.addEventListener('pointercancel', u);
+  b.addEventListener('keydown', (e) => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) d(e); });
+  b.addEventListener('keyup', (e) => { if (e.key === ' ' || e.key === 'Enter') u(); });
+  b.addEventListener('blur', u);
+}
 function renderControls() {
   const box = $('#ctrls'); box.innerHTML = '';
   const ex = EXPS[S.exp];
@@ -887,9 +898,7 @@ function renderControls() {
       b.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="12" cy="12" r="3.5" fill="currentColor"/></svg> S2 gomb: nyomd és tartsd';
       const down = (e) => { e.preventDefault(); S.sim.switches.S2 = true; b.classList.add('down'); };
       const up = () => { if (S.sim) S.sim.switches.S2 = false; b.classList.remove('down'); };
-      b.addEventListener('pointerdown', down); b.addEventListener('pointerup', up); b.addEventListener('pointerleave', up); b.addEventListener('pointercancel', up);
-      b.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') down(e); });
-      b.addEventListener('keyup', up);
+      holdify(b, down, up);
       box.append(b);
     } else if (c === 'light') {
       const w = document.createElement('div'); w.className = 'lightctl';
@@ -900,7 +909,7 @@ function renderControls() {
       let keep = S.light;
       const down = (e) => { e.preventDefault(); keep = S.light; S.light = 0; inp.value = 0; cover.classList.add('down'); };
       const up = () => { if (cover.classList.contains('down')) { S.light = keep; inp.value = keep; cover.classList.remove('down'); } };
-      cover.addEventListener('pointerdown', down); cover.addEventListener('pointerup', up); cover.addEventListener('pointerleave', up); cover.addEventListener('pointercancel', up);
+      holdify(cover, down, up);
       box.append(cover);
     } else if (typeof c === 'object' && c.toggle) {
       const b = document.createElement('button'); b.className = 'ctrl'; b.setAttribute('aria-pressed', String(!!S.sim.switches[c.toggle]));
@@ -916,7 +925,7 @@ function renderControls() {
       const b = document.createElement('button'); b.className = 'ctrl hold'; b.textContent = 'Fújj bele!';
       const down = (e) => { e.preventDefault(); S.micBlow = true; b.classList.add('down'); };
       const up = () => { S.micBlow = false; b.classList.remove('down'); };
-      b.addEventListener('pointerdown', down); b.addEventListener('pointerup', up); b.addEventListener('pointerleave', up); b.addEventListener('pointercancel', up);
+      holdify(b, down, up);
       const m = document.createElement('button'); m.className = 'ctrl'; m.setAttribute('aria-pressed', String(!!S.micStream));
       m.innerHTML = '<span class="knob"></span> Tablet mikrofonja';
       m.onclick = () => setMicInput(!(S.micStream || S.micPending));
@@ -930,7 +939,7 @@ function renderControls() {
       const set = (v) => { if (S.sim && S.sim.ic[c.remote]) S.sim.ic[c.remote].remote = v; };
       const down = (e) => { e.preventDefault(); set(true); b.classList.add('down'); };
       const up = () => { set(false); b.classList.remove('down'); };
-      b.addEventListener('pointerdown', down); b.addEventListener('pointerup', up); b.addEventListener('pointerleave', up); b.addEventListener('pointercancel', up);
+      holdify(b, down, up);
       box.append(b);
     } else if (typeof c === 'object' && c.press) {
       const b = document.createElement('button'); b.className = 'ctrl hold';
@@ -938,9 +947,7 @@ function renderControls() {
       b.querySelector('span').textContent = c.label || c.press;
       const down = (e) => { e.preventDefault(); S.sim.switches[c.press] = true; b.classList.add('down'); };
       const up = () => { if (S.sim) S.sim.switches[c.press] = false; b.classList.remove('down'); };
-      b.addEventListener('pointerdown', down); b.addEventListener('pointerup', up); b.addEventListener('pointerleave', up); b.addEventListener('pointercancel', up);
-      b.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') down(e); });
-      b.addEventListener('keyup', up);
+      holdify(b, down, up);
       box.append(b);
     } else if (typeof c === 'object' && c.tune) {
       const w = document.createElement('div'); w.className = 'lightctl';
@@ -976,7 +983,7 @@ function renderControls() {
         const b = document.createElement('button'); b.className = 'ctrl hold'; b.textContent = txt;
         const down = (e) => { e.preventDefault(); S.sim.motor[c.spin].hand = dir; b.classList.add('down'); };
         const up = () => { if (S.sim) S.sim.motor[c.spin].hand = 0; b.classList.remove('down'); };
-        b.addEventListener('pointerdown', down); b.addEventListener('pointerup', up); b.addEventListener('pointerleave', up); b.addEventListener('pointercancel', up);
+        holdify(b, down, up);
         box.append(b);
       }
     } else if (typeof c === 'object' && c.obj) {
@@ -992,7 +999,7 @@ function renderControls() {
       const b = document.createElement('button'); b.className = 'ctrl hold'; b.textContent = c.label || 'Érintsd meg';
       const down = (e) => { e.preventDefault(); S.sim.obj[c.touch] = c.R; S.ctl.objName[c.touch] = 'ujj'; b.classList.add('down'); };
       const up = () => { if (S.sim) S.sim.obj[c.touch] = 1e12; S.ctl.objName[c.touch] = 'érintsd'; b.classList.remove('down'); };
-      b.addEventListener('pointerdown', down); b.addEventListener('pointerup', up); b.addEventListener('pointerleave', up); b.addEventListener('pointercancel', up);
+      holdify(b, down, up);
       box.append(b);
     } else if (c === 'sound') {
       const b = document.createElement('button'); b.className = 'ctrl'; b.setAttribute('aria-pressed', String(S.soundOn));

@@ -46,7 +46,7 @@ const pukiN = readdirSync(new URL('./hangok/puki/', import.meta.url)).filter((f)
 if (!page.includes(`const PUKI_N = ${pukiN};`)) throw new Error('az app.js PUKI_N értéke nem egyezik a hangok/puki fájlok számával: ' + pukiN);
 // a verzió az oldal, a manifest, az ikonok és a hangok tartalmából: bármelyik változik, a telepített app frissül
 const hashDir = (h, d) => { for (const f of readdirSync(new URL('./' + d + '/', import.meta.url), { recursive: true }).map(String).sort()) { try { h.update(f).update(readFileSync(new URL('./' + d + '/' + f, import.meta.url))); } catch (e) { /* könyvtár */ } } return h; };
-const version = hashDir(hashDir(createHash('sha256').update(page).update(manifest), 'icons'), 'hangok').digest('hex').slice(0, 12);
+const version = hashDir(hashDir(hashDir(createHash('sha256').update(page).update(manifest), 'icons'), 'hangok'), 'fonts').digest('hex').slice(0, 12);
 const soundsVer = hashDir(createHash('sha256'), 'hangok').digest('hex').slice(0, 8);
 const sw = read('./src/sw.template.js').replace('__VERSION__', version).replace('__PUKI_N__', String(pukiN)).replace('__CHANNEL__', channel).replace('__SOUNDS_VER__', soundsVer);
 
@@ -58,6 +58,6 @@ if (!outDir) {
   writeFileSync(outDir + '/index.html', page);
   writeFileSync(outDir + '/sw.js', sw);
   writeFileSync(outDir + '/manifest.webmanifest', manifest);
-  for (const d of ['icons', 'hangok']) cpSync(new URL('./' + d, import.meta.url), outDir + '/' + d, { recursive: true });
+  for (const d of ['icons', 'hangok', 'fonts']) cpSync(new URL('./' + d, import.meta.url), outDir + '/' + d, { recursive: true });
 }
 console.log(`${channel}: index.html kész (${(page.length / 1024).toFixed(0)} kB), sw.js verzió: ${version}${outDir ? ', könyvtár: ' + outDir : ''}`);

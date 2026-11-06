@@ -409,6 +409,7 @@
       // teljesítményerősítő: a bemenet változását (a lassú átlagához képest) 20-szorosára erősíti;
       // a kimenet belül kondenzátoron át csatolt, a kitérés a tápfeszültség felénél korlátos
       const vp = v('P'); st.active = vp > 2;
+      st.vtUsed = st.vt;   // ezzel a vezérlőjellel oldottuk meg ezt a lépést: a kimeneti áramot ebből számoljuk
       const vin = v('INP'); if (st.avg == null) st.avg = vin;
       if (!this.freezeCaps) st.avg += (vin - st.avg) * Math.min(1, dt / 0.02);
       const vmax = Math.max(0.05, vp / 2 - 0.3);
@@ -463,7 +464,7 @@
       const i = (vpin(pin) - vpin(o)) / R; cur[pin] = (cur[pin] || 0) + i; if (o === 'N') sumN += i; else cur[o] = (cur[o] || 0) - i;
     }
     let io = 0;
-    if (d.ic === 'amp') io = t.OUT >= 0 ? (v('OUT') - st.vt) / AMP_ROUT : 0;
+    if (d.ic === 'amp') { io = t.OUT >= 0 ? (v('OUT') - (st.vtUsed || 0)) / AMP_ROUT : 0; st.iSup = Math.abs(io); cur.P = (cur.P || 0) + st.iSup; sumN += st.iSup; }
     else if (t.OUT >= 0) io = v('OUT') * st.gOut;
     cur.OUT = (cur.OUT || 0) + io;
     if (d.ic === 'organ' && t.FB >= 0) { cur.FB = (v('FB') - st.fbV) / 47000; sumN += cur.FB; }
@@ -562,6 +563,8 @@
         if (d.ic === 'amp') {
           // a kimenet feszültségforrás kis belső ellenállással (az előző lépés bemenetéből számolva)
           if (t.OUT >= 0) { const g = 1 / AMP_ROUT; stampG(I(t.OUT), I(t.N), g); stampI(I(t.OUT), I(t.N), -st.vt * g); }
+          // a kimenet áramát a tápból veszi fel (az előző lépés kimeneti áramának nagysága): így az elem fizeti a hangszóró energiáját
+          if (t.P >= 0) stampI(I(t.P), I(t.N), st.iSup || 0);
         } else if (t.OUT >= 0) stampG(I(t.OUT), I(t.N), st.gOut);
         if (d.ic === 'organ' && t.FB >= 0) { const g = 1 / 47000; stampG(I(t.FB), I(t.N), g); stampI(I(t.FB), I(t.N), -st.fbV * g); }
         if (d.ic === 'melody' && t.P >= 0) stampG(I(t.P), I(t.N), st.gP);

@@ -10,7 +10,8 @@ const CACHE = PREFIX + VERSION;
 // a hangfájlok külön tárba kerülnek; a nevük a hangfájlok tartalmából képzett jel, így csak akkor töltődnek le újra, ha változtak
 const SOUNDS = 'fdn-hangok-' + CHANNEL + '-' + '__SOUNDS_VER__';
 const PUKI_N = __PUKI_N__;
-const CORE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/icon.svg'];
+const FONTS = ['atkinson-hyperlegible-latin-400', 'atkinson-hyperlegible-latin-700', 'atkinson-hyperlegible-latin-ext-400', 'atkinson-hyperlegible-latin-ext-700', 'baloo2-latin', 'baloo2-latin-ext'].map((f) => './fonts/' + f + '.woff2');
+const CORE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/icon.svg'].concat(FONTS);
 const BASE = new URL('./', self.location).pathname;   // pl. /boffin-fekete-doboz-nelkul/ vagy …/dev/
 // a saját régi tárolóink: a csatorna korábbi verziói, és (az élesnél) a csatornák bevezetése előtti régi nevek
 const isOld = (k) => (k.startsWith(PREFIX) && k !== CACHE) || (k.startsWith('fdn-hangok-' + CHANNEL + '-') && k !== SOUNDS) || (CHANNEL === 'main' && (/^fdn-[0-9a-f]{12}$/.test(k) || k === 'fdn-hangok-1'));
