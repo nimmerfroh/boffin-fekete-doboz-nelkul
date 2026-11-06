@@ -491,6 +491,12 @@ function drawBoard(layout, opts) {
     const bb = items[opts.highlight].g.getBBox();
     const ring = svgEl('rect', { x: bb.x - 8, y: bb.y - 8, width: bb.width + 16, height: bb.height + 16, rx: 16, fill: 'none', stroke: 'var(--spark)', 'stroke-width': 4, 'stroke-dasharray': '10 7', class: 'hl' }, board);
     ring.style.pointerEvents = 'none';
+    // széles nézetben a rajzlap magában görget: a kiemelt alkatrész legyen látható (pl. két rácsnál a másodikon); az oldalt nem görgeti
+    requestAnimationFrame(() => {
+      const sc = ring.closest && ring.closest('.boardcard'); if (!sc || sc.scrollHeight <= sc.clientHeight + 2) return;
+      const r = ring.getBoundingClientRect(), c = sc.getBoundingClientRect();
+      if (r.top < c.top || r.bottom > c.bottom) sc.scrollTop += r.top - c.top - Math.max(0, (c.height - r.height) / 2);
+    });
   }
   const flowG = svgEl('g', { 'pointer-events': 'none' }, board);
   const tipG = svgEl('g', { 'pointer-events': 'none' }, board);
@@ -1173,7 +1179,11 @@ function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.
 
 function renderPanel() {
   const ex = EXPS[S.exp];
+  // ugyanazon a lépésen belüli újrarajzolásnál (pl. válasz után) a panel görgetési helyzete megmarad
+  const pkey = S.exp + ':' + S.stage + ':' + S.step, oldBody = panel.querySelector('.pbody');
+  const keepScroll = oldBody && S.panelKey === pkey ? oldBody.scrollTop : 0; S.panelKey = pkey;
   panel.innerHTML = '';
+  requestAnimationFrame(() => { const b = panel.querySelector('.pbody'); if (b && keepScroll) b.scrollTop = keepScroll; });
   meterBox = null;
   if (ex.card) { renderCardPanel(ex); return; }
   const head = el('div'); head.append(el('h2', null, ex.title), el('div', 'tag', ex.tag)); panel.append(head);
@@ -1185,7 +1195,7 @@ function renderPanel() {
     st.append(b);
   });
   panel.append(st);
-  const body = el('div'); body.style.display = 'flex'; body.style.flexDirection = 'column'; body.style.gap = '14px';
+  const body = el('div', 'pbody'); body.style.display = 'flex'; body.style.flexDirection = 'column'; body.style.gap = '14px';
   panel.append(body);
   const nav = el('div', 'navrow');
   const next = (label, fn) => { const b = el('button', 'btn primary', label); b.onclick = fn; nav.append(b); return b; };
@@ -1466,7 +1476,7 @@ function updateWarn() {
 }
 function renderCardPanel(ex) {
   const head = el('div'); head.append(el('div', 'cardkicker', 'Alkatrész-album'), el('h2', null, ex.title), el('div', 'tag', ex.tag)); panel.append(head);
-  const body = el('div'); body.style.display = 'flex'; body.style.flexDirection = 'column'; body.style.gap = '14px'; panel.append(body);
+  const body = el('div', 'pbody'); body.style.display = 'flex'; body.style.flexDirection = 'column'; body.style.gap = '14px'; panel.append(body);
   body.append(sayBlock(ex.intro[S.age], { auto: true }));
   const sym = el('div', 'symrow'); const sv = el('div', 'symbox'); sv.append(symbolSvg(ex.symbol)); sym.append(sv);
   const an = el('div', 'analogy'); an.append(el('b', null, 'Hasonlat: '), document.createTextNode(ex.analogy)); sym.append(an);

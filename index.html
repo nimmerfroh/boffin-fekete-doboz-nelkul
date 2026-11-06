@@ -166,10 +166,11 @@ svg.board { display: block; width: 100%; height: auto; min-width: 520px; touch-a
 .big .say p, body.age-k .say p { font-size: 21px; }
 .speak { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface-2); display: grid; place-items: center; cursor: pointer; }
 .speak.on { border-color: var(--accent); color: var(--accent); }
-.parts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.parts li { display: grid; grid-template-columns: 58px 1fr; gap: 10px; align-items: center; padding: 6px 8px; border-radius: 12px; background: var(--surface-2); }
-.parts li svg { width: 58px; height: 34px; }
-.parts .pn { font-weight: 700; }
+/* tömör hozzávalólista: több hasábban */
+.parts { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 6px; }
+.parts li { display: grid; grid-template-columns: 44px 1fr; gap: 8px; align-items: center; padding: 5px 7px; border-radius: 12px; background: var(--surface-2); }
+.parts li svg { width: 44px; height: 26px; }
+.parts .pn { font-weight: 700; font-size: 14px; line-height: 1.2; }
 .parts .src { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
 .chip { font-size: 12px; font-weight: 700; border-radius: 6px; padding: 1px 7px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
 .chip.k300 { color: #B4372F; border-color: color-mix(in srgb, #B4372F 40%, transparent); }
@@ -177,6 +178,18 @@ svg.board { display: block; width: 100%; height: auto; min-width: 520px; touch-a
 .chip.khome { color: #2F7D4E; border-color: color-mix(in srgb, #2F7D4E 40%, transparent); }
 :root[data-theme="dark"] .chip.k300, :root:not([data-theme="light"]) .chip.k300 { }
 .navrow { display: flex; gap: 10px; flex-wrap: wrap; }
+/* széles nézet: a munkaterület pontosan a képernyő magassága; a panel tartalma magában görgethető, a gombsor mindig látszik */
+@media (min-width: 901px) {
+  .main { height: max(520px, calc(100vh - 16px)); height: max(520px, calc(100dvh - 16px)); align-items: stretch; }
+  .boardcard { overflow-y: auto; overscroll-behavior: contain; }
+  .panel { overflow: hidden; }
+  .panel .pbody { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-right: 6px; margin-right: -6px; }
+  .panel > .navrow { flex: none; padding-top: 12px; border-top: 1px solid var(--line); }
+}
+/* keskeny nézet (álló tablet, telefon): a gombsor a képernyő aljára ragad */
+@media (max-width: 900px) {
+  .panel > .navrow { position: sticky; bottom: 0; z-index: 2; background: var(--surface); margin: 0 -16px -16px; padding: 10px 16px 12px; border-top: 1px solid var(--line); border-radius: 0 0 18px 18px; }
+}
 .btn { border: 0; border-radius: 14px; min-height: 52px; padding: 8px 20px; font-weight: 800; font-size: 17px; cursor: pointer; background: var(--surface-2); display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-display); }
 .btn.primary { background: var(--accent); color: var(--accent-ink); }
 .btn[disabled] { opacity: .45; cursor: default; }
@@ -3700,6 +3713,12 @@ function drawBoard(layout, opts) {
     const bb = items[opts.highlight].g.getBBox();
     const ring = svgEl('rect', { x: bb.x - 8, y: bb.y - 8, width: bb.width + 16, height: bb.height + 16, rx: 16, fill: 'none', stroke: 'var(--spark)', 'stroke-width': 4, 'stroke-dasharray': '10 7', class: 'hl' }, board);
     ring.style.pointerEvents = 'none';
+    // széles nézetben a rajzlap magában görget: a kiemelt alkatrész legyen látható (pl. két rácsnál a másodikon); az oldalt nem görgeti
+    requestAnimationFrame(() => {
+      const sc = ring.closest && ring.closest('.boardcard'); if (!sc || sc.scrollHeight <= sc.clientHeight + 2) return;
+      const r = ring.getBoundingClientRect(), c = sc.getBoundingClientRect();
+      if (r.top < c.top || r.bottom > c.bottom) sc.scrollTop += r.top - c.top - Math.max(0, (c.height - r.height) / 2);
+    });
   }
   const flowG = svgEl('g', { 'pointer-events': 'none' }, board);
   const tipG = svgEl('g', { 'pointer-events': 'none' }, board);
@@ -4382,7 +4401,11 @@ function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.
 
 function renderPanel() {
   const ex = EXPS[S.exp];
+  // ugyanazon a lépésen belüli újrarajzolásnál (pl. válasz után) a panel görgetési helyzete megmarad
+  const pkey = S.exp + ':' + S.stage + ':' + S.step, oldBody = panel.querySelector('.pbody');
+  const keepScroll = oldBody && S.panelKey === pkey ? oldBody.scrollTop : 0; S.panelKey = pkey;
   panel.innerHTML = '';
+  requestAnimationFrame(() => { const b = panel.querySelector('.pbody'); if (b && keepScroll) b.scrollTop = keepScroll; });
   meterBox = null;
   if (ex.card) { renderCardPanel(ex); return; }
   const head = el('div'); head.append(el('h2', null, ex.title), el('div', 'tag', ex.tag)); panel.append(head);
@@ -4394,7 +4417,7 @@ function renderPanel() {
     st.append(b);
   });
   panel.append(st);
-  const body = el('div'); body.style.display = 'flex'; body.style.flexDirection = 'column'; body.style.gap = '14px';
+  const body = el('div', 'pbody'); body.style.display = 'flex'; body.style.flexDirection = 'column'; body.style.gap = '14px';
   panel.append(body);
   const nav = el('div', 'navrow');
   const next = (label, fn) => { const b = el('button', 'btn primary', label); b.onclick = fn; nav.append(b); return b; };
@@ -4675,7 +4698,7 @@ function updateWarn() {
 }
 function renderCardPanel(ex) {
   const head = el('div'); head.append(el('div', 'cardkicker', 'Alkatrész-album'), el('h2', null, ex.title), el('div', 'tag', ex.tag)); panel.append(head);
-  const body = el('div'); body.style.display = 'flex'; body.style.flexDirection = 'column'; body.style.gap = '14px'; panel.append(body);
+  const body = el('div', 'pbody'); body.style.display = 'flex'; body.style.flexDirection = 'column'; body.style.gap = '14px'; panel.append(body);
   body.append(sayBlock(ex.intro[S.age], { auto: true }));
   const sym = el('div', 'symrow'); const sv = el('div', 'symbox'); sv.append(symbolSvg(ex.symbol)); sym.append(sv);
   const an = el('div', 'analogy'); an.append(el('b', null, 'Hasonlat: '), document.createTextNode(ex.analogy)); sym.append(an);
