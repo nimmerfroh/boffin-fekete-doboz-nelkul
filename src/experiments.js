@@ -63,7 +63,7 @@ const EXPS = [
     },
   },
   {
-    id: 'delay', chapter: 'D', hint: { k: 'Kapcsold be az S1-et, nyomd meg az S2 gombot, aztán engedd el!', m: 'Kapcsold be az S1-et, nyomd meg és engedd el az S2-t. Figyeld a kondenzátor sárga csíkját: ennyi töltés van benne. Aztán próbáld ki: engedd el a gombot, és rögtön kapcsold ki az S1-et! A lámpa azonnal elalszik, pedig a kondenzátorban még van töltés.', n: 'S1 be, S2 rövid nyomás. Figyeld a C5 feszültségét és a bázisáramot a mérőn. Utána: S2 elengedése után azonnal S1 ki. A C5 ugyanúgy kisül (a C5 → R3 → bázis → emitter → C5 körben), de a LED nem kap áramot.' },
+    id: 'delay', chapter: 'D', hint: { k: 'Kapcsold be az S1-et, nyomd meg az S2 gombot, aztán engedd el!', m: 'Kapcsold be az S1-et, nyomd meg és engedd el az S2-t. Figyeld a kondenzátor sárga csíkját: ennyi töltés van benne. Aztán próbáld ki: engedd el a gombot, és rögtön kapcsold ki az S1-et! A lámpa azonnal elalszik, pedig a kondenzátorban még van töltés.', n: 'S1 be, S2 rövid nyomás. Figyeld a C5 feszültségét és a bázisáramot a képernyő mérőtábláján. Utána: S2 elengedése után azonnal S1 ki. A C5 ugyanúgy kisül (a C5 → R3 → bázis → emitter → C5 körben), de a LED nem kap áramot.' },
     title: 'Késleltetett lámpa', tag: 'Elengeded, de még ég egy kicsit',
     layout: LAY.delay, sim: { dt: 0.002, scale: 1 }, controls: ['S1', 'S2'],
     intro: {
@@ -106,7 +106,7 @@ const EXPS = [
     why: {
       k: 'A két tranzisztor játszik: amikor az egyik bekapcsol, meglöki a másikat, hogy kapcsoljon ki. Aztán fordítva. Így villog.',
       m: 'Amikor az egyik tranzisztor bekapcsol, a kondenzátoron keresztül egy pillanatra „lelöki” a másikat. A kondenzátor az ellenálláson át lassan újratöltődik, a másik tranzisztor visszakapcsol, és most ő löki le az elsőt. Nagyobb kondenzátornak több idő kell, ezért az a fele lassabb lesz.',
-      n: 'Egy félperiódus ideje ≈ 0,69 · R · C = 0,69 · 5,1 kΩ · 100 µF ≈ 0,35 s. 3 V-on a LED-ek miatt kisebb a kollektor feszültséglépése, ezért a szimuláció kb. 0,2 s-os félperiódusokat ad (2,6 Hz). Egyik oldalt 470 µF-tal az a félperiódus kb. 4,7-szer hosszabb.',
+      n: 'Egy félperiódus ideje ≈ 0,69 · R · C = 0,69 · 5,1 kΩ · 100 µF ≈ 0,35 s. 3 V-on a LED-ek miatt kisebb a kollektor feszültséglépése, ezért a szimuláció kb. 0,2 s-os félperiódusokat ad (kb. 2,5 Hz). Egyik oldalt 470 µF-tal az a félperiódus kb. 4,7-szer hosszabb.',
     },
   },
   {
@@ -120,16 +120,16 @@ const EXPS = [
     },
     guess: {
       q: { k: 'Ha a kondenzátorok ezerszer kisebbek, mi lesz a villogással?', m: 'Ezerszer kisebb kondenzátorokkal mi történik a villogással?', n: 'Mit vársz, ha C ezredrészére csökken?' },
-      opts: [['Ezerszer gyorsabb: hang lesz belőle', 'sound'], ['Ezerszer lassabb lesz', 'slow'], ['Nem változik semmi', 'same']], right: 0,
-      after: { k: 'Igen! Olyan gyors, hogy már hangot hallasz.', m: 'A villogás másodpercenként kb. 1600-szor ismétlődik, ezt a hangszóró hangként adja ki.', n: 'f ≈ 1 / (1,38 · R · C) ≈ 1,4 kHz; a szimuláció kb. 1,6 kHz-et ad.' },
+      opts: [['Sokkal gyorsabb: hang lesz belőle', 'sound'], ['Sokkal lassabb lesz', 'slow'], ['Nem változik semmi', 'same']], right: 0,
+      after: { k: 'Igen! Olyan gyors, hogy már hangot hallasz.', m: 'A villogás másodpercenként kb. 1600-szor ismétlődik, ezt a hangszóró hangként adja ki.', n: 'f ≈ 1 / (1,38 · R · C) ≈ 1,4 kHz; a szimuláció kb. 1,6 kHz-et ad, ez a villogó kb. 2,5 Hz-ének kb. 640-szerese.' },
     },
     variants: [
       { id: 'c1', label: 'Az egyik C2 helyett C1 (0,02 µF)', real: 'Cseréld a bal oldali 0,1 µF-os kondenzátort (D1–D3) a 0,02 µF-os C1-re. Magasabb vagy mélyebb lesz a hang?', apply: swapPart('C2', 'C1', 'C4b'), needs: ['C1'] },
     ],
     why: {
-      k: 'Ez ugyanaz a villogó, csak ezerszer gyorsabb. A hangszóró ilyen gyors kapcsolgatástól zümmögni kezd. A dobozban lévő hangot adó IC-k belsejében is ilyen apró villogó dolgozik.',
-      m: 'Kisebb kondenzátor gyorsabban töltődik, ezért ezerszer gyorsabban kapcsolgat. Az IC-k, például a riasztó IC, belül ugyanilyen alkatrészekből állnak: tranzisztorokból, ellenállásokból és kondenzátorokból, csak parányiak, és egyetlen kis lapkán vannak. Most te építettél egyet nagyban!',
-      n: 'A frekvencia fordítva arányos C-vel: 100 µF-ról 0,1 µF-ra csökkentve ezerszeres. Ha az egyik oldalt 0,02 µF-ra cseréled, az a félperiódus ötödére rövidül, a hang magasabb lesz (a szimulációban kb. 3,4 kHz). A hangot adó IC-kben ugyanilyen oszcillátor van, csak integrált formában.',
+      k: 'Ez ugyanaz a villogó, csak több százszor gyorsabb. A hangszóró ilyen gyors kapcsolgatástól zümmögni kezd. A dobozban lévő hangot adó IC-k belsejében is ilyen apró villogó dolgozik.',
+      m: 'Kisebb kondenzátor gyorsabban töltődik, ezért több százszor gyorsabban kapcsolgat. Az IC-k, például a riasztó IC, belül ugyanilyen alkatrészekből állnak: tranzisztorokból, ellenállásokból és kondenzátorokból, csak parányiak, és egyetlen kis lapkán vannak. Most te építettél egyet nagyban!',
+      n: 'Ugyanabban a kapcsolásban a frekvencia fordítva arányos C-vel: 100 µF-ról 0,1 µF-ra csökkentve ezerszeres lenne. Itt azonban a jobb oldali LED helyére hangszóró is került, ami megváltoztatja a kollektor feszültséglépését, ezért a szimulációban kb. 640-szoros (2,5 Hz → kb. 1,6 kHz). Ha az egyik oldalt 0,02 µF-ra cseréled, az a félperiódus rövidül, a hang magasabb lesz (a szimulációban kb. 2,4 kHz). A hangot adó IC-kben ugyanilyen oszcillátor van, csak integrált formában.',
     },
   },
   // ===================== A) Áram és alkatrészek =====================
@@ -165,10 +165,10 @@ const EXPS = [
     intro: {
       k: 'Két lámpát kötünk be. Előbb egymás után, aztán egymás mellé. Melyik világít jobban?',
       m: 'Két izzót egymás után (sorosan) kötünk. Utána átépítjük, hogy egymás mellett (párhuzamosan) legyenek. Figyeld, mennyire világítanak.',
-      n: 'Soros és párhuzamos kapcsolás összehasonlítása a 2,5 V-os (L1) és a 6 V-os (L2) izzóval, 3 V-ról.',
+      n: 'Soros és párhuzamos kapcsolás összehasonlítása a kis (L1, 3,2 V-os égő) és a nagy (L2, 6 V-os) izzóval, 3 V-ról.',
     },
     guess: {
-      q: { k: 'Két lámpa egymás után. Fényesebbek lesznek, mint egy lámpa, vagy halványabbak?', m: 'Ha két izzót egymás után kötsz, fényesebbek vagy halványabbak lesznek, mint egyetlen izzó?', n: 'Mi történik az áramerősséggel, ha két izzót sorba kötsz?' },
+      q: { k: 'Két lámpa egymás után. Fényesebbek lesznek, mint egy lámpa, vagy halványabbak?', m: 'Ha két izzót egymás után kötsz, fényesebbek vagy halványabbak lesznek, mint egyetlen izzó?', n: 'Mi történik a két izzó fényével, ha sorba kötöd őket?' },
       opts: [['Halványabbak', 'dim'], ['Ugyanolyanok', 'on'], ['Fényesebbek', 'on']], right: 0,
       after: { k: 'Igen! Egymás után halványabbak, mert az áramnak mindkettőn át kell mennie.', m: 'Sorosan az áramnak mindkét izzón át kell jutnia, ez nehezebb, ezért kisebb az áram, és halványabbak.', n: 'Soros kapcsolásnál az ellenállások összeadódnak, így az áram kisebb: kb. 80 mA az egyes izzók 180 és 140 mA-e helyett.' },
     },
@@ -181,8 +181,8 @@ const EXPS = [
       n: 'S1 be. Hasonlítsd össze az izzók áramát soros és párhuzamos kapcsolásban.',
     },
     why: {
-      k: 'Egymás után a két lámpa osztozik az áramon, ezért halványak. Egymás mellett mindegyik külön utat kap, ezért fényesebbek.',
-      m: 'Sorosan az áram egyetlen úton halad, és mindkét izzó fékezi. Párhuzamosan mindkét izzó a teljes elemfeszültséget kapja, és mindkettőn külön áram folyik. A lakásban is párhuzamosan vannak bekötve a lámpák, ezért nem halványodnak el, ha bekapcsolsz egy másikat. A 6 V-os izzó 3 V-on mindig halványabb a 2,5 V-osnál.',
+      k: 'Egymás után a két lámpa osztozik az elem erején, mindkettőnek csak egy része jut, ezért halványak. Egymás mellett mindegyik külön utat kap, ezért fényesebbek.',
+      m: 'Sorosan az áram egyetlen úton halad, és mindkét izzó fékezi. Párhuzamosan mindkét izzó a teljes elemfeszültséget kapja, és mindkettőn külön áram folyik. A lakásban is párhuzamosan vannak bekötve a lámpák, ezért nem halványodnak el, ha bekapcsolsz egy másikat. Párhuzamosan a 6 V-os izzó halványabb a kicsinél, sorosan viszont ugyanaz az áram folyik át mindkettőn.',
       n: 'Sorosan R = R1 + R2 ≈ 36 Ω, I = 3 V / 36 Ω ≈ 83 mA mindkettőn. Párhuzamosan mindkettőre 3 V jut: L1-en kb. 180 mA, L2-n kb. 140 mA folyik, az elemből összesen kb. 320 mA. Ezért fogy gyorsabban az elem párhuzamos kapcsolásnál. (A modell az izzók meleg ellenállásával számol; a valóságban hidegen kisebb.)',
     },
   },
@@ -195,7 +195,7 @@ const EXPS = [
       n: 'Az RV-t változtatható ellenállásként használjuk (az egyik vég és a csúszka között 0–50 kΩ). Sorba van kötve az R1-gyel, a LED-del és a mérőműszerrel.',
     },
     guess: {
-      q: { k: 'Ha tekered a gombot, mi lesz a lámpával?', m: 'Mi történik a LED-del, ha tekered az RV gombját?', n: 'Hogyan változik a LED árama az RV ellenállásával?' },
+      q: { k: 'Ha tekered a gombot, mi lesz a lámpával?', m: 'Mi történik a LED-del, ha tekered az RV gombját?', n: 'Mit csinál a LED, ha tekered az RV-t?' },
       opts: [['Halványodik vagy erősödik', 'dim'], ['Csak ki-be kapcsol', 'blink'], ['Semmi', 'same']], right: 0,
       after: { k: 'Igen! A gombbal halványítod.', m: 'Minél nagyobb az ellenállás, annál kevesebb áram jut a LED-hez, és annál halványabb.', n: 'I ≈ (3 V − U_LED) / (R1 + R_RV): 0 Ω-nál kb. 11 mA, 50 kΩ-nál kb. 0,03 mA.' },
     },
@@ -222,7 +222,7 @@ const EXPS = [
       n: 'A motor fordítva is működik: forgatva feszültséget indukál (generátor). A mérőműszer 5 V-os állásban a motor feszültségét méri.',
     },
     guess: {
-      q: { k: 'Nincs elem. Ha megpörgeted a motort, megmozdul a mutató?', m: 'Elem nélkül, csak kézzel pörgetve, kileng a műszer?', n: 'Mit mér a műszer, ha a motor tengelyét kézzel forgatod?' },
+      q: { k: 'Nincs elem. Ha megpörgeted a motort, megmozdul a mutató?', m: 'Elem nélkül, csak kézzel pörgetve, kileng a műszer?', n: 'Mutat-e valamit a műszer, ha a motor tengelyét kézzel forgatod?' },
       opts: [['Igen, a motor áramot termel', 'on'], ['Nem, elem nélkül nincs áram', 'off']], right: 0,
       after: { k: 'Igen! Ha pörgeted, a motor áramot ad.', m: 'A forgó motor áramot termel. Így működnek az erőművek generátorai és a biciklidinamó is.', n: 'Kb. 1 V-ot: a feszültség a fordulatszámmal arányos.' },
     },
@@ -242,14 +242,14 @@ const EXPS = [
     id: 'capbat', chapter: 'B', title: 'Kondenzátor mint akkumulátor', tag: 'Feltöltöd, és egy kicsit kitart',
     layout: LAY.capbat, sim: { dt: 0.002, scale: 1, meter: { M6: '5V' } }, controls: ['S2', { meter: 'M6', ranges: ['5V'] }],
     intro: {
-      k: 'A két nagy kondenzátor kis tartály az áramnak. A gombbal megtöltöd, aztán figyeld, meddig világít a lámpa.',
+      k: 'A két nagy kondenzátor kis tartály, ami elektromosságot tárol. A gombbal megtöltöd, aztán figyeld, meddig világít a lámpa.',
       m: 'Az S2 gomb nyomva tartásakor az elem feltölti a két 470 µF-os kondenzátort. Elengedés után az elem már nincs bekötve: a LED a kondenzátorokból kap áramot. A műszer a feszültségüket mutatja.',
       n: 'Két párhuzamos 470 µF-os kondenzátor (940 µF) kisül az R2 (1 kΩ) és a LED felé. A mérőműszer 5 V-os állásban a kondenzátorok feszültségét méri.',
     },
     guess: {
       q: { k: 'Feltöltöd, aztán elengeded a gombot. Mit csinál a lámpa?', m: 'Feltöltöd a kondenzátorokat, aztán elengeded az S2-t. Mi lesz a LED-del?', n: 'Mi történik a LED-del és a feszültséggel az S2 elengedése után?' },
       opts: [['Még világít egy kicsit', 'fade'], ['Azonnal kialszik', 'off'], ['Örökké világít', 'on']], right: 0,
-      after: { k: 'Igen! A kondenzátorban maradt áram, abból világít még.', m: 'A kondenzátorok tárolták a töltést, és most átadják a LED-nek. Ahogy fogy, a LED halványul.', n: 'A kondenzátor feszültsége csökken, a LED kb. 1,6 V alatt kialszik: nagyjából 1,5–2 másodperc.' },
+      after: { k: 'Igen! A kondenzátorban maradt áram, abból világít még.', m: 'A kondenzátorok tárolták a töltést, és most átadják a LED-nek. Ahogy fogy, a LED halványul.', n: 'A kondenzátor feszültsége csökken, a LED kb. 1,7 V alatt már alig látszik: a szimulációban kb. 1,4 másodperc.' },
     },
     variants: [
       { id: 'one', label: 'Csak egy kondenzátorral', real: 'Vedd ki az egyik 470 µF-os kondenzátort (a B3–D3 közöttit). Rövidebb vagy hosszabb ideig világít majd?', apply: (lay) => lay.filter((p) => p.id !== 'C5b') },
@@ -262,7 +262,7 @@ const EXPS = [
     why: {
       k: 'A kondenzátor olyan, mint egy kis vödör. A gombbal teletöltöd, utána a lámpa kiissza belőle az áramot. Kicsi a vödör, ezért hamar kiürül.',
       m: 'A kondenzátor töltést tárol, mint egy nagyon kicsi akkumulátor. Sokkal kevesebbet tud, mint egy elem, de nagyon gyorsan feltölthető és kisüthető. Két kondenzátor együtt kétszer annyit tárol, mint egy.',
-      n: 'Q = C · U = 940 µF · 3 V ≈ 2,8 mC. A LED kb. 1,6 V-ig világít, addig kb. 1,3 mC töltés fogy el, nagyjából 1 mA-es átlagárammal ez másfél–két másodperc. Egy ceruzaelem kb. 2000 mAh-t, azaz 7200 C-ot tárol: több milliószor ennyit.',
+      n: 'Q = C · U = 940 µF · 3 V ≈ 2,8 mC. A kondenzátorokat a LED-ág és a mérő 10 kΩ-os belső ellenállása együtt süti ki; a LED kb. 1,7 V-ig látszik, a szimulációban kb. 1,4 s-ig. Egy ceruzaelem kb. 2000 mAh-t, azaz 7200 C-ot tárol: több milliószor ennyit.',
     },
   },
   {
@@ -276,7 +276,7 @@ const EXPS = [
     guess: {
       q: { k: 'Tekered a gombot. Mi lesz a ventilátorral?', m: 'Mi történik a motorral, ha tekered az RV-t?', n: 'Hogyan függ a motor fordulatszáma a csúszka állásától?' },
       opts: [['Gyorsul vagy lassul', 'dim'], ['Csak ki-be kapcsol', 'blink'], ['Semmi', 'same']], right: 0,
-      after: { k: 'Igen! A gombbal gyorsítod és lassítod.', m: 'A gomb a tranzisztorokon keresztül szabályozza, mennyi áram jut a motorhoz.', n: 'A motor feszültsége kb. a csúszka feszültsége mínusz 1,4 V (két bázis–emitter átmenet).' },
+      after: { k: 'Igen! A gombbal gyorsítod és lassítod.', m: 'A gomb a tranzisztorokon keresztül szabályozza, mennyi áram jut a motorhoz.', n: 'A motor feszültsége kb. a csúszka feszültsége mínusz 1,4–1,5 V (két bázis–emitter átmenet).' },
     },
     variants: [],
     hint: {
@@ -287,7 +287,7 @@ const EXPS = [
     why: {
       k: 'A gombon csak egy picike áram megy át. A tranzisztorok ebből a picike áramból nagyot csinálnak, ami már a motort is meg tudja forgatni.',
       m: 'Az RV-n át csak nagyon kevés áram folyik, ez kevés egy motorhoz. Az első tranzisztor százszorosára erősíti, a második még százszorosára. Így a gomb nagyon kis áramával irányíthatod a motor nagy áramát. Ha a gomb túl alacsony feszültséget ad, a motor el sem indul.',
-      n: 'Darlington-kapcsolás: a teljes áramerősítés β₁·β₂ ≈ 10 000–20 000, így a csúszka árama mikroamperes, a motoré 30–60 mA. Ára a két bázis–emitter feszültség (kb. 1,4 V): a motorra legfeljebb kb. 1,6 V jut, ezért lassabb, mint közvetlenül az elemre kötve. Egy tranzisztorral az RV terhelése miatt a szabályozás csak a skála legvégén működne.',
+      n: 'Darlington-kapcsolás: a teljes áramerősítés β₁·β₂ ≈ 10 000–20 000, így a csúszka árama mikroamperes, a motoré 30–60 mA. Ára a két bázis–emitter feszültség (kb. 1,4–1,5 V): a motorra legfeljebb kb. 1,5 V jut, ezért lassabb, mint közvetlenül az elemre kötve. Egy tranzisztorral az RV terhelése miatt a szabályozás csak a skála legvégén működne.',
     },
   },
 
@@ -309,7 +309,7 @@ const EXPS = [
     hint: {
       k: 'Kapcsold be, aztán nyomd és tartsd az „Érintsd meg” gombot!',
       m: 'Kapcsold be az S1-et. A valódi áramkörön tedd az ujjad a C3 és az E3 pontra; itt a gombot tartsd nyomva.',
-      n: 'Nézd a mérőn a bázisáramot érintéskor: néhány µA.',
+      n: 'Nézd a képernyő mérőtábláján a bázisáramot érintéskor: néhány µA.',
     },
     why: {
       k: 'A kezed egy nagyon picit vezeti az áramot. Ez olyan kevés, hogy egy lámpa nem gyulladna ki tőle. De a két tranzisztor felnagyítja, mint egy nagyító, és a lámpa kigyullad.',
@@ -353,7 +353,7 @@ const EXPS = [
       n: 'Bistabil multivibrátor (RS flip-flop): két keresztbe csatolt NPN tranzisztor. A gombok a bázisokat földelik (beállítás és törlés).',
     },
     guess: {
-      q: { k: 'Megnyomod és elengeded a gombot. A lámpa marad, vagy visszaugrik?', m: 'Megnyomod, majd elengeded az S2b-t. Mi lesz a LED-ekkel elengedés után?', n: 'Mi tartja meg az állapotot a gomb elengedése után?' },
+      q: { k: 'Megnyomod és elengeded a gombot. A lámpa marad, vagy visszaugrik?', m: 'Megnyomod, majd elengeded az S2b-t. Mi lesz a LED-ekkel elengedés után?', n: 'Mi lesz a LED-del, ha elengeded a gombot?' },
       opts: [['Úgy marad', 'on'], ['Visszaugrik', 'off']], right: 0,
       after: { k: 'Igen! Megjegyzi. Ez egy pici memória.', m: 'Úgy marad: a két tranzisztor egymást tartja abban az állapotban. Ez egy 1 bites memória.', n: 'A visszacsatolás: a bekapcsolt tranzisztor alacsonyan tartja a másik bázisát, a kikapcsolt a magas kollektorfeszültségével nyitva tartja a párját.' },
     },
@@ -378,7 +378,7 @@ const EXPS = [
       n: 'ÉS-kapu két sorba kötött NPN tranzisztorral: a kimenet (LED) csak akkor aktív, ha mindkét bemenet (gomb) aktív.',
     },
     guess: {
-      q: { k: 'Ha csak az egyik gombot nyomod, kigyullad a lámpa?', m: 'Kigyullad a LED, ha csak az S2a-t nyomod?', n: 'Mi az ÉS-kapu kimenete, ha csak az egyik bemenet aktív?' },
+      q: { k: 'Ha csak az egyik gombot nyomod, kigyullad a lámpa?', m: 'Kigyullad a LED, ha csak az S2a-t nyomod?', n: 'Bekapcsol-e az ÉS-kapu kimenete (a LED), ha csak az egyik bemenet aktív?' },
       opts: [['Nem, mindkettő kell', 'off'], ['Igen', 'on']], right: 0,
       after: { k: 'Igen! Mindkét gomb kell, ez a titkos kód.', m: 'Mindkét tranzisztornak vezetnie kell, különben az áram útja megszakad.', n: '0 ÉS 1 = 0: a soros kapcsolásban bármelyik lezárt tranzisztor megszakítja az áramot.' },
     },
@@ -403,7 +403,7 @@ const EXPS = [
       n: 'VAGY-kapu: két párhuzamos kapcsoló. A kimenet akkor aktív, ha legalább az egyik bemenet aktív.',
     },
     guess: {
-      q: { k: 'Ha csak az egyik gombot nyomod, kigyullad a lámpa?', m: 'Kigyullad a LED, ha csak az egyik gombot nyomod?', n: 'Mi a VAGY-kapu kimenete, ha csak az egyik bemenet aktív?' },
+      q: { k: 'Ha csak az egyik gombot nyomod, kigyullad a lámpa?', m: 'Kigyullad a LED, ha csak az egyik gombot nyomod?', n: 'Bekapcsol-e a VAGY-kapu kimenete (a LED), ha csak az egyik bemenet aktív?' },
       opts: [['Igen, bármelyik elég', 'on'], ['Nem, mindkettő kell', 'off']], right: 0,
       after: { k: 'Igen! Bármelyik gomb elég.', m: 'A két gomb két külön utat ad az áramnak. Elég, ha az egyik nyitva van.', n: '0 VAGY 1 = 1: a párhuzamos ágak közül egy is elég a kör zárásához.' },
     },
@@ -428,7 +428,7 @@ const EXPS = [
       n: 'NEM-kapu (inverter): a tranzisztor a LED-del párhuzamosan van kötve, és bekapcsolva rövidre zárja. Gomb lenyomva → LED ki; gomb felengedve → LED be.',
     },
     guess: {
-      q: { k: 'Ha megnyomod a gombot, mi lesz a lámpával?', m: 'Mi történik a LED-del, ha megnyomod az S2-t?', n: 'Mi a NEM-kapu kimenete aktív bemenetnél?' },
+      q: { k: 'Ha megnyomod a gombot, mi lesz a lámpával?', m: 'Mi történik a LED-del, ha megnyomod az S2-t?', n: 'Mi lesz a NEM-kapu kimenetén lévő LED-del, ha a bemenet aktív?' },
       opts: [['Kialszik', 'off'], ['Kigyullad', 'on']], right: 0,
       after: { k: 'Igen! Ez a fordított lámpa.', m: 'A bekapcsolt tranzisztor „rövidzár” a LED mellett: az áram azon megy, nem a LED-en.', n: 'NEM 1 = 0: a telített tranzisztoron kb. 0,1 V esik, ez kevés a LED nyitásához.' },
     },
@@ -469,7 +469,7 @@ const EXPS = [
     },
     why: {
       k: 'A hangszóró csak akkor szól, ha változik rajta az áram. A villogó mindig kapcsolgat, ezért a hangszóró minden kapcsolásnál kattan egyet.',
-      m: 'A hangszóróban egy mágnes és egy tekercs mozgatja a membránt. Ha az áram hirtelen bekapcsol vagy kikapcsol, a membrán egyet ugrik: ez a kattanás. A zenészek metronómja is ilyen egyenletes kattogással segít tartani a ritmust.',
+      m: 'A hangszóróban egy mágnes és egy tekercs mozgatja a membránt. Ha az áram hirtelen bekapcsol vagy kikapcsol, a membrán egyet ugrik: ez a kattanás. A zenészek metronómja is ilyen kattogással segít tartani a ritmust (ez a miénk nem egészen egyenletes: a hangszórós fele hosszabb).',
       n: 'Minden átbillenésnél egy kattanás: periódusonként kettő. A szimulációban a hangszórós oldal kb. 0,4 s-ig vezet, a LED-es kb. 0,2 s-ig: a hangszórón kisebb a feszültségesés, mint a LED-en, ezért nagyobb a kollektor feszültséglépése, és lassabban billen vissza. C5-tel az egyik szakasz kb. 1 s-ra nyúlik. Ha mindkét oldalon nagyobb lenne a kondenzátor, egyenletesen lassulna.',
     },
   },
@@ -484,7 +484,7 @@ const EXPS = [
       n: 'Astabil multivibrátor, amelynek egyik bázisellenállása R2 + RV (1–51 kΩ), és egy nyomógombon át kap tápot. Gomb nélkül az egyik tranzisztor nem kap bázisáramot, a rezgés leáll.',
     },
     guess: {
-      q: { k: 'Ha tekered a tekerőt, mi lesz a hanggal?', m: 'Mi történik a hanggal, ha nagyobbra állítod az RV ellenállását?', n: 'Hogyan függ a frekvencia az RV ellenállásától?' },
+      q: { k: 'Ha tekered a tekerőt, mi lesz a hanggal?', m: 'Mi történik a hanggal, ha nagyobbra állítod az RV ellenállását?', n: 'Mi történik a hangmagassággal, ha az RV ellenállását növeled?' },
       opts: [['Mélyebb lesz', 'slow'], ['Magasabb lesz', 'sound'], ['Nem változik', 'same']], right: 0,
       after: { k: 'Igen! Nagyobb fékezés, lassabb rezgés, mélyebb hang.', m: 'Nagyobb ellenálláson lassabban töltődik a kondenzátor, lassabb a rezgés: mélyebb a hang.', n: 'A félperiódus ≈ 0,69 · R · C, tehát nagyobb R → hosszabb periódus → kisebb frekvencia.' },
     },
@@ -497,13 +497,13 @@ const EXPS = [
     why: {
       k: 'A hang nagyon gyors rezgés. A tekerő azt állítja, milyen gyorsan rezeg: gyors rezgés magas hang, lassú rezgés mély hang.',
       m: 'A hangmagasságot az adja meg, hányszor rezeg másodpercenként a hangszóró. A tekerő a kondenzátor töltődését lassítja vagy gyorsítja. A billentyű nélkül az egyik tranzisztor nem kap áramot, ezért csend van, mint egy zongorán, ha nem ütsz le billentyűt.',
-      n: 'A szimuláció szerint kb. 240 Hz és 3,2 kHz között hangolható. A frekvencia nem arányos a gomb állásával, mert a másik oldal félperiódusa állandó (0,69 · 5,1 kΩ · 0,1 µF ≈ 0,35 ms). Az első elektronikus hangszerek (pl. a theremin) is ilyen oszcillátorokkal működtek.',
+      n: 'A szimuláció szerint kb. 250 Hz és 3,4 kHz között hangolható. A frekvencia nem arányos a gomb állásával, mert a másik oldal félperiódusa állandó (0,69 · 5,1 kΩ · 0,1 µF ≈ 0,35 ms). Az első elektronikus hangszerek (pl. a theremin) is ilyen oszcillátorokkal működtek.',
     },
   },
   {
     id: 'siren', chapter: 'E', title: 'Sziréna', tag: 'Felfelé és lefelé csúszó hang',
     layout: LAY.siren, sim: { dt: 0.000005, scale: 1 / 1000 }, slow: 1000, controls: ['S1', { press: 'S2', label: 'Sziréna gomb (S2)' }, 'sound'],
-    audio: { type: 'siren', probe: 'SP', cap: 'C5', R: 10000, Rb: 5100, C: 470e-6, grid: [0.7, 0.75, 0.85, 1, 1.25, 1.6, 2, 2.5, 3] },
+    audio: { type: 'siren', probe: 'SP', cap: 'C5', R: 10000, Rb: 570, C: 470e-6,   /* Rb: a szimulációhoz illesztve (nyomva kb. 0,9 V-ig töltődik) */ grid: [0.7, 0.75, 0.85, 1, 1.25, 1.6, 2, 2.5, 3] },
     intro: {
       k: 'Tartsd nyomva a gombot: a hang egyre magasabb. Engedd el: lassan lecsúszik és elhallgat. Mint egy mentőautó!',
       m: 'A hangos villogó egyik oldala nem közvetlenül az elemről kap áramot, hanem egy nagy kondenzátorról (C5). A gomb lassan feltölti, elengedve lassan kiürül, és közben változik a hang.',
@@ -518,12 +518,12 @@ const EXPS = [
     hint: {
       k: 'Kapcsold be a hangot, aztán tartsd nyomva a gombot pár másodpercig, majd engedd el!',
       m: 'Kapcsold be az S1-et és a hangot. Tartsd nyomva az S2-t, figyeld a C5 sárga csíkját, aztán engedd el.',
-      n: 'Figyeld a C5 feszültségét a mérőn: kb. 0,7 V alatt elhallgat. A kijelzés 1000× lassított.',
+      n: 'Figyeld a C5 feszültségét a képernyő mérőtábláján: kb. 0,7 V alatt elhallgat. A kijelzés 1000× lassított.',
     },
     why: {
       k: 'A nagy kondenzátor egy lassan teli- és kiürülő vödör. Minél telibb, annál gyorsabban rezeg a villogó, és annál magasabb a hang.',
       m: 'A villogó sebessége attól függ, milyen erősen kap áramot az egyik tranzisztor. Ezt az áramot most egy lassan töltődő kondenzátor adja. Töltődéskor nő a hang, kisüléskor csökken. A dobozban lévő riasztó IC (U2) is ilyen, egymást vezérlő rezgőkörökkel szól.',
-      n: 'A szimuláció szerint kb. 0,8 V-on 630 Hz, 3 V-on kb. 1450 Hz, 0,7 V alatt a rezgés leáll. Töltéskor τ ≈ R4 · C5 ≈ 4,7 s (a bázisáram miatt valamivel gyorsabban áll be). Ez egy feszültségvezérelt oszcillátor (VCO), a szintetizátorok és a rádiók egyik alapeleme. A hang a szimulációból kiszámolt frekvencia–feszültség táblázatból és a C5 egyszerűsített töltődési modelljéből készül.',
+      n: 'A szimuláció szerint a gomb nyomva tartásakor a C5 csak kb. 0,9 V-ig töltődik, mert a rezgőkör maga is folyamatosan süti; ekkor kb. 700 Hz-en szól, 0,7 V-on kb. 550 Hz-en, alatta a rezgés leáll. A töltés eleje lassú (R4 · C5 ≈ 4,7 s időállandóval indul), aztán kb. 2–3 s alatt beáll; elengedve kb. fél másodperc alatt 0,7 V alá esik, és elhallgat. Ez egy feszültségvezérelt oszcillátor (VCO), a szintetizátorok és a rádiók egyik alapeleme. A hang a szimulációból kiszámolt frekvencia–feszültség táblázatból és a C5 egyszerűsített töltődési modelljéből készül.',
     },
   },
 
@@ -540,7 +540,7 @@ const EXPS = [
     guess: {
       q: { k: 'Ha letakarod a kis fekete szemet, mi lesz?', m: 'Mi történik, ha árnyék vetül a fototranzisztorra?', n: 'Mi történik a vezérlőfeszültséggel és a hanggal, ha a Q4-et elsötétíted?' },
       opts: [['Megszólal a riasztó', 'sound'], ['Semmi', 'same'], ['Kialszik a LED', 'off']], right: 0,
-      after: { k: 'Igen! Sötétben megszólal.', m: 'Árnyékban a Q4 nem vezet, így a rezgőkör áramot kap, és szólni kezd.', n: 'A vezérlőfeszültség megemelkedik, és a rezgőkör teljes sötétben kb. 700 Hz-en szól.' },
+      after: { k: 'Igen! Sötétben megszólal.', m: 'Árnyékban a Q4 nem vezet, így a rezgőkör áramot kap, és szólni kezd.', n: 'A vezérlőfeszültség megemelkedik, és a rezgőkör teljes sötétben kb. 720 Hz-en szól.' },
     },
     variants: [],
     hint: {
@@ -551,7 +551,7 @@ const EXPS = [
     why: {
       k: 'A kis fekete szem fényben elveszi az áramot a riasztótól. Ha árnyék jön, már nem veszi el, és a riasztó megszólal.',
       m: 'Ez a sziréna és az éjjeli lámpa keveréke. A fototranzisztor fényben „lecsapolja” a rezgőkör áramát. Árnyékban ez megszűnik, és a rezgőkör szól. Ilyen elven működnek a boltok ajtajában a csengők, amik megszólalnak, ha belépsz a fénysugárba.',
-      n: 'A szimulációban erős fénynél a rezgés leáll, teljes sötétben kb. 700 Hz, félhomályban kb. 340 Hz: a Q4 árama folyamatosan hangolja a feszültségvezérelt oszcillátort. Ez ugyanaz a kapcsolás, mint a sziréna, csak a C5 helyett fény állítja a vezérlőfeszültséget. A hang a szimulációból kiszámolt frekvencia–fényerő táblázatból készül.',
+      n: 'A szimulációban erős fénynél a rezgés leáll, teljes sötétben kb. 720 Hz, félhomályban kb. 400 Hz: a Q4 árama folyamatosan hangolja a feszültségvezérelt oszcillátort. Ez ugyanaz a kapcsolás, mint a sziréna, csak a C5 helyett fény állítja a vezérlőfeszültséget. A hang a szimulációból kiszámolt frekvencia–fényerő táblázatból készül.',
     },
   },
 
@@ -565,7 +565,7 @@ const EXPS = [
       n: 'A szénmikrofon (X1) ellenállása csendben kb. 1 kΩ, erős hangnyomásra kb. 10 kΩ. Az R4-gyel (10 kΩ) feszültségosztót alkot a Q2 bázisán; erős hangnál a bázisfeszültség 0,6 V fölé emelkedik.',
     },
     guess: {
-      q: { k: 'Ha belefújsz a mikrofonba, mi lesz a lámpával?', m: 'Mi történik a LED-del, ha belefújsz az X1-be?', n: 'Mi történik a bázisfeszültséggel, ha a mikrofon ellenállása megnő?' },
+      q: { k: 'Ha belefújsz a mikrofonba, mi lesz a lámpával?', m: 'Mi történik a LED-del, ha belefújsz az X1-be?', n: 'Mi lesz a LED-del, ha a mikrofon ellenállása erős hangtól megnő?' },
       opts: [['Kigyullad', 'on'], ['Semmi', 'off']], right: 0,
       after: { k: 'Igen! A fújástól felvillan.', m: 'A fújás megnyomja a mikrofon belsejét, nő az ellenállása, és ettől a tranzisztor bekapcsolja a LED-et.', n: 'Nagyobb alsó ellenállás → nagyobb bázisfeszültség → a tranzisztor nyit.' },
     },
@@ -578,7 +578,7 @@ const EXPS = [
     why: {
       k: 'A mikrofonban apró szemcsék vannak. Ha hang éri, összenyomódnak, és ettől másképp vezeti az áramot. A tranzisztor ezt észreveszi, és felkapcsolja a lámpát.',
       m: 'A hang a levegő rezgése. A mikrofonba érve megmozdítja a belsejét, és ettől megváltozik az ellenállása. Ez a kicsi változás a tranzisztor bázisán elég ahhoz, hogy a LED kigyulladjon. Így működnek a tapsra kapcsoló lámpák. (A tablet mikrofonja itt csak azt méri, milyen hangos a hang, és ezzel „nyomja” a virtuális mikrofont.)',
-      n: 'Feszültségosztó: U_B = 3 V · R_X1 / (R_X1 + 10 kΩ). 1 kΩ-nál kb. 0,27 V (zárva), 10 kΩ-nál 1,5 V (a tranzisztor bekapcsol, a LED-áramot az R1 korlátozza). A küszöb a szimulációban kb. 3 kΩ-nál van. A valódi szénmikrofon változása beszédnél kisebb, ezért erős hang (fújás, taps közelről) kell.',
+      n: 'Feszültségosztó: U_B = 3 V · R_X1 / (R_X1 + 10 kΩ). 1 kΩ-nál kb. 0,27 V (zárva). 10 kΩ-nál terheletlenül 1,5 V lenne, de a bázis–emitter átmenet kb. 0,7 V-on megfogja: a tranzisztor bekapcsol, a LED-áramot az R1 korlátozza. A küszöb a szimulációban kb. 3 kΩ-nál van. A valódi szénmikrofon változása beszédnél kisebb, ezért erős hang (fújás, taps közelről) kell.',
     },
   },
 
@@ -600,7 +600,7 @@ const EXPS = [
     hint: {
       k: 'Kapcsold be mindkét kapcsolót és a hangot! Aztán kapcsold ki a „Fény a kábelben” gombot.',
       m: 'Kapcsold be mindkét S1-et és a hangot. A valódi áramkörön szakítsd meg a fényt: kapcsold ki az adót (S1), vagy fogd le ujjal a kábel adó felőli végét a tartóval együtt. A kábelt ne húzd ki a vevő tartójából, és ne hagyd úgy: a nyitott tartón át a szobafény bekapcsolja a vevőt, és a hangszóró folyamatosan áramot kap. A „Fény a kábelben” kapcsolóval itt is kipróbálhatod. Ki- és bekapcsolgatva morzejeleket küldhetsz!',
-      n: 'Figyeld a fototranzisztor áramát a mérőn, és hasonlítsd össze az adó LED-jének áramával. A kijelzés 1000× lassított.',
+      n: 'Figyeld a fototranzisztor áramát a képernyő mérőtábláján, és hasonlítsd össze az adó LED-jének áramával. A kijelzés 1000× lassított.',
     },
     why: {
       k: 'A LED olyan gyorsan villog, hogy nem látod. A kis fekete szem a kábel másik végén látja, és minden villanásnál meglöki a hangszórót. A sok gyors lökésből lesz a hang.',
@@ -643,8 +643,8 @@ const EXPS = [
     },
     why: {
       k: 'Az IC egy kis doboz, amibe sok apró alkatrészt zártak. Az U23-ban egy villogó van, mint amit te raktál össze. Így már tudod, mi van benne, és nyugodtan használhatod.',
-      m: 'Az IC-ket azért találták ki, hogy ne kelljen mindig mindent elemenként összerakni. Te már megépítetted ugyanezt két tranzisztorból és két kondenzátorból (Villogó). Az U23 ugyanezt tudja, csak kisebb helyen, kevesebb vezetékkel. Nagyobb ellenállással a CTL lábon lassabban villog, kisebbel olyan gyorsan, hogy folyamatos fénynek látszik.',
-      n: 'A modellünkben a villogás frekvenciája arányos a CTL áramával: 100 kΩ-mal kb. 5 Hz (látható villogás), 5,1 kΩ-mal kb. 40 Hz, ami már folyamatos fénynek tűnik. A saját villogódban ugyanezt a bázisellenállás és a kondenzátor szorzata szabta meg (≈ 0,69 · R · C). Ez egy viselkedési modell, a valódi modul számai ettől eltérhetnek.',
+      m: 'Az IC-ket azért találták ki, hogy ne kelljen mindig mindent elemenként összerakni. Te már megépítetted ugyanezt két tranzisztorból és két kondenzátorból (Villogó). Az U23 ugyanezt tudja, csak kisebb helyen, kevesebb vezetékkel. Nagyobb ellenállással a CTL lábon lassabban villog, kisebbel gyorsabban, egészen vibráló fényig.',
+      n: 'A modellünkben a villogás frekvenciája arányos a CTL áramával: 100 kΩ-mal kb. 5,5 Hz (látható villogás), 5,1 kΩ-mal kb. 40 Hz: ez már gyors, vibráló fény (a szem kb. 50 Hz fölött látja folyamatosnak). A CTL lábon belül is van egy 10 kΩ-os ellenállás, ezért a frekvencia nem pontosan fordítottan arányos a külső ellenállással. A saját villogódban ugyanezt a bázisellenállás és a kondenzátor szorzata szabta meg (≈ 0,69 · R · C). Ez egy viselkedési modell, a valódi modul számai ettől eltérhetnek.',
     },
   },
   {
@@ -733,7 +733,7 @@ const EXPS = [
       n: 'Kétfokozatú erősítő: a mikrofon az R2-vel feszültségosztót alkot, a váltakozó jel a C3-on át egy Darlington-pár bázisára jut. A munkapontot az R5 állítja be a kimenetről visszacsatolva, ezért a tranzisztorok β-jától alig függ. A hangszóró az R1-gyel sorban a kollektorkörben van.',
     },
     guess: {
-      q: { k: 'Ha beszélsz a mikrofonba, mi lesz?', m: 'Mi történik a hangszóróval, ha a mikrofonba beszélsz?', n: 'Mekkora lesz a hangszóró áramának változása a mikrofon ellenállásának változásához képest?' },
+      q: { k: 'Ha beszélsz a mikrofonba, mi lesz?', m: 'Mi történik a hangszóróval, ha a mikrofonba beszélsz?', n: 'Mi történik a hangszóróval, ha a mikrofon ellenállása a hangtól változik?' },
       opts: [['Megszólal a hangszóró', 'sound'], ['Kigyullad egy lámpa', 'on'], ['Semmi', 'same']], right: 0,
       after: { k: 'Igen! A hangszóróból a te hangod jön.', m: 'A tranzisztorok felerősítik a mikrofon kicsi változását, és a hangszóró a te hangodat szólaltatja meg.', n: 'A szimulációban a mikrofon ±90 Ω-os változása kb. 15 mA-es (csúcstól csúcsig) áramváltozást ad a hangszóróban, 14 mA-es nyugalmi áram mellett.' },
     },
@@ -772,7 +772,7 @@ const EXPS = [
       n: 'Az U4 lábai: (+) és (−) a táp, INP a bemenet, OUT a kimenet, FIL a szűrt táp. A mikrofont az R2 a FIL-ről táplálja; a hangszóró az OUT és a (−) között van. Az IC itt elforgatva áll a rácson.',
     },
     guess: {
-      q: { k: 'Hangosabb lesz, mint a hangosbemondód?', m: 'Hangosabban vagy halkabban szól, mint a két tranzisztoros hangosbemondód?', n: 'Hányszor nagyobb lesz a hangszóró áramának változása, mint a hangosbemondónál?' },
+      q: { k: 'Hangosabb lesz, mint a hangosbemondód?', m: 'Hangosabban vagy halkabban szól, mint a két tranzisztoros hangosbemondód?', n: 'Hangosabban vagy halkabban szól, mint a hangosbemondó?' },
       opts: [['Hangosabb', 'sound'], ['Ugyanolyan', 'same'], ['Halkabb', 'dim']], right: 0,
       after: { k: 'Igen! Sokkal hangosabb.', m: 'Sokkal hangosabb: az IC-ben több és erősebb tranzisztor dolgozik.', n: 'A szimulációban ugyanarra a mikrofonváltozásra kb. 180 mA-es változás jön a 15 mA helyett, vagyis kb. tizenkétszer akkora.' },
     },
@@ -807,9 +807,9 @@ const EXPS = [
       n: 'Az U3 lábai: (+), (−), OUT (a hangszóró a (+) és az OUT között), IN1 és IN2 vezérlőbemenet. A kézikönyv szerint a bemeneteket a (−)-ra kötve lehet végiglépkedni a nyolc hangon.',
     },
     guess: {
-      q: { k: 'Ha megnyomod a gombot, mi lesz?', m: 'Mi történik, ha megnyomod az S2-t?', n: 'Hány gombnyomás után kerülsz vissza az első hanghoz?' },
+      q: { k: 'Ha megnyomod a gombot, mi lesz?', m: 'Mi történik, ha megnyomod az S2-t?', n: 'Mi történik, amikor a gomb az IN1 lábat a (−)-ra köti?' },
       opts: [['Másik hang szól', 'sound'], ['Elhallgat', 'off'], ['Ugyanaz szól', 'same']], right: 0,
-      after: { k: 'Igen! Minden nyomásra új hang jön.', m: 'Minden gombnyomásra a következő hang jön, nyolc után kezdi elölről.', n: 'Nyolc: a három flip-flopos számláló 8 állapot után körbeér.' },
+      after: { k: 'Igen! Minden nyomásra új hang jön.', m: 'Minden gombnyomásra a következő hang jön, nyolc után kezdi elölről.', n: 'A számláló egyet lép, és a következő hang szól. Nyolc lépés után körbeér: három flip-flop 2³ = 8 állapotot tud.' },
     },
     hint: {
       k: 'Kapcsold be a hangot, és nyomogasd a gombot!',
@@ -877,7 +877,7 @@ const EXPS = [
       n: 'Az U24 lábai: (+), (−) és a kimenet. A kimenet adás közben a (−)-ra kapcsol, ezért a LED a (+) és a kimenet közé kerül. A kézikönyv szerint itt nem kell elé ellenállás.',
     },
     guess: {
-      q: { k: 'Ha megnyomod a távirányító gombját, mi lesz?', m: 'Mit csinál a LED, ha a távirányítóval rávilágítasz az U24-re?', n: 'Miért villog a LED, és miért nem ég folyamatosan?' },
+      q: { k: 'Ha megnyomod a távirányító gombját, mi lesz?', m: 'Mit csinál a LED, ha a távirányítóval rávilágítasz az U24-re?', n: 'Mit csinál a LED, ha a távirányítóval rávilágítasz az U24-re?' },
       opts: [['Villog a lámpa', 'blink'], ['Semmi, hiszen nem látszik a fény', 'off'], ['Megszólal', 'sound']], right: 0,
       after: { k: 'Igen! A doboz látja, amit mi nem.', m: 'A LED villog: a távirányító jelét a fénye villogása hordozza.', n: 'Mert a távirányító a kódot villanássorozatként küldi, és a kimenet ezt követi.' },
     },
@@ -912,14 +912,14 @@ const EXPS = [
       n: 'A D8 két lábú, mint egy LED, és ugyanúgy van iránya (+). A My Home LED-jeibe áramkorlátozó ellenállás van építve, ezért elé nem kell ellenállás.',
     },
     guess: {
-      q: { k: 'Bekapcsolod. Milyen színű lesz?', m: 'Mit csinál a D8, ha bekapcsolod?', n: 'Hány alkatrész lehet egy ilyen LED-ben?' },
+      q: { k: 'Bekapcsolod. Milyen színű lesz?', m: 'Mit csinál a D8, ha bekapcsolod?', n: 'Mit csinál a D8, ha a helyes irányban 3 V-ot kap?' },
       opts: [['Váltogatja a színét', 'blink'], ['Mindig piros', 'on'], ['Nem világít', 'off']], right: 0,
-      after: { k: 'Igen! Mindenféle színe van.', m: 'Magától váltogatja a színét: van benne egy kis vezérlő.', n: 'Legalább öt: három LED, egy vezérlő IC és egy ellenállás.' },
+      after: { k: 'Igen! Mindenféle színe van.', m: 'Magától váltogatja a színét: van benne egy kis vezérlő.', n: 'Váltogatja a színét: a tokban legalább öt alkatrész van, három LED-chip, egy vezérlő IC és egy ellenállás.' },
     },
     hint: {
       k: 'Kapcsold be, és figyeld a színeket!',
       m: 'Kapcsold be az S1-et, és nézd, milyen színeket mutat. Melyik szín keverék?',
-      n: 'Figyeld a LED áramát: változik-e, amikor színt vált?',
+      n: 'A szimuláció a D8-at egyetlen LED-ként számolja, ezért itt az áram nem változik. A valódi készleten mérd meg a My Home mérőjével (50 mA-es állás, sorosan): ugrik-e az áram, amikor színt vált?',
     },
     why: {
       k: 'A LED-ben három kis lámpa van: piros, zöld és kék. Egy pici villogó felváltva kapcsolja őket. Ha kettő egyszerre ég, a színük összekeveredik.',
@@ -947,7 +947,7 @@ const EXPS = [
       n: 'Az U32 két lábú, a (+) jel felül. A mérőműszer (50 mA-es állásban) sorban van vele; minden hangnál megváltozik a felvett áram.',
     },
     guess: {
-      q: { k: 'Mit csinál a mérő mutatója zene közben?', m: 'Mit csinál a mérőműszer, amíg a dallam szól?', n: 'Miért változik a mérő kitérése zene közben?' },
+      q: { k: 'Mit csinál a mérő mutatója zene közben?', m: 'Mit csinál a mérőműszer, amíg a dallam szól?', n: 'Mit csinál a mérő mutatója zene közben?' },
       opts: [['Ugrál', 'blink'], ['Áll', 'same'], ['Nulla', 'off']], right: 0,
       after: { k: 'Igen! Minden hangnál mozdul.', m: 'Ugrál: amikor szól egy hang, több áram kell, a szünetekben kevesebb.', n: 'Mert a beépített hangszóró árama hangonként be- és kikapcsol.' },
     },
@@ -985,7 +985,7 @@ const EXPS = [
       n: 'Középhullámú rádió: a hangolt kör (A1 ∥ CV) rezonanciafrekvenciája f = 1 / (2π·√(L·C)). A szimulációban L ≈ 380 µH, C ≈ 55–235 pF (a szórt kapacitással), így kb. 530–1100 kHz hangolható. Magyarországon középhullámon a Kossuth Rádió szól, 540 kHz-en, a solti adóról.',
     },
     guess: {
-      q: { k: 'Hol szól a rádió: a tekerő elején, közepén vagy a végén?', m: 'A forgókondenzátor melyik állásánál fogod a Kossuth Rádiót?', n: 'Mekkora kapacitás kell a 540 kHz-hez 380 µH-s tekerccsel?' },
+      q: { k: 'Hol szól a rádió: a tekerő elején, közepén vagy a végén?', m: 'A forgókondenzátor melyik állásánál fogod a Kossuth Rádiót?', n: 'A forgókondenzátor melyik állása felé kell tekerni a 540 kHz-hez: a nagy vagy a kis kapacitás felé?' },
       opts: [['Majdnem a végén', 'on'], ['Középen', 'same'], ['Az elején', 'off']], right: 0,
       after: { k: 'Igen! Majdnem egészen el kell tekerni.', m: 'Majdnem a végén: a Kossuth a középhullám legalsó szélén van, ahhoz a legnagyobb kapacitás kell.', n: 'C = 1 / ((2π·540 kHz)²·380 µH) ≈ 229 pF, ebből kb. 15 pF a szórt kapacitás, tehát a CV kb. 214 pF-on áll, közel a maximumhoz.' },
     },
@@ -1009,7 +1009,7 @@ const EXPS = [
       n: 'PNP kapcsoló a (+) oldalon: az R3 a bázist a (+) felé húzza (zárva), fényben a Q4 a (−) felé húzza, a bázisáram kifolyik, és a Q1 vezet. Egy átkötő kábel kell hozzá.',
     },
     guess: {
-      q: { k: 'Mit csinál a lámpa, ha letakarod a kis fekete szemet?', m: 'Mi történik a LED-del, ha letakarod a Q4-et?', n: 'Mi lesz a kollektorárammal, ha a Q4 nem kap fényt?' },
+      q: { k: 'Mit csinál a lámpa, ha letakarod a kis fekete szemet?', m: 'Mi történik a LED-del, ha letakarod a Q4-et?', n: 'Mi lesz a LED-del, ha a Q4 nem kap fényt?' },
       opts: [['Elalszik', 'off'], ['Kigyullad', 'on'], ['Semmi nem változik', 'same']], right: 0,
       after: { k: 'Igen! Ez a lámpa a fényt szereti.', m: 'Sötétben a Q4 nem vezet, az R3 a bázist a + felé húzza, és a PNP bezár.', n: 'A bázis a (+) közelébe kerül, nincs bázisáram, így a kollektoráram is nulla.' },
     },
@@ -1038,7 +1038,7 @@ const CHECKS = {
     after: { k: 'Igen! A sorrend mindegy, csak a kör legyen zárt.', m: 'Egy körben az áram mindenhol ugyanakkora, ezért mindegy, melyik alkatrész van elöl.', n: 'Soros körben az áram minden ponton ugyanaz, és a feszültségek összege sem függ a sorrendtől: semmi nem változik.' },
   },
   conduct: {
-    q: { k: 'Ha egy pénzérmét teszel a két kábelvég közé, mi lesz a lámpával?', m: 'Mit mutat a LED, ha egy fémpénzt vizsgálsz?', n: 'Mit vársz egy fémpénznél: mekkora lesz az ellenállása a többi anyaghoz képest?' },
+    q: { k: 'Ha egy pénzérmét teszel a két kábelvég közé, mi lesz a lámpával?', m: 'Mit mutat a LED, ha egy fémpénzt vizsgálsz?', n: 'Mit csinál a LED, ha egy fémpénzt vizsgálsz, és miért?' },
     opts: [['Fényesen világít', 'on'], ['Halványan', 'dim'], ['Nem világít', 'off']], right: 0,
     after: { k: 'Igen! A pénz fémből van, és a fém vezet.', m: 'A pénzérme fém, a fémek jól vezetnek, ezért a LED fényesen ég, mint az alufóliánál.', n: 'A fémek ellenállása nagyon kicsi (az érméé néhány ezred ohm), így a kör áramát csak az R1 és a LED korlátozza.' },
   },
@@ -1048,24 +1048,24 @@ const CHECKS = {
     after: { k: 'Igen! Minél több izzó van egymás után, annál kevesebb jut egynek.', m: 'Sorosan mindegyik izzó fékezi az áramot, és az elem feszültségén is osztoznak: hárman még kevesebbet kapnak.', n: 'A soros ellenállások összeadódnak, az áram csökken, és minden izzóra kisebb feszültség jut: a fényerő tovább csökken.' },
   },
   dimmer: {
-    q: { k: 'Ha a tekerő helyére a nagy, 100 kΩ-os ellenállást teszed, milyen lesz a lámpa?', m: 'Mi történik, ha az RV helyett az R5-öt (100 kΩ) kötöd be?', n: 'Mekkora lesz nagyjából a LED árama, ha az RV helyett az R5 (100 kΩ) van a körben?' },
+    q: { k: 'Ha a tekerő helyére a nagy, 100 kΩ-os ellenállást teszed, milyen lesz a lámpa?', m: 'Mi történik, ha az RV helyett az R5-öt (100 kΩ) kötöd be?', n: 'Milyen lesz a LED, ha az RV helyett az R5 (100 kΩ) van a körben?' },
     opts: [['Nagyon halvány vagy sötét', 'dim'], ['Ugyanolyan fényes', 'same'], ['Fényesebb', 'on']], right: 0,
     after: { k: 'Igen! A nagy ellenállás nagyon fékezi az áramot.', m: 'A 100 kΩ még a tekerő legnagyobb állásánál is nagyobb fék, ezért a LED alig vagy egyáltalán nem világít.', n: 'I ≈ (3 V − 1,8 V) / 100 kΩ ≈ 12 µA: ezt a mérő még mutatja, de a LED-en nem látszik.' },
   },
   generator: {
-    q: { k: 'Ha gyorsabban pörgeted a motort, mit csinál a mutató?', m: 'Mi történik a mérő kitérésével, ha gyorsabban forgatod a motort?', n: 'Hogyan függ a motor által termelt feszültség a fordulatszámtól?' },
+    q: { k: 'Ha gyorsabban pörgeted a motort, mit csinál a mutató?', m: 'Mi történik a mérő kitérésével, ha gyorsabban forgatod a motort?', n: 'Mit csinál a mutató, ha gyorsabban forgatod a motort?' },
     opts: [['Jobban kitér', 'on'], ['Ugyanannyit', 'same'], ['Kevésbé tér ki', 'dim']], right: 0,
     after: { k: 'Igen! Gyorsabb pörgetés, több áram.', m: 'Minél gyorsabban forog a tekercs a mágnes mellett, annál nagyobb feszültséget kelt.', n: 'A keltett feszültség arányos a fordulatszámmal (U = k·ω): kétszer gyorsabban kétszer akkora.' },
   },
   capbat: {
-    q: { k: 'Ha az ellenállást egy nagyobbra cseréled, mi lesz a lámpával feltöltés után?', m: 'Ha az R2 (1 kΩ) helyett az R4-et (10 kΩ) teszed be, mi változik?', n: 'Hogyan változik a LED fénye és a világítás ideje, ha az R2 helyére 10 kΩ kerül?' },
-    opts: [['Halványabb, de tovább világít', 'fade'], ['Fényesebb, és tovább világít', 'on'], ['Ugyanolyan', 'same']], right: 0,
-    after: { k: 'Igen! A nagyobb fék miatt lassabban fogy a tartály, de kevesebb jut a lámpának.', m: 'A nagyobb ellenálláson kevesebb áram folyik: a LED halványabb, de a kondenzátor lassabban ürül ki.', n: 'Tízszer nagyobb ellenállással kb. tizedannyi az áram, és kb. tízszer tovább tart a kisülés (τ = R·C).' },
+    q: { k: 'Ha a két nagy kondenzátor helyett két kisebbet (C4) teszel be, meddig világít a lámpa?', m: 'Mi változik, ha a két C5 (470 µF) helyett két C4-et (100 µF) teszel be?', n: 'Hogyan változik a világítás ideje, ha a két 470 µF-os kondenzátor helyére két 100 µF-os kerül?' },
+    opts: [['Rövidebb ideig', 'fade'], ['Tovább', 'slow'], ['Ugyanannyi ideig', 'same']], right: 0,
+    after: { k: 'Igen! A kisebb tartály hamarabb kiürül.', m: 'A kisebb kondenzátorokba kevesebb töltés fér, ezért hamarabb kiürülnek, és a LED hamarabb elalszik.', n: 'A kisülés ideje a kapacitással arányos: 940 µF helyett 200 µF kb. 4,7-szer rövidebb. A szimulációban a LED kb. 1,4 s helyett kb. 0,3 s-ig látszik.' },
   },
   motorspeed: {
     q: { k: 'Ha a motor helyére a kis izzót (L1) teszed, mit csinál a tekerő?', m: 'Ha a motor helyére az izzót (L1) teszed, mit állít majd a tekerő?', n: 'A motor itt a második tranzisztor emitterkörében van. Mit állít a tekerő, ha a motor helyére az L1 izzó kerül?' },
     opts: [['Az izzó fényét', 'dim'], ['Az izzó csak villogni fog', 'blink'], ['Az izzó nem világít', 'off']], right: 0,
-    after: { k: 'Igen! A tekerő most az izzó fényét állítja.', m: 'A tranzisztorok nem csak a motort tudják szabályozni: az izzónál a fényerőt. A teljes fényét nem éri el, mert a két tranzisztor elvesz egy kis feszültséget.', n: 'Emitterkövetőként a kimenet kb. a csúszka feszültsége mínusz 1,3 V, így az izzóra legfeljebb kb. 1,7 V jut (a szimulációban kb. 90 mA): halványabb, de folyamatosan állítható. Egy LED-nek ez kevés lenne, mert neki ellenállással együtt ennél több feszültség kell.' },
+    after: { k: 'Igen! A tekerő most az izzó fényét állítja.', m: 'A tranzisztorok nem csak a motort tudják szabályozni: az izzónál a fényerőt. A teljes fényét nem éri el, mert a két tranzisztor elvesz egy kis feszültséget.', n: 'Emitterkövetőként a kimenet kb. a csúszka feszültsége mínusz 1,4–1,5 V, így az izzóra legfeljebb kb. 1,5 V jut (a szimulációban kb. 1,54 V és 96 mA): halványabb, de folyamatosan állítható. Egy LED-nek ez kevés lenne, mert neki ellenállással együtt ennél több feszültség kell.' },
   },
   night: {
     q: { k: 'Ha a felső ellenállás helyére egy nagyobbat teszel, mikor gyullad ki a lámpa?', m: 'Mi történik, ha az R3 (5,1 kΩ) helyére az R5-öt (100 kΩ) teszed?', n: 'Hogyan változik a bekapcsolási fényszint, ha az R3 helyére 100 kΩ kerül?' },
@@ -1073,12 +1073,12 @@ const CHECKS = {
     after: { k: 'Igen! Most a szemnek könnyebb elvezetni a kicsi áramot, ezért csak nagy sötétben gyullad ki.', m: 'A nagyobb ellenálláson kevesebb áram jut a bázishoz, ezt a fototranzisztor már kis fénynél is el tudja vezetni. Ezért csak sötétebben gyullad ki, és halványabb is lesz.', n: 'A bázisra jutó áram kb. 2,3 V / 100 kΩ ≈ 23 µA; ennyit a fototranzisztor már gyenge fénynél is elvezet. A küszöb sötétebb fény felé tolódik, a LED-áram pedig legfeljebb β · 23 µA.' },
   },
   touch: {
-    q: { k: 'Ha nedves ujjal érsz hozzá, mi lesz?', m: 'Mi történik, ha nedves ujjal érinted meg a két pontot?', n: 'Hogyan változik a bázisáram, ha nedves a bőröd?' },
+    q: { k: 'Ha nedves ujjal érsz hozzá, mi lesz?', m: 'Mi történik, ha nedves ujjal érinted meg a két pontot?', n: 'Mi lesz a LED-del, ha nedves a bőröd, és miért?' },
     opts: [['Könnyebben kigyullad', 'on'], ['Nem gyullad ki', 'off'], ['Villogni kezd', 'blink']], right: 0,
     after: { k: 'Igen! A nedves bőr jobban vezet.', m: 'A nedves bőr ellenállása kisebb, ezért több áram jut a tranzisztorhoz, és biztosabban kigyullad a lámpa.', n: 'A bőr ellenállása nedvesen sokszor kisebb, így a bázisáram nő; a LED áramát továbbra is az R1 korlátozza.' },
   },
   water: {
-    q: { k: 'Ha csak az egyik kábelvég ér a vízbe, világít a lámpa?', m: 'Mi történik, ha csak az egyik kábelvég ér bele a vízbe?', n: 'Mi lesz a bázisárammal, ha csak az egyik kábelvég ér a vízbe?' },
+    q: { k: 'Ha csak az egyik kábelvég ér a vízbe, világít a lámpa?', m: 'Mi történik, ha csak az egyik kábelvég ér bele a vízbe?', n: 'Világít-e a LED, ha csak az egyik kábelvég ér a vízbe?' },
     opts: [['Nem világít', 'off'], ['Világít', 'on'], ['Halványan világít', 'dim']], right: 0,
     after: { k: 'Igen! Az áramnak az egyik kábelen be, a másikon ki kell jutnia. Egy kábel nem elég.', m: 'Az áramnak zárt kör kell: a vízen át az egyik kábelvégtől a másikig. Ha csak az egyik ér bele, a kör nyitva van.', n: 'Nyitott körben nem folyik bázisáram, így mindkét tranzisztor zárva marad.' },
   },
@@ -1088,7 +1088,7 @@ const CHECKS = {
     after: { k: 'Igen! Az ellenállás nem lát, mindig ugyanúgy húzza a kart.', m: 'Az ellenállás mindig ugyanannyira húzza a bázist a − felé, nem függ a fénytől: a lámpa mindig ég.', n: 'Az R4-en kb. 0,23 mA folyik a (−) felé, ebből kb. 0,14 mA-t az R3 ad, a maradék kb. 0,09 mA a bázisból jön; ennek β-szorosa már telíti a Q1-et.' },
   },
   shadow: {
-    q: { k: 'Ha éjszaka lekapcsolod a villanyt a szobában, mit csinál a riasztó?', m: 'Mi történik, ha teljesen besötétedik a szobában?', n: 'Miért nem jó ez a kapcsolás egy sötét szobában?' },
+    q: { k: 'Ha éjszaka lekapcsolod a villanyt a szobában, mit csinál a riasztó?', m: 'Mi történik, ha teljesen besötétedik a szobában?', n: 'Mit csinál ez a riasztó egy teljesen sötét szobában?' },
     opts: [['Folyamatosan szól', 'sound'], ['Csendben marad', 'off'], ['Villogni kezd a LED', 'blink']], right: 0,
     after: { k: 'Igen! A riasztó a sötétet árnyéknak hiszi.', m: 'A riasztó nem tudja megkülönböztetni az árnyékot a sötét szobától: sötétben mindig szól.', n: 'A kapcsolás csak a fény erősségét figyeli, nem a változását. Ezért használnak a valódi fénysorompók egy saját, villogó fényforrást (mint az U24 infravevő a távirányítóval).' },
   },
@@ -1103,12 +1103,12 @@ const CHECKS = {
     after: { k: 'Igen! Áram nélkül elfelejti.', m: 'Az emlékező lámpa csak addig emlékszik, amíg kap áramot. Bekapcsoláskor az a tranzisztor nyer, amelyik egy hajszállal gyorsabb.', n: 'Ez „felejtő” memória: az állapotot csak a két tranzisztor egymást tartó árama őrzi. A számítógép munkamemóriája (RAM) is ilyen, ezért vész el kikapcsoláskor.' },
   },
   and: {
-    q: { k: 'Ha három gomb lenne egymás után, hányat kellene megnyomni?', m: 'Ha egy harmadik gombot is beépítenél ugyanígy, sorban, mikor gyulladna ki a LED?', n: 'Mit valósít meg három, ugyanígy sorba kötött bemenet?' },
+    q: { k: 'Ha három gomb lenne egymás után, hányat kellene megnyomni?', m: 'Ha egy harmadik gombot is beépítenél ugyanígy, sorban, mikor gyulladna ki a LED?', n: 'Hány bemenetnek kell aktívnak lennie, ha három bemenet van ugyanígy sorba kötve?' },
     opts: [['Mind a hármat', 'on'], ['Bármelyiket', 'blink'], ['Kettő is elég', 'same']], right: 0,
     after: { k: 'Igen! Mindegyiknek nyitva kell lennie, hogy átjusson az áram.', m: 'Egymás után kötve minden gombnak zárva kell lennie, különben megszakad a kör.', n: 'Háromszoros ÉS-kaput: a kimenet csak akkor igaz, ha mindhárom bemenet igaz.' },
   },
   or: {
-    q: { k: 'Ha három gomb lenne egymás mellett, hányat kellene megnyomni?', m: 'Ha egy harmadik gombot is párhuzamosan kötnél a kettő mellé, mikor gyulladna ki a LED?', n: 'Mit valósít meg három párhuzamos bemenet?' },
+    q: { k: 'Ha három gomb lenne egymás mellett, hányat kellene megnyomni?', m: 'Ha egy harmadik gombot is párhuzamosan kötnél a kettő mellé, mikor gyulladna ki a LED?', n: 'Hány aktív bemenet elég, ha három bemenet van párhuzamosan kötve?' },
     opts: [['Bármelyik egy elég', 'on'], ['Mind a hármat', 'same'], ['Egyik sem működne', 'off']], right: 0,
     after: { k: 'Igen! Bármelyik gomb kinyit egy utat az áramnak.', m: 'Párhuzamosan mindegyik gomb külön utat ad az áramnak: egy is elég.', n: 'Háromszoros VAGY-kaput: a kimenet igaz, ha legalább az egyik bemenet igaz.' },
   },
@@ -1123,14 +1123,14 @@ const CHECKS = {
     after: { k: 'Igen! Olyan gyorsan villog, hogy a szemed már nem tudja követni.', m: 'Ezerszer kisebb kondenzátorral ezerszer gyorsabban villog: a szemünk ezt folyamatos (kicsit halványabb) fénynek látja. Hangszóróval hangot hallanál!', n: 'A frekvencia kb. ezerszeresére nő (néhány kHz), a szem kb. 50 Hz fölött már nem látja a villogást: mindkét LED kb. félerővel égni látszik.' },
   },
   metronome: {
-    q: { k: 'Ha a két 5,1 kΩ-os ellenállást 10 kΩ-osra cseréled, gyorsabban vagy lassabban kattog?', m: 'Hogyan változik a kattogás, ha a két R3 (5,1 kΩ) helyett R4-et (10 kΩ) teszel be?', n: 'Hogyan függ a metronóm üteme a bázisellenállásoktól?' },
+    q: { k: 'Ha a két 5,1 kΩ-os ellenállást 10 kΩ-osra cseréled, gyorsabban vagy lassabban kattog?', m: 'Hogyan változik a kattogás, ha a két R3 (5,1 kΩ) helyett R4-et (10 kΩ) teszel be?', n: 'Hogyan változik az ütem, ha a bázisellenállások kétszeresére nőnek?' },
     opts: [['Lassabban kattog', 'slow'], ['Gyorsabban kattog', 'blink'], ['Ugyanúgy', 'same']], right: 0,
     after: { k: 'Igen! A nagyobb fék lassabban tölti a kondenzátort.', m: 'A kondenzátor a bázisellenálláson át töltődik. Nagyobb ellenálláson lassabban, ezért ritkábban kattog.', n: 'A félperiódus ≈ 0,69 · R · C, tehát az R kétszerezése kb. kétszer hosszabb ütemet ad.' },
   },
   sound: {
     q: { k: 'Ha a kicsi kondenzátorok helyett nagyokat teszel be, mit hallasz?', m: 'Mi történik, ha a két C2 (0,1 µF) helyett C4-et (100 µF) teszel be?', n: 'Mi lesz a hangból, ha a kapacitás ezerszeresére nő?' },
     opts: [['Hang helyett lassú kattogás', 'slow'], ['Magasabb hang', 'sound'], ['Ugyanaz a hang', 'same']], right: 0,
-    after: { k: 'Igen! Visszakapod a metronómot.', m: 'Nagy kondenzátorral ezerszer lassabb lesz, mint a villogónál: hang helyett külön kattanásokat hallasz.', n: 'Néhány kHz helyett néhány Hz: a hangszóró már nem hangot ad, hanem egyedi kattanásokat (ez a metronóm).' },
+    after: { k: 'Igen! Visszakapod a metronómot.', m: 'Nagy kondenzátorral több százszor lassabb lesz: hang helyett külön kattanásokat hallasz.', n: 'Néhány kHz helyett néhány Hz: a hangszóró már nem hangot ad, hanem egyedi kattanásokat (ez a metronóm).' },
   },
   organ: {
     q: { k: 'Ha nyomva tartod a billentyűt, és közben lassan tekersz, mit hallasz?', m: 'Mi történik, ha a billentyűt nyomva tartod, és közben forgatod a tekerőt?', n: 'Mit hallasz, ha a hang szólása közben folyamatosan változtatod az RV-t?' },
@@ -1145,22 +1145,22 @@ const CHECKS = {
   clap: {
     q: { k: 'Ha a felső ellenállást kisebbre cseréled, mi lesz?', m: 'Mi történik, ha az R4 (10 kΩ) helyett az R3-at (5,1 kΩ) teszed be?', n: 'Hogyan változik a bekapcsolási küszöb, ha a felső ellenállás 5,1 kΩ-ra csökken?' },
     opts: [['Érzékenyebb: halkabb hangra is villan', 'sound'], ['Kevésbé érzékeny', 'dim'], ['Semmi nem változik', 'same']], right: 0,
-    after: { k: 'Igen! Kisebb hang is elég lesz.', m: 'A kisebb felső ellenállás több feszültséget ad a bázisra, ezért a mikrofon kisebb változása is elég a bekapcsoláshoz.', n: 'A küszöb ott van, ahol U_B ≈ 0,6 V: R_X1 ≈ R_felső / 4. 10 kΩ-nál ez kb. 2,5 kΩ, 5,1 kΩ-nál kb. 1,3 kΩ, vagyis sokkal kisebb hangnyomás is elég.' },
+    after: { k: 'Igen! Kisebb hang is elég lesz.', m: 'A kisebb felső ellenállás több feszültséget ad a bázisra, ezért a mikrofon kisebb változása is elég a bekapcsoláshoz.', n: 'A küszöb ott van, ahol a bázis kb. 0,6–0,7 V-ot kap: R_X1 ≈ R_felső / 4 körül. A szimulációban 10 kΩ-nál kb. 3 kΩ, 5,1 kΩ-nál kb. 1,5 kΩ, vagyis sokkal kisebb hangnyomás is elég.' },
   },
   amp: {
-    q: { k: 'Ha csak egy tranzisztor lenne kettő helyett, milyen hangos lenne?', m: 'Ha a két tranzisztor helyett csak egyet használnál, hogyan szólna?', n: 'Hogyan változik az erősítés, ha a Darlington-pár helyett egyetlen tranzisztor marad?' },
+    q: { k: 'Ha csak egy tranzisztor lenne kettő helyett, milyen hangos lenne?', m: 'Ha a két tranzisztor helyett csak egyet használnál, hogyan szólna?', n: 'Hogyan szólna, ha a Darlington-pár helyett egyetlen tranzisztor maradna?' },
     opts: [['Halkabban', 'dim'], ['Hangosabban', 'sound'], ['Ugyanúgy', 'same']], right: 0,
     after: { k: 'Igen! Két nagyító jobban nagyít, mint egy.', m: 'A két tranzisztor egymás után sokkal jobban erősít. Eggyel kisebb az erősítés, ezért halkabb a hang.', n: 'A Darlington-pár áramerősítése kb. β², egy tranzisztoré csak β, így az erősítés jóval kisebb (a visszacsatolás miatt nem pontosan század, de jelentősen).' },
   },
   lightlink: {
-    q: { k: 'Ha a fénykábelt nagyon élesen meghajlítod, mi lesz a hanggal?', m: 'Mi történik, ha az üvegszálat nagyon élesen megtöröd?', n: 'Miért gyengül a jel, ha az üvegszálat élesen meghajlítod?' },
+    q: { k: 'Ha a fénykábelt nagyon élesen meghajlítod, mi lesz a hanggal?', m: 'Mi történik, ha az üvegszálat nagyon élesen megtöröd?', n: 'Mi lesz a hanggal, ha az üvegszálat élesen meghajlítod?' },
     opts: [['Halkabb lesz vagy elhallgat', 'dim'], ['Hangosabb lesz', 'sound'], ['Semmi nem változik', 'same']], right: 0,
     after: { k: 'Igen! Az éles kanyarban a fény kiszökik a kábelből.', m: 'A fény a kábel falán pattogva halad. Éles kanyarnál már nem pattan vissza, hanem kiszökik, ezért kevesebb jut a vevőhöz.', n: 'A teljes visszaverődéshez a fénynek elég lapos szögben kell a falra érkeznie; éles hajlításnál ez megszűnik, és a fény nagy része kilép (a Light kézikönyve is így magyarázza).' },
   },
   u23: {
     q: { k: 'Ha a CTL lábhoz kisebb ellenállást kötsz, hogyan villog?', m: 'Mi történik, ha a CTL-en lévő R5 (100 kΩ) helyére az R4-et (10 kΩ) teszed?', n: 'Hogyan változik a villogás frekvenciája, ha a CTL ellenállása tizedére csökken?' },
     opts: [['Gyorsabban villog', 'blink'], ['Lassabban villog', 'slow'], ['Kialszik', 'off']], right: 0,
-    after: { k: 'Igen! Több áram, gyorsabb villogás.', m: 'Kisebb ellenálláson több áram folyik a CTL-be, és az IC ettől gyorsabban villog, mint a villogód kisebb ellenállással.', n: 'A modellünkben a frekvencia a CTL áramával arányos, így kb. tízszeresére nő, és a villogás már folyamatos fénynek látszik.' },
+    after: { k: 'Igen! Több áram, gyorsabb villogás.', m: 'Kisebb ellenálláson több áram folyik a CTL-be, és az IC ettől gyorsabban villog, mint a villogód kisebb ellenállással.', n: 'A modellünkben a frekvencia a CTL áramával arányos, de a CTL lábon belül is van egy 10 kΩ-os ellenállás: (100 kΩ + 10 kΩ) / (10 kΩ + 10 kΩ) ≈ 5,5, így kb. 5,5 Hz-ről 30 Hz-re nő. Ez gyors, vibráló fény; a szem kb. 50 Hz fölött látná folyamatosnak.' },
   },
   d8: {
     q: { k: 'Ha a színes lámpát fordítva teszed be, mi lesz?', m: 'Mi történik, ha a D8-at fordítva (a + jellel a − felé) kötöd be?', n: 'Mi lesz, ha a D8 polaritását megfordítod?' },
@@ -1183,7 +1183,7 @@ const CHECKS = {
     after: { k: 'Igen! Minden hangnál felvillan, a szünetekben elalszik.', m: 'A hangok alatt az IC kapcsolgat, a szünetekben nem. A LED így a dallam ritmusában villog.', n: 'Hang közben a kimenet hangfrekvencián kapcsol (a szem átlagnak látja), szünetben nyitva van: a LED a dallam ritmusát mutatja.' },
   },
   u32: {
-    q: { k: 'Ha a mérőt kiveszed, és a helyére egy vezetéket teszel, szól tovább a zene?', m: 'Mi változik, ha a mérőműszer helyére egy vezetéket teszel?', n: 'Mennyit változtat a működésen a mérő 50 mA-es állása?' },
+    q: { k: 'Ha a mérőt kiveszed, és a helyére egy vezetéket teszel, szól tovább a zene?', m: 'Mi változik, ha a mérőműszer helyére egy vezetéket teszel?', n: 'Mi változik, ha a mérőt (50 mA-es állásban) egy vezetékre cseréled?' },
     opts: [['Ugyanúgy szól', 'same'], ['Elhallgat', 'off'], ['Hangosabban szól', 'sound']], right: 0,
     after: { k: 'Igen! A mérő csak megmutatja az áramot, nem kell a zenéhez.', m: 'A mérőműszer úgy van kitalálva, hogy szinte ne zavarja az áramot. Nélküle is ugyanúgy szól.', n: 'Áramállásban a mérő belső ellenállása kicsi (néhány ohm) a dallam IC-éhez képest, ezért alig változtat a körön.' },
   },
@@ -1234,11 +1234,11 @@ const CARDS = [
     layout: LAY.bench_bat, sim: { dt: 0.002, scale: 1, meter: { M6: '5V' } }, controls: ['S1', { meter: 'M6', ranges: ['5V'] }], probes: [],
     intro: { k: 'Az elem adja az áramot. Olyan, mint egy kis szivattyú, ami körbe hajtja az áramot. Két vége van: a + és a −.', m: 'Az elemtartóban két ceruzaelem van egymás után, együtt 3 voltot adnak. Az áram a + végéből indul, végigmegy az áramkörön, és a − végébe érkezik vissza.', n: 'A B1 két sorba kötött AA cella (2 × 1,5 V = 3 V). A feszültség a hajtóerő; itt a mérő 5 V-os állásban, az elemmel párhuzamosan méri. Nagy áramnál a belső ellenállás miatt a kapocsfeszültség kicsit csökken.' },
     hint: { k: 'Kapcsold be az S1-et, és nézd a mutatót! A mérő gombja maradjon az 5 V-on.', m: 'Kapcsold be az S1-et: a mérő megmutatja, hány voltot ad az elem. A mérőt csak 5 V-os állásban használd, áramállásban rövidre zárná az elemet!', n: 'Olvasd le a feszültséget. Mennyi lenne két elemtartóval sorba kötve? És párhuzamosan? (A mérő itt csak 5 V-os állásban lehet: áramállásban szinte nincs ellenállása, és rövidre zárná az elemet.)' },
-    why: { k: 'Az elemben különböző anyagok találkoznak, és ettől indul az áram. Ha az anyag elfogy, az elem lemerül.', m: 'Az elemben két különböző anyag van, közöttük vegyi folyamat zajlik. Ez tolja az áramot a + felől a − felé az áramkörön keresztül. Ha lemerül, kisebb lesz a feszültsége.', n: 'Az elektrokémiai cella a kémiai energiát alakítja elektromossá. Sorba kötött cellák feszültsége összeadódik, a párhuzamosaké nem (csak tovább bírják). A My Home dobozban 3 elemes tartó van (B3, 4,5 V).' },
+    why: { k: 'Az elemben különböző anyagok találkoznak, és ettől indul az áram. Ha az anyag elfogy, az elem lemerül.', m: 'Az elemben két különböző anyag van, közöttük vegyi folyamat zajlik. Ez tolja az áramot a + felől a − felé az áramkörön keresztül. Ha lemerül, kisebb lesz a feszültsége.', n: 'Az elektrokémiai cella a kémiai energiát alakítja elektromossá. Sorba kötött cellák feszültsége összeadódik, a párhuzamosaké nem (csak tovább bírják). A My Home dobozban 3 elemes, 4,5 V-os tartó van (B3); ebben az appban a 3 V-os B1-et használjuk.' },
     check: {
-      q: { k: 'Ha két elemtartót kötsz egymás után, többet vagy kevesebbet mutatna a mérő?', m: 'Mit mutatna a mérő két sorba kötött elemtartóval?', n: 'Mekkora két sorba kötött B1 feszültsége?' },
+      q: { k: 'Ha két elemtartót kötsz egymás után, több vagy kevesebb lesz az ereje (a feszültsége)?', m: 'Mekkora feszültséget ad két sorba kötött elemtartó?', n: 'Mekkora feszültséget ad két sorba kötött B1, és mérhető-e az M6 5 V-os állásában?' },
       opts: [['Kétszer annyit (6 V)', 'on'], ['Ugyanannyit (3 V)', 'same'], ['Kevesebbet', 'dim']], right: 0,
-      after: { k: 'Igen! Egymás után a feszültségük összeadódik.', m: 'Sorba kötve a feszültségek összeadódnak: 3 V + 3 V = 6 V. Ezért van a fényorgonánál két elemtartó.', n: 'U = 3 V + 3 V = 6 V. Párhuzamosan 3 V maradna, csak a tárolt energia lenne kétszeres.' },
+      after: { k: 'Igen! Egymás után a feszültségük összeadódik.', m: 'Sorba kötve a feszültségek összeadódnak: 3 V + 3 V = 6 V. Ezért van a fényorgonánál két elemtartó. Ezt a mérő 5 V-os állása már nem tudná megmutatni: túl sok lenne neki.', n: 'U = 3 V + 3 V = 6 V, ez meghaladja az M6 5 V-os méréshatárát. Párhuzamosan 3 V maradna, csak a tárolt energia lenne kétszeres.' },
     },
   },
   {
@@ -1249,7 +1249,7 @@ const CARDS = [
     hint: { k: 'Kapcsold be, és kövesd ujjal a sárga pöttyöket: körbe mennek!', m: 'Kapcsold be az S1-et, és kövesd a pöttyöket az elem + végétől a − végéig. Látod, hogy kör?', n: 'Kapcsold be, és koppints a rács pontjaira: egy vezeték minden pontján ugyanaz a feszültség.' },
     why: { k: 'Az áram csak körben tud menni: ki az elemből, át a lámpán, és vissza az elembe.', m: 'Az áram zárt körben folyik. Ha bárhol megszakad a kör, mindenhol megáll. Ezért fontos, hogy minden pattintás jól üljön.', n: 'Kirchhoff áramtörvénye: egy csomópontba befolyó áramok összege egyenlő a kifolyókéval. Zárt kör nélkül nincs áram.' },
     check: {
-      q: { k: 'Ha egy vezetéket kiveszel a körből, mi lesz a lámpával?', m: 'Mi történik, ha a kör egyik vezetékét kiveszed?', n: 'Mekkora lesz az áram, ha a kör egy helyen megszakad?' },
+      q: { k: 'Ha egy vezetéket kiveszel a körből, mi lesz a lámpával?', m: 'Mi történik, ha a kör egyik vezetékét kiveszed?', n: 'Mi lesz a lámpával, ha a kör egy helyen megszakad?' },
       opts: [['Elalszik', 'off'], ['Halványabb lesz', 'dim'], ['Ugyanúgy ég', 'same']], right: 0,
       after: { k: 'Igen! Megszakad az út, és az áram megáll.', m: 'Ha a kör megszakad, az áram mindenhol megáll, nem csak ott, ahol a lyuk van.', n: 'Nulla: nyitott körben nem folyik áram, a teljes elemfeszültség a szakadás két oldala között jelenik meg.' },
     },
@@ -1281,7 +1281,7 @@ const CARDS = [
     hint: { k: 'Kapcsold be. Aztán próbáld ki fordítva is!', m: 'Kapcsold be, aztán próbáld ki fordítva, a zöld LED-del, és (csak a képernyőn) ellenállás nélkül. Figyeld a figyelmeztetést!', n: 'Hasonlítsd össze a piros és a zöld LED áramát ugyanazzal az ellenállással. Miért kisebb a zöldé?' },
     why: { k: 'A LED olyan, mint egy ajtó, ami csak egy irányba nyílik. Ha fordítva teszed be, zárva marad, és nem világít.', m: 'A LED csak egy irányban vezet: fordítva nem folyik áram. Ellenállás nélkül viszont túl sok áram folyna, és a valódi LED kiégne: ezt jelzi a piros figyelmeztetés.', n: 'A zöld LED nyitófeszültsége nagyobb, ezért ugyanazon az ellenálláson kisebb áram folyik. Ellenállás nélkül csak az elem és a LED belső ellenállása korlátozna: a szimulációban 100 mA fölé menne, a valódi LED kb. 20–30 mA-t bír.' },
     check: {
-      q: { k: 'Ha a LED-et fordítva teszed be, és egymás után kötöd egy izzóval, világít az izzó?', m: 'Egy fordítva bekötött LED után sorban egy izzó van. Világít az izzó?', n: 'Mi lesz egy izzóval, ha vele sorban egy záróirányú LED van?' },
+      q: { k: 'Ha a LED-et fordítva teszed be, és egymás után kötöd egy izzóval, világít az izzó?', m: 'Egy fordítva bekötött LED után sorban egy izzó van. Világít az izzó?', n: 'Világít-e egy izzó, ha vele sorban egy záróirányú LED van?' },
       opts: [['Nem', 'off'], ['Igen', 'on'], ['Csak halványan', 'dim']], right: 0,
       after: { k: 'Igen! A fordított LED az izzó elől is elzárja az utat.', m: 'Egymás után kötve ugyanaz az áram menne át mindkettőn. A fordított LED nem enged át semmit, így az izzó sem kap áramot.', n: 'Soros körben a záróirányú dióda megszakítja az áramot: az izzó sötét marad.' },
     },
@@ -1300,7 +1300,7 @@ const CARDS = [
     hint: { k: 'Kapcsold be, aztán próbáld ki a többi ellenállást. Melyikkel a legfényesebb?', m: 'Cseréld sorban az ellenállásokat, és figyeld a LED fényét és az áramot.', n: 'Számold ki előre az áramot Ohm törvényével, aztán ellenőrizd a kijelzőn.' },
     why: { k: 'Az ellenállás olyan, mint egy szűk cső: kevesebb víz fér át rajta. Nagy ellenálláson kevés áram megy át, és a lámpa halvány.', m: 'Az ellenállás anyaga nehezebben engedi át az áramot, mint egy vezeték. Arra jó, hogy pont annyi áram folyjon, amennyi kell: például ne égjen ki a LED.', n: 'Az ellenálláson eső feszültség U = I · R, a hővé alakuló teljesítmény P = I² · R. Ezért melegszik egy túlterhelt ellenállás.' },
     check: {
-      q: { k: 'Ha két ellenállást kötsz egymás után, fényesebb vagy halványabb lesz a lámpa?', m: 'Mi történik, ha az R1 után még egy 100 Ω-os ellenállást kötsz sorba?', n: 'Mekkora két sorba kötött 100 Ω-os ellenállás eredője, és mi lesz az árammal?' },
+      q: { k: 'Ha két ellenállást kötsz egymás után, fényesebb vagy halványabb lesz a lámpa?', m: 'Mi történik, ha az R1 után még egy 100 Ω-os ellenállást kötsz sorba?', n: 'Mi lesz a LED fényével, ha két 100 Ω-os ellenállás van sorban?' },
       opts: [['Halványabb', 'dim'], ['Fényesebb', 'on'], ['Ugyanolyan', 'same']], right: 0,
       after: { k: 'Igen! Két fék jobban fékez, mint egy.', m: 'Egymás után kötve az ellenállások összeadódnak: nagyobb fék, kevesebb áram.', n: 'R = 100 Ω + 100 Ω = 200 Ω, az áram kb. a felére csökken (kb. 6 mA).' },
     },
@@ -1312,11 +1312,11 @@ const CARDS = [
     variants: [{ id: 'l2', label: 'A nagy izzó (L2, 6 V)', real: 'Cseréld az L1 izzót az L2-re (6 V-os).', apply: swapP('L1', 'L2'), needs: ['L2'] }],
     intro: { k: 'Az izzóban egy vékony drót van. Ha áram folyik rajta, felforrósodik, és világítani kezd.', m: 'Az izzó egy vékony, tekercselt drót egy üvegburában. Az áram felmelegíti, és a forró drót világít. Sok áram kell neki, és nem kell elé ellenállás.', n: 'Az izzószál ellenállása hidegen kicsi, melegen nagyobb (az L1-é üzemi hőmérsékleten kb. 16 Ω). Az L1 3,2 V / 0,2 A-es, az L2 6 V-os: 3 V-on halványabban izzik.' },
     hint: { k: 'Kapcsold be, aztán próbáld ki a nagy izzót is!', m: 'Kapcsold be, és hasonlítsd össze a két izzót: melyik fényesebb 3 V-on?', n: 'Nézd meg az áramokat. Miért kap kevesebbet az L2?' },
-    why: { k: 'Az izzó a melegtől világít, mint a kályha forró része. Ezért meleg is lesz, ne fogd meg sokáig!', m: 'Az izzó az áram nagy részét hővé alakítja, és csak a kis része lesz fény. Ezért cserélték le a LED-ekre, amelyek ugyanannyi fényhez sokkal kevesebb áramot kérnek.', n: 'Az L2-t 6 V-ra tervezték: 3 V-on a teljesítménye (P = U² / R) jóval kisebb a névlegesnél, ezért alig izzik. A LED fényhasznosítása az izzóénak sokszorosa.' },
+    why: { k: 'Az izzó a melegtől világít, mint a kályha forró része. Ezért meleg is lesz, ne fogd meg sokáig!', m: 'Az izzó az elektromos energia nagy részét hővé alakítja, és csak a kis része lesz fény. Ezért cserélték le a LED-ekre, amelyek ugyanannyi fényhez sokkal kevesebb áramot kérnek.', n: 'Az L2-t 6 V-ra tervezték: 3 V-on a teljesítménye (P = U² / R) jóval kisebb a névlegesnél, ezért alig izzik. A LED fényhasznosítása az izzóénak sokszorosa.' },
     check: {
       q: { k: 'Melyik kér több áramot: az izzó vagy a LED?', m: 'Ugyanakkora fényhez melyik kér több áramot: az izzó vagy a LED?', n: 'Ugyanakkora fényhez melyiknek nagyobb a teljesítményfelvétele?' },
       opts: [['Az izzó', 'on'], ['A LED', 'dim'], ['Ugyanannyit', 'same']], right: 0,
-      after: { k: 'Igen! Az izzó sok áramot elhasznál melegítésre.', m: 'Az izzó: az áram nagy része hő lesz belőle. A LED ugyanannyi fényhez sokkal kevesebbet kér.', n: 'Az izzó: hatásfoka néhány százalék, a LED-é ennek sokszorosa (a My Home kézikönyve szerint a LED az izzó áramának kb. ötödével beéri).' },
+      after: { k: 'Igen! Az izzó sok energiát elhasznál melegítésre.', m: 'Az izzó: az energia nagy része hő lesz belőle. A LED ugyanannyi fényhez sokkal kevesebbet kér.', n: 'Az izzó: hatásfoka néhány százalék, a LED-é ennek sokszorosa (a My Home kézikönyve szerint a LED az izzó áramának kb. ötödével beéri).' },
     },
   },
   {
@@ -1328,7 +1328,7 @@ const CARDS = [
     hint: { k: 'Kapcsold be, és nézd a ventilátort! Ne hajolj fölé, amíg forog. Mielőtt megfordítod a motort, kérd meg a szülődet, hogy vegye le a propellert.', m: 'Kapcsold be, figyeld az áramot induláskor és forgás közben. A megfordítás előtt vedd le a propellert: fordítva forogva felfelé tolja magát, és leröppenhet. Ne hajolj a forgó motor fölé.', n: 'Mekkora az áram induláskor, és mekkora, amikor már felpörgött? Miért? (A megfordításhoz vedd le a propellert: fordított irányban felfelé húz, és leröppenhet.)' },
     why: { k: 'A motorban mágnesek lökdösik egymást, és ettől forog. Ha megfordítod az áramot, a lökdösés is megfordul.', m: 'Ha megfordítod a motort, az áram a másik irányba folyik a tekercsekben, a mágneses erő is megfordul, és visszafelé forog. Ugyanez a motor áramot is termel, ha te forgatod (Energia fejezet).', n: 'Forgás közben a motor generátorként is működik: a keltett feszültség szembe dolgozik az elemmel, ezért üresjárásban sokkal kisebb az áram, mint álló helyzetben.' },
     check: {
-      q: { k: 'Ha két elemmel hajtanád, gyorsabban vagy lassabban forogna?', m: 'Mi történne, ha kétszer akkora feszültséggel (két elemtartóval) hajtanád a motort?', n: 'Hogyan függ az üresjárási fordulatszám a tápfeszültségtől?' },
+      q: { k: 'Ha két elemmel hajtanád, gyorsabban vagy lassabban forogna?', m: 'Mi történne, ha kétszer akkora feszültséggel (két elemtartóval) hajtanád a motort?', n: 'Gyorsabban vagy lassabban forog a motor kétszeres tápfeszültségen?' },
       opts: [['Gyorsabban', 'on'], ['Lassabban', 'slow'], ['Visszafelé', 'same']], right: 0,
       after: { k: 'Igen! Több hajtóerő, gyorsabb forgás.', m: 'Nagyobb feszültség nagyobb áramot hajt át, és a motor gyorsabban forog.', n: 'Közel arányosan: a motor addig gyorsul, amíg a keltett ellenfeszültség majdnem eléri a tápfeszültséget.' },
     },
@@ -1341,20 +1341,20 @@ const CARDS = [
     hint: { k: 'Kapcsold be a hangot, nyomd meg a gombot, aztán engedd el!', m: 'Kapcsold be a hangot. Nyomd meg és engedd el a gombot: mikor kattan?', n: 'Mikor kattan: a megnyomáskor, nyomva tartás közben vagy elengedéskor? Mi kellene a folyamatos hanghoz?' },
     why: { k: 'A hangszóró egy kis dob. Ha az áram megrántja, egyet koppan. Ha nagyon gyorsan rángatják, hangot hallasz.', m: 'A membrán csak akkor mozdul, amikor az áram változik. Ha másodpercenként több százszor kapcsolgatják, a sok kattanás hanggá áll össze: így szól a villogóból épített hang és a sziréna.', n: 'A hallható tartomány kb. 20 Hz – 20 kHz. A rezgőköreid (Rezgések fejezet) ilyen frekvencián kapcsolgatják a hangszóró áramát.' },
     check: {
-      q: { k: 'Mi kell ahhoz, hogy a hangszóró ne csak kattanjon, hanem sípoljon?', m: 'Mit kellene csinálni a gombbal, hogy folyamatos hangot halljunk?', n: 'Milyen áram kell a folyamatos hanghoz?' },
+      q: { k: 'Mi kell ahhoz, hogy a hangszóró ne csak kattanjon, hanem sípoljon?', m: 'Mit kellene csinálni a gombbal, hogy folyamatos hangot halljunk?', n: 'Mit kell tenni az árammal, hogy a hangszóró folyamatos hangot adjon?' },
       opts: [['Nagyon gyorsan kapcsolgatni', 'sound'], ['Erősebben megnyomni', 'on'], ['Nyomva tartani', 'same']], right: 0,
       after: { k: 'Igen! Ha nagyon gyorsan be-ki kapcsolod, sípolni fog. Kézzel ilyen gyors nem vagy, ezt egy villogó csinálja.', m: 'Másodpercenként több százszor kellene be- és kikapcsolni. Ezt egy rezgőkör tudja, kézzel nem megy.', n: 'Hangfrekvenciás, változó áram: például egy astabil multivibrátor kimenete néhány száz Hz-en.' },
     },
   },
   {
-    id: 'p_cap', part: 'C5', symbol: 'cap', title: 'Kondenzátor', tag: 'Kis tartály az áramnak',
+    id: 'p_cap', part: 'C5', symbol: 'cap', title: 'Kondenzátor', tag: 'Kis tartály a töltésnek',
     analogy: 'Vödör: gyorsan megtelik töltéssel, aztán kiadja.',
     layout: LAY.capbat, sim: { dt: 0.002, scale: 1, meter: { M6: '5V' } }, controls: ['S2', { meter: 'M6', ranges: ['5V'] }], probes: [{ ids: ['D1'], label: 'A LED árama' }],
     variants: [
       { id: 'one', label: 'Csak egy C5', real: 'Vedd ki az egyik 470 µF-os kondenzátort.', apply: (lay) => lay.filter((p) => p.id !== 'C5b') },
       { id: 'c4', label: 'Két kisebb (C4, 100 µF)', real: 'Cseréld a két C5-öt C4-re (100 µF).', apply: swapP('C5', 'C4'), needs: ['C4'] },
     ],
-    intro: { k: 'A kondenzátor egy kis tartály az áramnak. Gyorsan megtelik, és aztán egy kicsit kiadja.', m: 'A kondenzátor két, egymáshoz nagyon közeli fémlemezből áll. Ha feltöltöd, töltést tárol, és később kiadja. A nagyobbakon + jel van: azokat csak egy irányban szabad bekötni.', n: 'C = Q / U. A Boffin kondenzátorai: C1 0,02 µF, C2 0,1 µF, C3 10 µF, C4 100 µF, C5 470 µF. Az elektrolit kondenzátorok (C3–C5) polarizáltak.' },
+    intro: { k: 'A kondenzátor egy kis tartály, ami elektromosságot tárol. Gyorsan megtelik, és aztán egy kicsit kiadja.', m: 'A kondenzátor két, egymáshoz nagyon közeli fémlemezből áll. Ha feltöltöd, töltést tárol, és később kiadja. A nagyobbakon + jel van: azokat csak egy irányban szabad bekötni.', n: 'C = Q / U. A Boffin kondenzátorai: C1 0,02 µF, C2 0,1 µF, C3 10 µF, C4 100 µF, C5 470 µF. Az elektrolit kondenzátorok (C3–C5) polarizáltak.' },
     hint: { k: 'Nyomd meg a gombot egy kicsit, aztán engedd el, és nézd a lámpát!', m: 'Töltsd fel a gombbal, engedd el, és figyeld a mérőt. Próbáld ki egy kondenzátorral és a kisebbekkel (C4) is.', n: 'Mérd meg, mennyi idő alatt esik a feszültség a felére a különböző kapacitásokkal.' },
     why: { k: 'A kondenzátor olyan, mint egy vödör: a gomb megtölti, aztán a lámpa kiissza belőle. A kisebb vödör hamarabb kiürül.', m: 'Minél nagyobb a kondenzátor, annál több töltés fér bele, és annál tovább tud áramot adni. A villogókban és az időzítőkben ez adja az időt.', n: 'Kisülés ellenálláson át: U(t) = U₀ · e^(−t / RC). Az időállandó a kapacitással arányos: két C4-gyel kb. 4,7-szer gyorsabb, mint két C5-tel.' },
     check: {
@@ -1381,7 +1381,7 @@ const CARDS = [
     analogy: 'Fénytől nyíló csap: minél több fény, annál több áram.',
     layout: LAY.bench_photo, light: 0.85, sim: { dt: 0.001, scale: 1 }, controls: ['S1', 'light'], probes: [{ ids: ['D1'], label: 'Áram (a fénytől függ)' }],
     intro: { k: 'Ez egy kis fekete szem. Fényben átengedi az áramot, sötétben nem.', m: 'A fototranzisztor (Q4) olyan tranzisztor, amit nem áram, hanem fény nyit ki. Minél több fény éri, annál több áramot enged át.', n: 'A fototranzisztor bázisáramát a beeső fény adja, ezt a tranzisztor felerősíti. Sötétben csak nagyon kicsi áram szivárog át rajta.' },
-    hint: { k: 'Kapcsold be, és húzd a fényt! Aztán takard le a szemet.', m: 'Kapcsold be, állítsd a fényt, és figyeld a LED-et és az áramot.', n: 'Hogyan függ az áram a fénytől? Hol éri el azt az áramot, amit egy 100 Ω-os ellenállás adna?' },
+    hint: { k: 'Kapcsold be, és húzd a fényt! Aztán takard le a szemet.', m: 'Kapcsold be, állítsd a fényt, és figyeld a LED-et és az áramot.', n: 'Hogyan függ az áram a fénytől? Teljes fénynél mekkora, és miért halványabb a LED, mint egy 100 Ω-os ellenállással? (A kézikönyv szerint a Q4 erős fényben kb. 1 kΩ-os ellenállásként viselkedik.)' },
     why: { k: 'A szem fényt lát, és ettől kinyit egy kis kaput az áramnak. Sötétben bezárja.', m: 'A fény energiát ad a fototranzisztor belsejének, és ettől vezetni kezd. Így lehet fénnyel áramot vezérelni: ez az éjjeli lámpa és a fénytávíró érzékelője.', n: 'A modellünkben az áram a fény kb. 1,6. hatványával nő. A valódi alkatrész az infravörös fényre is érzékeny, ezért zavarhatja a napfény.' },
     check: {
       q: { k: 'Az éjjeli lámpa sötétben gyullad ki. Mit kellene tenni, hogy inkább világosban gyulladjon ki?', m: 'Az éjjeli lámpában a szem fényben elveszi az áramot a tranzisztortól. Mit cserélnél, hogy világosban gyulladjon ki?', n: 'Hogyan alakítanád át az éjjeli lámpa feszültségosztóját, hogy fényben kapcsoljon be?' },
@@ -1397,7 +1397,7 @@ const CARDS = [
     hint: { k: 'Kapcsold be, és fújj bele! Mi lesz a lámpával?', m: 'Kapcsold be, és nyomd a „Fújj bele” gombot, vagy kapcsold be a tablet mikrofonját.', n: 'Mennyire esik az áram fújás közben? Számold ki, mekkora lett a mikrofon ellenállása.' },
     why: { k: 'Ha belefújsz, a mikrofon jobban fékezi az áramot, és a lámpa halványabb lesz.', m: 'A hang nyomása megváltoztatja a mikrofon ellenállását. Ez a kis változás már jel: a hangosbemondó ezt erősíti fel, a hangra villogó LED pedig kapcsolásra használja.', n: 'I ≈ (3 V − 1,8 V) / (R_mic + 100 Ω): 1 kΩ-nál kb. 1 mA, 10 kΩ-nál kb. 0,1 mA. Önmagában ez gyenge jel, ezért kell utána erősítő (tranzisztor vagy U4).' },
     check: {
-      q: { k: 'Ha a mikrofont egy tranzisztor kapujához kötöd, mire lehet jó?', m: 'Mire használhatod a mikrofon ellenállás-változását, ha egy tranzisztorhoz kötöd?', n: 'Mit nyersz, ha a mikrofon egy tranzisztor bázisát vezérli?' },
+      q: { k: 'Ha a mikrofont egy tranzisztor kapujához kötöd, mire lehet jó?', m: 'Mire használhatod a mikrofon ellenállás-változását, ha egy tranzisztorhoz kötöd?', n: 'Mire használhatod, ha a mikrofon egy tranzisztor bázisát vezérli?' },
       opts: [['Tapsra kapcsoló lámpára', 'on'], ['Semmire', 'off'], ['Elem töltésére', 'same']], right: 0,
       after: { k: 'Igen! Így épült a hangra villogó LED.', m: 'A tranzisztor felerősíti a kicsi változást, így egy taps is fel tudja kapcsolni a lámpát (Hangra villogó LED).', n: 'A mikrofon kis ellenállás-változása a bázis feszültségét mozgatja, a tranzisztor ezt sokszoros kollektoráram-változássá erősíti.' },
     },
@@ -1412,7 +1412,7 @@ const CARDS = [
     hint: { k: 'Kapcsold be, és lassan húzd a csúszkát jobbra! Figyeld a két számot.', m: 'Húzd a csúszkát, és hasonlítsd össze a bázisáramot és a kollektoráramot. Aztán nézd meg a PNP-s változatot is!', n: 'Hol kezd vezetni? Mekkora az erősítés középen, és mi történik a végén (telítés)?' },
     why: { k: 'Az NPN tranzisztort úgy nyitod ki, hogy a kis karját felfelé, a + felé húzod. Akkor a nagy áram is megindul.', m: 'Az NPN emittere a − felé kerül. Ha a bázisát a + felé húzod, egy kicsi áram folyik be rajta, és a tranzisztor kinyit. A legtöbb kísérletben ilyen piros tranzisztor kapcsolta a lámpát.', n: 'Az NPN-ben a fő áram a kollektorból az emitter felé folyik (a rajzjel nyila kifelé mutat). Kapcsolóként a terhelés alá, a (−) oldalra szokás tenni: ez az alsó oldali kapcsoló.' },
     check: {
-      q: { k: 'Ha a csúszkát egészen balra húzod (a − felé), mi lesz a lámpával?', m: 'Mi történik, ha a bázist egészen a − felé húzod?', n: 'Mi lesz a kollektorárammal, ha a bázis feszültsége 0,5 V alá esik?' },
+      q: { k: 'Ha a csúszkát egészen balra húzod (a − felé), mi lesz a lámpával?', m: 'Mi történik, ha a bázist egészen a − felé húzod?', n: 'Mi lesz a LED-del, ha a bázis feszültsége 0,5 V alá esik?' },
       opts: [['Elalszik', 'off'], ['Fényesebb lesz', 'on'], ['Villogni kezd', 'blink']], right: 0,
       after: { k: 'Igen! Lefelé húzva a csap bezárul.', m: 'Ha a bázis nem kap áramot, a tranzisztor zárva van, és a lámpa elalszik.', n: '0,5 V alatt a bázisáram elhanyagolható, így a kollektoráram is (I_C ≈ β · I_B).' },
     },
@@ -1429,7 +1429,7 @@ const CARDS = [
     check: {
       q: { k: 'Melyik tranzisztort tennéd a lámpa fölé, a + oldalra?', m: 'Ha a tranzisztornak a + és a lámpa közé kell kerülnie, melyiket választod?', n: 'Felső oldali kapcsolóhoz (a + és a terhelés közé) melyik típus való?' },
       opts: [['A PNP-t', 'on'], ['Az NPN-t', 'same'], ['Bármelyik ugyanúgy jó', 'blink']], right: 0,
-      after: { k: 'Igen! A PNP a + oldalon, az NPN a − oldalon szeret lenni.', m: 'A PNP emittere a +-ra kerül, ezért ő való a lámpa fölé. Az NPN-é a −-ra, ő a lámpa alá.', n: 'A PNP: az emittere a (+)-on van, a bázisát a (−) felé húzva kapcsol. Egy NPN felső oldalon emitterkövetőként dolgozna, és elvesztene kb. 0,7 V-ot (a motorszabályzó két tranzisztora ezért vesztett kb. 1,3 V-ot).' },
+      after: { k: 'Igen! A PNP a + oldalon, az NPN a − oldalon szeret lenni.', m: 'A PNP emittere a +-ra kerül, ezért ő való a lámpa fölé. Az NPN-é a −-ra, ő a lámpa alá.', n: 'A PNP: az emittere a (+)-on van, a bázisát a (−) felé húzva kapcsol. Egy NPN felső oldalon emitterkövetőként dolgozna, és elvesztene kb. 0,7 V-ot (a motorszabályzó két tranzisztora ezért vesztett kb. 1,4–1,5 V-ot).' },
     },
   },
   {

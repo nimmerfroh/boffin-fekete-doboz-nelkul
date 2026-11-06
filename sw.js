@@ -3,7 +3,7 @@
 // A VERSION-t a build szkript tölti ki az oldal, a manifest, az ikonok és a hangok tartalmából: új kiadásnál a régi tár törlődik.
 // Két csatorna van: az éles (main) a webhely gyökerében, a fejlesztői (dev) a /dev/ alatt. Mindkettő csak a saját
 // tárolóit kezeli, és az éles service worker nem nyúl a /dev/ alatti kérésekhez (annak saját service workere van).
-const VERSION = '0817b6a22871';
+const VERSION = 'c15aae80b9e6';
 const CHANNEL = 'main';
 const PREFIX = 'fdn-' + CHANNEL + '-';
 const CACHE = PREFIX + VERSION;
