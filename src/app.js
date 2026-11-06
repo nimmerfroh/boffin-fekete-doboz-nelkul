@@ -1206,12 +1206,12 @@ function renderPanel() {
     q.opts.forEach(([txt, icon], idx) => {
       const b = el('button', 'opt'); b.append(guessIcon(icon)); b.append(document.createTextNode(txt));
       if (S.guess != null) { if (idx === q.right) b.classList.add('right'); else if (idx === S.guess) b.classList.add('wrong'); }
-      b.onclick = () => { S.guess = idx; renderPanel(); if (S.autoread) speak((idx === q.right ? 'Eltaláltad! ' : 'Nem egészen. ') + q.after[S.age]); };
+      b.onclick = () => { S.guess = idx; renderPanel(); if (S.autoread) speak(feedbackText(idx === q.right, 'Eltaláltad!', q.after[S.age])); };
       opts.append(b);
     });
     body.append(opts);
     if (S.guess != null) {
-      const f = el('div', 'feedback'); f.append(el('b', null, S.guess === q.right ? 'Eltaláltad! ' : 'Nem egészen. '), document.createTextNode(q.after[S.age])); body.append(f);
+      body.append(feedbackEl(S.guess === q.right, 'Eltaláltad!', q.after[S.age]));
       body.append(el('p', 'note', 'Most próbáld ki a valódi áramkörön is, aztán nézd meg itt, mi történik belül.'));
     }
     back('Vissza', () => goStage(1));
@@ -1239,6 +1239,7 @@ function renderPanel() {
     } else {
       body.append(sayBlock(ex.why[S.age], { auto: true }));
       if (ex.inside) body.append(insideCard(ex));
+      if (ex.check) body.append(checkCard(ex));
       if (S.age === 'n') {
         body.append(el('h3', null, 'Mérőműszer'));
         meterBox = el('div', 'meter'); body.append(meterBox);
@@ -1256,6 +1257,29 @@ function renderPanel() {
   panel.append(nav);
 }
 
+// „Ellenőrizd magad!”: egy új helyzetről szóló kérdés a kísérlet végén (megértette-e, nem csak megcsinálta)
+// a visszajelzés: jó válasznál nem kettőzzük az „Igen!”-t, rossz válasznál elhagyjuk az elején álló helyeslést
+const AFFIRM = /^(Igen|Így van|Pontosan|Úgy van)[!,.]\s*/;
+function feedbackText(ok, okWord, after) { return ok ? (AFFIRM.test(after) ? after : okWord + ' ' + after) : 'Nem egészen. ' + after.replace(AFFIRM, ''); }
+function feedbackEl(ok, okWord, after) {
+  const t = feedbackText(ok, okWord, after); const m = /^(\S+(?: \S+)?[!.]) (.*)$/.exec(t);
+  const f = el('div', 'feedback'); f.append(el('b', null, m ? m[1] + ' ' : ''), document.createTextNode(m ? m[2] : t)); return f;
+}
+function checkCard(ex) {
+  const q = ex.check; const d = el('div', 'checkq');
+  d.append(el('h3', null, 'Ellenőrizd magad!'));
+  d.append(sayBlock(q.q[S.age]));
+  const opts = el('div', 'opts');
+  q.opts.forEach(([txt, icon], idx) => {
+    const b = el('button', 'opt'); b.append(guessIcon(icon)); b.append(document.createTextNode(txt));
+    if (S.check != null) { if (idx === q.right) b.classList.add('right'); else if (idx === S.check) b.classList.add('wrong'); }
+    b.onclick = () => { S.check = idx; renderPanel(); if (S.autoread) speak(feedbackText(idx === q.right, 'Igen!', q.after[S.age])); };
+    opts.append(b);
+  });
+  d.append(opts);
+  if (S.check != null) d.append(feedbackEl(S.check === q.right, 'Igen!', q.after[S.age]));
+  return d;
+}
 function insideCard(ex) {
   const d = el('div', 'inside');
   const h = el('div', 'vh'); h.append(el('b', null, ex.inside.title));
@@ -1325,7 +1349,7 @@ function markDone() { S.done[EXPS[S.exp].id] = true; store.set('done', S.done); 
 function selectExp(i) {
   if (S.soundOn) setSound(false);
   if (S.micStream) setMicInput(false); S.micBlow = false; S.micP = 0;
-  S.exp = i; S.step = 0; S.guess = null; S.variants = {}; S.sim = null; S.maxStage = 0; S.audio = null;
+  S.exp = i; S.step = 0; S.guess = null; S.check = null; S.variants = {}; S.sim = null; S.maxStage = 0; S.audio = null;
   S.ctl = initCtl(EXPS[i]); S.vc = 0; S.icOpen = false;
   S.light = EXPS[i].light || 0.85;
   store.set('exp', i);

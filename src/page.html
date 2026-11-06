@@ -206,6 +206,8 @@ svg.board { display: block; width: 100%; height: auto; min-width: 520px; touch-a
 /* figyelmeztetés, ha nincs magyar felolvasóhang */
 .voicewarn { background: color-mix(in srgb, var(--spark) 18%, var(--surface)); border: 1px solid color-mix(in srgb, var(--spark) 50%, var(--line)); border-radius: 14px; padding: 10px 14px; font-size: 15px; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
 .voicewarn b { font-weight: 700; }
+.checkq { border-top: 2px dashed var(--line); margin-top: 6px; padding-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+.checkq h3 { margin: 0; }
 .voicewarn details { flex: 1 1 260px; } .voicewarn summary { cursor: pointer; color: var(--accent); font-weight: 700; }
 /* telefonon tömörebb fejléc: alcím nélkül, a Puki és a Felolvasás csak ikonnal */
 @media (max-width: 600px) { .brand p { display: none; } .brand h1 { font-size: 24px; } .tools .lbl { display: none; } .top { gap: 10px; } }

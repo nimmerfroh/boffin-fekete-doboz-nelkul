@@ -354,3 +354,26 @@ test('U5 rádió: csak a Kossuth 540 kHz-es frekvenciájára hangolva szól, a h
   assert.ok(off.pp < on.pp / 20, 'elhangolva csend: ' + off.pp);
   assert.ok(quiet.pp < on.pp / 3, 'lehalkítva: ' + quiet.pp);
 });
+
+test('minden kísérlet végén van „Ellenőrizd magad!” kérdés, mindhárom korosztálynak', () => {
+  for (const ex of X.EXPS) {
+    const c = ex.check; assert.ok(c, ex.id + ': hiányzik');
+    for (const a of ['k', 'm', 'n']) { assert.ok(c.q[a] && c.q[a].length > 10, ex.id + ' kérdés ' + a); assert.ok(c.after[a] && c.after[a].length > 10, ex.id + ' magyarázat ' + a); }
+    assert.ok(c.opts.length >= 2 && c.right >= 0 && c.right < c.opts.length, ex.id + ' válaszok');
+    for (const [t, icon] of c.opts) assert.ok(t && ['on', 'off', 'dim', 'blink', 'fade', 'sound', 'slow', 'same'].includes(icon), ex.id + ' ikon ' + icon);
+  }
+});
+test('az „Ellenőrizd magad!” állításai a szimulációban is igazak', () => {
+  const sw = (lay, f) => lay.map((p) => f(p) || p);
+  const onAt = (lay, light) => { const s = new E.Sim(lay, { light }); s.switches.S1 = true; run(s, 0.05, 0.002); return s.cur.D1 > 0.002; };
+  // éjjeli lámpa: R5-tel sötétebb fénynél gyullad ki
+  const night5 = sw(L.night, (p) => (p.p === 'R3' ? { ...p, p: 'R5' } : null));
+  assert.ok(onAt(L.night, 0.15) && !onAt(night5, 0.15));
+  // metronóm: R4-gyel lassabb
+  const T3 = period(L.metronome, 'SP', 6, 0.001, 0.01), T4 = period(sw(L.metronome, (p) => (p.p === 'R3' ? { ...p, p: 'R4' } : null)), 'SP', 6, 0.001, 0.01);
+  assert.ok(T4 > 1.6 * T3, `${T3} → ${T4}`);
+  // motor helyett izzó: a tekerő állítja a fényét
+  const lamp = sw(L.motorspeed, (p) => (p.p === 'M1' ? { ...p, p: 'L1' } : null));
+  const lampI = (pv) => { const s = new E.Sim(lamp, { pot: { RV: pv } }); s.switches.S1 = true; run(s, 0.05, 0.002); return s.cur.L1; };
+  assert.ok(lampI(0.02) > 0.06 && lampI(0.3) < lampI(0.02) && lampI(0.8) < 0.005);
+});
