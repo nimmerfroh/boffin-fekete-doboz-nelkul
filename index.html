@@ -68,6 +68,9 @@ body {
 .wrap { max-width: 1280px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
 h1, h2, h3 { font-family: var(--font-display); line-height: 1.1; margin: 0; text-wrap: balance; }
 button { font: inherit; color: inherit; }
+/* tableten, telefonon a hosszú érintés ne jelöljön ki szöveget és ne hozza fel a menüt a gombokon és a rácson */
+button, .ctrl, .seg, #ctrls, #board, .lightctl, .meterctl { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+.ctrl.hold { touch-action: none; }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
 /* fejléc */
@@ -3969,6 +3972,8 @@ function setAge(a) {
 }
 function syncAutoread() { $('#autoread').setAttribute('aria-pressed', String(S.autoread)); store.set('autoread', S.autoread); }
 document.querySelectorAll('[data-age]').forEach((b) => { b.onclick = () => setAge(b.dataset.age); });
+// hosszú érintésre ne jöjjön elő a helyi menü (kijelölés, másolás) a gombokon és a rácson
+document.addEventListener('contextmenu', (e) => { if (e.target.closest && e.target.closest('button, .ctrl, #board')) e.preventDefault(); });
 // Puki gomb: minden nyomásra egy véletlen, valódi pukifelvétel (hangok/puki, forrás: FORRASOK.md).
 // Csak a kiválasztott fájl töltődik le; a service worker megjegyzi, így utána offline is megy.
 // A gomb kiírja a sorszámot, hogy meg lehessen mondani, melyik nem jó.

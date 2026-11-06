@@ -1357,6 +1357,8 @@ function setAge(a) {
 }
 function syncAutoread() { $('#autoread').setAttribute('aria-pressed', String(S.autoread)); store.set('autoread', S.autoread); }
 document.querySelectorAll('[data-age]').forEach((b) => { b.onclick = () => setAge(b.dataset.age); });
+// hosszú érintésre ne jöjjön elő a helyi menü (kijelölés, másolás) a gombokon és a rácson
+document.addEventListener('contextmenu', (e) => { if (e.target.closest && e.target.closest('button, .ctrl, #board')) e.preventDefault(); });
 // Puki gomb: minden nyomásra egy véletlen, valódi pukifelvétel (hangok/puki, forrás: FORRASOK.md).
 // Csak a kiválasztott fájl töltődik le; a service worker megjegyzi, így utána offline is megy.
 // A gomb kiírja a sorszámot, hogy meg lehessen mondani, melyik nem jó.

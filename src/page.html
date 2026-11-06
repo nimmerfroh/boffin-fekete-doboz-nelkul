@@ -68,6 +68,9 @@ body {
 .wrap { max-width: 1280px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
 h1, h2, h3 { font-family: var(--font-display); line-height: 1.1; margin: 0; text-wrap: balance; }
 button { font: inherit; color: inherit; }
+/* tableten, telefonon a hosszú érintés ne jelöljön ki szöveget és ne hozza fel a menüt a gombokon és a rácson */
+button, .ctrl, .seg, #ctrls, #board, .lightctl, .meterctl { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+.ctrl.hold { touch-action: none; }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
 /* fejléc */
