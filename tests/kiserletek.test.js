@@ -377,3 +377,28 @@ test('az „Ellenőrizd magad!” állításai a szimulációban is igazak', () 
   const lampI = (pv) => { const s = new E.Sim(lamp, { pot: { RV: pv } }); s.switches.S1 = true; run(s, 0.05, 0.002); return s.cur.L1; };
   assert.ok(lampI(0.02) > 0.06 && lampI(0.3) < lampI(0.02) && lampI(0.8) < 0.005);
 });
+
+test('alkatrész-album: minden kártya teljes, a mérőpontjai léteznek', () => {
+  const cards = X.EXPS.filter((e) => e.card);
+  assert.equal(cards.length, 16);
+  for (const c of cards) {
+    assert.ok(E.PARTS[c.part] && c.symbol && c.analogy && c.analogy.length > 10, c.id);
+    const lays = [c.layout].concat(c.variants.map((v) => X.applyVariant(v, c.layout)));
+    for (const pr of c.probes || []) assert.ok(lays.some((l) => E.buildNetlist(l).elements.some((e) => pr.ids.includes(e.id))), c.id + ': ' + pr.label);
+  }
+});
+test('NPN és PNP: ugyanaz a csúszka fordított hatású (tükörkép)', () => {
+  for (const bf of [80, 150, 300]) withBeta(bf, () => {
+    const ic = (lay, q, v) => { const s = new E.Sim(lay, { pot: { RV: 1 - v } }); s.switches.S1 = true; run(s, 0.05, 0.002); return Math.abs(s.cur[q].C); };
+    assert.ok(ic(L.bench_npn, 'Q2', 0.9) > 0.008 && ic(L.bench_npn, 'Q2', 0.1) < 1e-4, 'NPN: felfelé nyit');
+    assert.ok(ic(L.bench_pnp, 'Q1', 0.1) > 0.008 && ic(L.bench_pnp, 'Q1', 0.9) < 1e-4, 'PNP: lefelé nyit');
+  });
+});
+test('nappali lámpa (PNP): fényben ég, sötétben nem', () => {
+  for (const bf of [80, 150, 300]) withBeta(bf, () => {
+    for (const [light, lit] of [[0, false], [0.05, false], [0.5, true], [1, true]]) {
+      const s = new E.Sim(L.daylamp, { light }); s.switches.S1 = true; run(s, 0.05, 0.002);
+      assert.equal(s.cur.D1 > 0.005, lit, `β=${bf}, fény ${light}: ${s.cur.D1}`);
+    }
+  });
+});

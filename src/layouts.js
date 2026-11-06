@@ -517,4 +517,67 @@ L.ic_u5 = [
   { p: 'J2', at: 'G4', to: '2:F3', id: 'J2b' },
 ];
 
+// ---- Alkatrész-album: próbapadok ----
+// Tranzisztoros próbapad (NPN): az RV csúszkája az R4-en át adja a bázisáramot, a kollektorkörben LED és R1.
+L.bench_npn = [
+  { p: 'S1', at: 'A9', dir: 'd' },
+  { p: 'B1', at: 'E9', dir: 'd' },
+  { p: 'RV', at: 'G4', dir: 'r' },
+  { p: 'R4', at: 'E5', dir: 'r' },
+  { p: 'Q2', at: 'E8', dir: 'd' },
+  { p: 'D1', at: 'F4', dir: 'u' },
+  { p: 'R1', at: 'D6', dir: 'r' },
+  { p: 'W2', at: 'F4', dir: 'd', id: 'Wp' },
+  { p: 'W3', at: 'C9', dir: 'd', id: 'Ws' },
+  { p: 'W4', at: 'G6', dir: 'r', id: 'Wn' },
+  { p: 'W2', at: 'E5', dir: 'd', id: 'Ww' },
+  { p: 'W2', at: 'E7', dir: 'd', id: 'Wb' },
+  { p: 'W2', at: 'D8', dir: 'd', id: 'Wk' },
+  { p: 'W3', at: 'D4', dir: 'r', id: 'Wx' },
+  { p: 'J1', at: 'G4', to: 'A9', id: 'Jp' },
+];
+// Ugyanez PNP-vel (tükörkép): az emitter a (+)-on, a LED és az R1 a kollektor és a (−) között.
+L.bench_pnp = [
+  { p: 'S1', at: 'A9', dir: 'd' },
+  { p: 'B1', at: 'E9', dir: 'd' },
+  { p: 'RV', at: 'G4', dir: 'r' },
+  { p: 'R4', at: 'D5', dir: 'u' },
+  { p: 'Q1', at: 'A7', dir: 'd' },
+  { p: 'R1', at: 'C6', dir: 'd' },
+  { p: 'D1', at: 'E7', dir: 'd' },
+  { p: 'W3', at: 'A7', dir: 'r', id: 'Wp' },
+  { p: 'W3', at: 'C9', dir: 'd', id: 'Ws' },
+  { p: 'W4', at: 'G6', dir: 'r', id: 'Wn' },
+  { p: 'W3', at: 'D5', dir: 'd', id: 'Ww' },
+  { p: 'W2', at: 'B5', dir: 'r', id: 'Wb' },
+  { p: 'W2', at: 'C6', dir: 'r', id: 'Wk' },
+  { p: 'W2', at: 'E6', dir: 'r', id: 'Wx' },
+  { p: 'J1', at: 'A9', to: 'G4', id: 'Jp' },
+];
+// Nappali lámpa (PNP): fényben a fototranzisztor a (−) felé húzza a bázist, és a PNP bekapcsol.
+L.daylamp = [
+  { p: 'S1', at: 'A9', dir: 'd' },
+  { p: 'B1', at: 'E9', dir: 'd' },
+  { p: 'R3', at: 'A8', dir: 'd' },
+  { p: 'Q4', at: 'E8', dir: 'd' },
+  { p: 'Q1', at: 'A7', dir: 'd' },
+  { p: 'R1', at: 'C6', dir: 'd' },
+  { p: 'D1', at: 'E7', dir: 'd' },
+  { p: 'W3', at: 'A7', dir: 'r', id: 'Wp' },
+  { p: 'W3', at: 'C9', dir: 'd', id: 'Ws' },
+  { p: 'W3', at: 'G7', dir: 'r', id: 'Wn' },
+  { p: 'W3', at: 'C8', dir: 'd', id: 'Wb' },
+  { p: 'W2', at: 'C6', dir: 'r', id: 'Wk' },
+  { p: 'W2', at: 'E6', dir: 'r', id: 'Wx' },
+  { p: 'J1', at: 'C8', to: 'B6', id: 'Jb' },
+];
+// Az első áramkörből cserével kapott próbapadok
+const fromFirst = (f) => L.first.map((p) => f(p) || p);
+L.bench_bat = fromFirst((p) => (p.p === 'R1' ? { ...p, p: 'M6' } : p.p === 'D1' ? { p: 'W3', at: 'D5', dir: 'r', id: 'Wd' } : null));
+L.bench_lamp = fromFirst((p) => (p.p === 'R1' ? { p: 'W3', at: 'D2', dir: 'r', id: 'Wr' } : p.p === 'D1' ? { ...p, p: 'L1' } : null));
+L.bench_motor = fromFirst((p) => (p.p === 'R1' ? { p: 'W3', at: 'D2', dir: 'r', id: 'Wr' } : p.p === 'D1' ? { ...p, p: 'M1' } : null));
+L.bench_spk = fromFirst((p) => (p.p === 'D1' ? { ...p, p: 'SP' } : p.p === 'S1' ? { ...p, p: 'S2' } : null));
+L.bench_photo = fromFirst((p) => (p.p === 'R1' ? { ...p, p: 'Q4' } : null));
+L.bench_mic = fromFirst((p) => (p.p === 'R1' ? { ...p, p: 'X1' } : null));
+
 module.exports = L;

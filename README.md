@@ -26,6 +26,8 @@ A készletek integrált áramkörei (zene-, riasztó-, „űrháborús” IC) fe
 **F) Fény és hang továbbítása:** hangra villogó LED (a tablet mikrofonjával is) · hangosbemondó (két tranzisztoros mikrofon-erősítő) · fénytávíró (két rács, üvegszál)
 **G) A fekete dobozok kinyitása:** U23 stroboszkóp · D8 színes LED · U2 riasztó · U3 űrháború · U1 zene · U32 dallam · U4 erősítő · U22 fényorgona · U24 infravevő · U5 rádió (középhullám, a Kossuth Rádió 540 kHz-en). Az IC-t valódi alkatrészként építjük be, aztán „kinyitjuk”: megmutatjuk, mely saját kísérletek rakják ki a belsejét.
 
+**Alkatrész-album** (a fejléc „Alkatrészek” gombja): 16 alkatrész (elem, vezeték, kapcsoló, LED, ellenállás, izzó, motor, hangszóró, kondenzátor, állítható ellenállás, fototranzisztor, mikrofon, NPN és PNP tranzisztor, mérőműszer, IC) egy-egy kis próbapaddal, magyarázattal, rajzjellel, hasonlattal és kérdéssel; a jó válasz után matrica jár. A PNP tranzisztorhoz külön kísérlet is van: a nappali lámpa (C fejezet).
+
 A további fejezetek tervét lásd: [docs/TERV.md](docs/TERV.md).
 
 Minden kísérlet menete: hozzávalók (melyik dobozból), lépésenkénti építés a valódi A–G × 1–10-es rácson, tippelés, élő szimuláció (látható áram, kapcsolók, alkatrészcsere), magyarázat. A szövegek három szinten (5, 7 és 11 éveseknek) érhetők el, felolvasással.

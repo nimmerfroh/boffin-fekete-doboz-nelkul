@@ -1000,6 +1000,32 @@ const EXPS = [
       n: 'A sávszélesség kb. f/Q: a modellünkben Q ≈ 35, így kb. 15 kHz széles sávban szól az adó. A valódi készleten az antennatekercs induktivitása és a forgókondenzátor tartománya eltérhet; ha a CV teljesen becsavart állásában sem éri el a 540 kHz-et, akkor a Kossuth nem fogható ezzel a kapcsolással. Az, hogy a solti adó éppen sugároz-e, a műsorszórótól függ (karbantartások is vannak).',
     },
   },
+  {
+    id: 'daylamp', chapter: 'C', title: 'Nappali lámpa (PNP)', tag: 'Fényben gyullad ki',
+    layout: LAY.daylamp, sim: { dt: 0.002, scale: 1 }, light: 0.85, controls: ['S1', 'light'],
+    intro: {
+      k: 'Ez az éjjeli lámpa fordítottja: világosban világít, sötétben elalszik. Egy zöld tranzisztor dolgozik benne.',
+      m: 'A zöld PNP tranzisztor (Q1) akkor nyit ki, ha a bázisát a − felé húzzák. Fényben a fototranzisztor (Q4) épp ezt teszi, ezért a LED világosban ég.',
+      n: 'PNP kapcsoló a (+) oldalon: az R3 a bázist a (+) felé húzza (zárva), fényben a Q4 a (−) felé húzza, a bázisáram kifolyik, és a Q1 vezet. Egy átkötő kábel kell hozzá.',
+    },
+    guess: {
+      q: { k: 'Mit csinál a lámpa, ha letakarod a kis fekete szemet?', m: 'Mi történik a LED-del, ha letakarod a Q4-et?', n: 'Mi lesz a kollektorárammal, ha a Q4 nem kap fényt?' },
+      opts: [['Elalszik', 'off'], ['Kigyullad', 'on'], ['Semmi nem változik', 'same']], right: 0,
+      after: { k: 'Igen! Ez a lámpa a fényt szereti.', m: 'Sötétben a Q4 nem vezet, az R3 a bázist a + felé húzza, és a PNP bezár.', n: 'A bázis a (+) közelébe kerül, nincs bázisáram, így a kollektoráram is nulla.' },
+    },
+    variants: [],
+    hint: {
+      k: 'Kapcsold be, és húzd a fényt a hold felé! Vagy takard le a szemet.',
+      m: 'Kapcsold be, és változtasd a fényt. Hasonlítsd össze az Éjjeli lámpával!',
+      n: 'Milyen fényszintnél kapcsol? Hasonlítsd össze az NPN-es éjjeli lámpa kapcsolási pontjával.',
+    },
+    why: {
+      k: 'A zöld tranzisztor fordított csap: akkor nyit ki, ha lefelé húzzák a karját. Fényben a szem lehúzza, és a lámpa világít.',
+      m: 'Az éjjeli lámpában a piros NPN volt, és a szem fényben elvette tőle az áramot. Itt a zöld PNP van, és a szem fényben épp kinyitja. Ugyanazok az alkatrészek, tükrözve: ezért van NPN és PNP is.',
+      n: 'A szimulációban kb. 0,2-es fényszint fölött kapcsol be: ekkor a Q4 árama meghaladja az R3-on folyó kb. 0,14 mA-t (0,7 V / 5,1 kΩ), és a különbség a bázisból folyik ki. PNP (Q1) a Boffin I 300-ban és a Light dobozban is van.',
+    },
+  },
+
 ];
 
 
@@ -1055,6 +1081,11 @@ const CHECKS = {
     q: { k: 'Ha csak az egyik kábelvég ér a vízbe, világít a lámpa?', m: 'Mi történik, ha csak az egyik kábelvég ér bele a vízbe?', n: 'Mi lesz a bázisárammal, ha csak az egyik kábelvég ér a vízbe?' },
     opts: [['Nem világít', 'off'], ['Világít', 'on'], ['Halványan világít', 'dim']], right: 0,
     after: { k: 'Igen! Az áramnak az egyik kábelen be, a másikon ki kell jutnia. Egy kábel nem elég.', m: 'Az áramnak zárt kör kell: a vízen át az egyik kábelvégtől a másikig. Ha csak az egyik ér bele, a kör nyitva van.', n: 'Nyitott körben nem folyik bázisáram, így mindkét tranzisztor zárva marad.' },
+  },
+  daylamp: {
+    q: { k: 'Ha a szem helyére egy ellenállást (R4) teszel, mikor világít a lámpa?', m: 'Mi történik, ha a Q4 helyére az R4-et (10 kΩ) teszed?', n: 'Mi lesz, ha a fototranzisztor helyére egy 10 kΩ-os ellenállás kerül?' },
+    opts: [['Mindig világít, fénytől függetlenül', 'on'], ['Sosem világít', 'off'], ['Csak sötétben világít', 'dim']], right: 0,
+    after: { k: 'Igen! Az ellenállás nem lát, mindig ugyanúgy húzza a kart.', m: 'Az ellenállás mindig ugyanannyira húzza a bázist a − felé, nem függ a fénytől: a lámpa mindig ég.', n: 'Az R4-en kb. 0,23 mA folyik a (−) felé, ebből kb. 0,14 mA-t az R3 ad, a maradék kb. 0,09 mA a bázisból jön; ennek β-szorosa már telíti a Q1-et.' },
   },
   shadow: {
     q: { k: 'Ha éjszaka lekapcsolod a villanyt a szobában, mit csinál a riasztó?', m: 'Mi történik, ha teljesen besötétedik a szobában?', n: 'Miért nem jó ez a kapcsolás egy sötét szobában?' },
@@ -1177,7 +1208,7 @@ const CHECKS = {
     after: { k: 'Igen! Ott most nincs adó, csak sistereg.', m: 'A Kossuth csak egy frekvencián szól. Máshová hangolva csak a zajt hallod. Este külföldi adók is bejöhetnek!', n: 'Kisebb kapacitással nagyobb a rezonanciafrekvencia; ott nappal nincs erős középhullámú adó, csak a légköri és elektromos zaj. Este, a jobb terjedés miatt távoli adók is foghatók.' },
   },
 };
-for (const ex of EXPS) ex.check = CHECKS[ex.id];
+for (const ex of EXPS) if (CHECKS[ex.id]) ex.check = CHECKS[ex.id];
 
 const CHAPTERS = [
   { id: 'A', title: 'Áram és alkatrészek', short: 'Alapok' },
@@ -1188,8 +1219,248 @@ const CHAPTERS = [
   { id: 'F', title: 'Fény és hang továbbítása', short: 'Továbbítás' },
   { id: 'G', title: 'A fekete dobozok kinyitása', short: 'Fekete dobozok' },
 ];
-const ORDER = ['first', 'conduct', 'series', 'dimmer', 'generator', 'capbat', 'motorspeed', 'night', 'touch', 'water', 'shadow', 'delay', 'flipflop', 'and', 'or', 'not', 'flash', 'metronome', 'sound', 'organ', 'siren', 'clap', 'amp', 'lightlink', 'u23', 'd8', 'u2', 'u3', 'u1', 'u32', 'u4', 'u22', 'u24', 'u5'];
+const ORDER = ['first', 'conduct', 'series', 'dimmer', 'generator', 'capbat', 'motorspeed', 'night', 'daylamp', 'touch', 'water', 'shadow', 'delay', 'flipflop', 'and', 'or', 'not', 'flash', 'metronome', 'sound', 'organ', 'siren', 'clap', 'amp', 'lightlink', 'u23', 'd8', 'u2', 'u3', 'u1', 'u32', 'u4', 'u22', 'u24', 'u5'];
 EXPS.sort((x, y) => ORDER.indexOf(x.id) - ORDER.indexOf(y.id));
+
+// ===================== Alkatrész-album: ismerkedés az alkatrészekkel =====================
+// Minden kártya egy kis próbapad (valódi szimulációval), magyarázat három szinten, rajzjel, hasonlat és egy kérdés.
+// A helyes válasz után a kártya „matrica” lesz az albumban.
+// Mezők: intro = Mi ez?, hint = Próbáld ki, why = Hogyan működik?, check = kérdés; variants: egyszerre csak egy lehet bekapcsolva.
+const swapP = (from, to) => (lay) => lay.map((p) => (p.p === from ? { ...p, p: to } : p));
+const CARDS = [
+  {
+    id: 'p_bat', part: 'B1', symbol: 'bat', title: 'Elem', tag: 'Ez hajtja az áramot',
+    analogy: 'Szivattyú: körbe hajtja az áramot a vezetékekben.',
+    layout: LAY.bench_bat, sim: { dt: 0.002, scale: 1, meter: { M6: '5V' } }, controls: ['S1', { meter: 'M6', ranges: ['5V'] }], probes: [],
+    intro: { k: 'Az elem adja az áramot. Olyan, mint egy kis szivattyú, ami körbe hajtja az áramot. Két vége van: a + és a −.', m: 'Az elemtartóban két ceruzaelem van egymás után, együtt 3 voltot adnak. Az áram a + végéből indul, végigmegy az áramkörön, és a − végébe érkezik vissza.', n: 'A B1 két sorba kötött AA cella (2 × 1,5 V = 3 V). A feszültség a hajtóerő; itt a mérő 5 V-os állásban, az elemmel párhuzamosan méri. Nagy áramnál a belső ellenállás miatt a kapocsfeszültség kicsit csökken.' },
+    hint: { k: 'Kapcsold be az S1-et, és nézd a mutatót! A mérő gombja maradjon az 5 V-on.', m: 'Kapcsold be az S1-et: a mérő megmutatja, hány voltot ad az elem. A mérőt csak 5 V-os állásban használd, áramállásban rövidre zárná az elemet!', n: 'Olvasd le a feszültséget. Mennyi lenne két elemtartóval sorba kötve? És párhuzamosan? (A mérő itt csak 5 V-os állásban lehet: áramállásban szinte nincs ellenállása, és rövidre zárná az elemet.)' },
+    why: { k: 'Az elemben különböző anyagok találkoznak, és ettől indul az áram. Ha az anyag elfogy, az elem lemerül.', m: 'Az elemben két különböző anyag van, közöttük vegyi folyamat zajlik. Ez tolja az áramot a + felől a − felé az áramkörön keresztül. Ha lemerül, kisebb lesz a feszültsége.', n: 'Az elektrokémiai cella a kémiai energiát alakítja elektromossá. Sorba kötött cellák feszültsége összeadódik, a párhuzamosaké nem (csak tovább bírják). A My Home dobozban 3 elemes tartó van (B3, 4,5 V).' },
+    check: {
+      q: { k: 'Ha két elemtartót kötsz egymás után, többet vagy kevesebbet mutatna a mérő?', m: 'Mit mutatna a mérő két sorba kötött elemtartóval?', n: 'Mekkora két sorba kötött B1 feszültsége?' },
+      opts: [['Kétszer annyit (6 V)', 'on'], ['Ugyanannyit (3 V)', 'same'], ['Kevesebbet', 'dim']], right: 0,
+      after: { k: 'Igen! Egymás után a feszültségük összeadódik.', m: 'Sorba kötve a feszültségek összeadódnak: 3 V + 3 V = 6 V. Ezért van a fényorgonánál két elemtartó.', n: 'U = 3 V + 3 V = 6 V. Párhuzamosan 3 V maradna, csak a tárolt energia lenne kétszeres.' },
+    },
+  },
+  {
+    id: 'p_wire', part: 'W3', symbol: 'wire', title: 'Vezeték', tag: 'Ezen az úton megy az áram',
+    analogy: 'Cső: ebben folyik az áram.',
+    layout: LAY.first, sim: { dt: 0.001, scale: 1 }, controls: ['S1'], probes: [{ ids: ['D1'], label: 'Áram a körben' }],
+    intro: { k: 'A kék vezetékek az utak, ezeken megy az áram. Ha egy út megszakad, az áram nem jut el a lámpáig.', m: 'A kék vezetékekben fém van, ezen halad az áram. A rajtuk lévő szám (1–7) azt mutatja, hány pattintógomb van rajtuk.', n: 'A vezeték jó közelítéssel nulla ellenállású összeköttetés: a két végén ugyanakkora a feszültség. Ami egy vezetéken van, az egyetlen csomópont.' },
+    hint: { k: 'Kapcsold be, és kövesd ujjal a sárga pöttyöket: körbe mennek!', m: 'Kapcsold be az S1-et, és kövesd a pöttyöket az elem + végétől a − végéig. Látod, hogy kör?', n: 'Kapcsold be, és koppints a rács pontjaira: egy vezeték minden pontján ugyanaz a feszültség.' },
+    why: { k: 'Az áram csak körben tud menni: ki az elemből, át a lámpán, és vissza az elembe.', m: 'Az áram zárt körben folyik. Ha bárhol megszakad a kör, mindenhol megáll. Ezért fontos, hogy minden pattintás jól üljön.', n: 'Kirchhoff áramtörvénye: egy csomópontba befolyó áramok összege egyenlő a kifolyókéval. Zárt kör nélkül nincs áram.' },
+    check: {
+      q: { k: 'Ha egy vezetéket kiveszel a körből, mi lesz a lámpával?', m: 'Mi történik, ha a kör egyik vezetékét kiveszed?', n: 'Mekkora lesz az áram, ha a kör egy helyen megszakad?' },
+      opts: [['Elalszik', 'off'], ['Halványabb lesz', 'dim'], ['Ugyanúgy ég', 'same']], right: 0,
+      after: { k: 'Igen! Megszakad az út, és az áram megáll.', m: 'Ha a kör megszakad, az áram mindenhol megáll, nem csak ott, ahol a lyuk van.', n: 'Nulla: nyitott körben nem folyik áram, a teljes elemfeszültség a szakadás két oldala között jelenik meg.' },
+    },
+  },
+  {
+    id: 'p_sw', part: 'S1', symbol: 'sw', title: 'Kapcsoló és nyomógomb', tag: 'Kinyitja és elzárja az utat',
+    analogy: 'Csap vagy híd: átengedi az áramot, vagy elzárja előle az utat.',
+    layout: LAY.first, sim: { dt: 0.001, scale: 1 }, controls: ['S1', { press: 'S2', label: 'S2 nyomógomb' }], probes: [{ ids: ['D1'], label: 'Áram a körben' }],
+    variants: [{ id: 'press', label: 'Nyomógomb a tolókapcsoló helyett', real: 'Cseréld a tolókapcsolót (S1) a nyomógombra (S2).', apply: swapP('S1', 'S2') }],
+    intro: { k: 'A kapcsolóval be- és kikapcsolod a lámpát. A tolókapcsoló bekapcsolva marad, a nyomógomb csak addig, amíg nyomod.', m: 'A tolókapcsoló (S1) két állású: be vagy ki, és úgy is marad. A nyomógomb (S2) csak addig köt össze, amíg nyomod, mint a csengő gombja.', n: 'Mindkettő egy fémes érintkező, ami zárja vagy bontja a kört. Zárva szinte nulla, nyitva szinte végtelen az ellenállása.' },
+    hint: { k: 'Kapcsold be és ki a kapcsolót. Aztán próbáld ki a nyomógombbal is!', m: 'Kapcsolgasd az S1-et. Aztán cseréld nyomógombra, nyomd meg, majd engedd el.', n: 'Hasonlítsd össze a kettőt: melyik kell egy villanyhoz, és melyik egy csengőhöz?' },
+    why: { k: 'A kapcsoló olyan, mint egy kis híd. Bekapcsolva átengedi az áramot, kikapcsolva felhúzza a hidat.', m: 'A kapcsoló belsejében két fémlemez van. Bekapcsolva összeérnek, és az áram átjut. Kikapcsolva szétválnak, és a kör megszakad.', n: 'A tolókapcsoló bistabil (mindkét állapotában megmarad), a nyomógomb monostabil (rugó viszi vissza). Az emlékező lámpa (flip-flop) elektronikusan csinál két nyomógombból egy tolókapcsolót.' },
+    check: {
+      q: { k: 'Melyik kell egy csengőhöz: a tolókapcsoló vagy a nyomógomb?', m: 'Egy ajtócsengőbe melyiket tennéd?', n: 'Melyik kell egy csengőhöz, és miért?' },
+      opts: [['A nyomógomb', 'sound'], ['A tolókapcsoló', 'on'], ['Mindegy', 'same']], right: 0,
+      after: { k: 'Igen! A csengő csak addig szól, amíg nyomod.', m: 'A nyomógomb: elengedéskor magától kikapcsol, így a csengő nem szól tovább.', n: 'A nyomógomb, mert monostabil: elengedve a rugó bontja a kört.' },
+    },
+  },
+  {
+    id: 'p_led', part: 'D1', symbol: 'led', title: 'LED', tag: 'Egyirányú lámpa',
+    analogy: 'Egyirányú szelep, ami világít, amikor átfolyik rajta az áram.',
+    layout: LAY.first, sim: { dt: 0.001, scale: 1 }, controls: ['S1'], probes: [{ ids: ['D1', 'D2'], label: 'A LED árama' }],
+    variants: [
+      { id: 'flip', label: 'Fordítsd meg a LED-et', real: 'Fordítsd meg a LED-et: a + jele most a másik oldalra kerül.', apply: (lay) => lay.map((p) => (p.p === 'D1' ? { ...p, at: 'D7', dir: 'l' } : p)) },
+      { id: 'green', label: 'Zöld LED', real: 'Cseréld a piros LED-et a zöldre (D2).', apply: swapP('D1', 'D2'), needs: ['D2'] },
+      { id: 'nor', label: 'Ellenállás nélkül (csak a képernyőn!)', real: 'Ezt NE próbáld ki a valódi készleten: a LED tönkremenne. A képernyőn megnézheted, mi történne.', apply: (lay) => lay.map((p) => (p.p === 'R1' ? { p: 'W3', at: 'D2', dir: 'r', id: 'Wr' } : p)) },
+    ],
+    intro: { k: 'A LED egy kis lámpa, ami csak egy irányban engedi át az áramot. A + jelének az elem + oldala felé kell néznie.', m: 'A LED (fénykibocsátó dióda) csak egy irányban vezet, és közben világít. Mindig ellenállás kell elé, különben túl sok áram folyna át rajta, és tönkremenne.', n: 'A LED félvezető dióda: nyitóirányban kb. 1,8 V (piros), illetve 2 V (zöld) fölött vezet, és az áram a feszültséggel meredeken nő. Ezért kell áramkorlátozó ellenállás: I ≈ (U_elem − U_LED) / R.' },
+    hint: { k: 'Kapcsold be. Aztán próbáld ki fordítva is!', m: 'Kapcsold be, aztán próbáld ki fordítva, a zöld LED-del, és (csak a képernyőn) ellenállás nélkül. Figyeld a figyelmeztetést!', n: 'Hasonlítsd össze a piros és a zöld LED áramát ugyanazzal az ellenállással. Miért kisebb a zöldé?' },
+    why: { k: 'A LED olyan, mint egy ajtó, ami csak egy irányba nyílik. Ha fordítva teszed be, zárva marad, és nem világít.', m: 'A LED csak egy irányban vezet: fordítva nem folyik áram. Ellenállás nélkül viszont túl sok áram folyna, és a valódi LED kiégne: ezt jelzi a piros figyelmeztetés.', n: 'A zöld LED nyitófeszültsége nagyobb, ezért ugyanazon az ellenálláson kisebb áram folyik. Ellenállás nélkül csak az elem és a LED belső ellenállása korlátozna: a szimulációban 100 mA fölé menne, a valódi LED kb. 20–30 mA-t bír.' },
+    check: {
+      q: { k: 'Ha a LED-et fordítva teszed be, és egymás után kötöd egy izzóval, világít az izzó?', m: 'Egy fordítva bekötött LED után sorban egy izzó van. Világít az izzó?', n: 'Mi lesz egy izzóval, ha vele sorban egy záróirányú LED van?' },
+      opts: [['Nem', 'off'], ['Igen', 'on'], ['Csak halványan', 'dim']], right: 0,
+      after: { k: 'Igen! A fordított LED az izzó elől is elzárja az utat.', m: 'Egymás után kötve ugyanaz az áram menne át mindkettőn. A fordított LED nem enged át semmit, így az izzó sem kap áramot.', n: 'Soros körben a záróirányú dióda megszakítja az áramot: az izzó sötét marad.' },
+    },
+  },
+  {
+    id: 'p_res', part: 'R1', symbol: 'res', title: 'Ellenállás', tag: 'Fékezi az áramot',
+    analogy: 'Szűk cső: kevesebb víz fér át rajta.',
+    layout: LAY.first, sim: { dt: 0.001, scale: 1 }, controls: ['S1'], probes: [{ ids: ['D1'], label: 'Áram a körben' }],
+    variants: [
+      { id: 'r2', label: 'R2 (1 kΩ)', real: 'Cseréld az R1-et (100 Ω) az R2-re (1 kΩ).', apply: swapP('R1', 'R2'), needs: ['R2'] },
+      { id: 'r3', label: 'R3 (5,1 kΩ)', real: 'Cseréld az R1-et az R3-ra (5,1 kΩ).', apply: swapP('R1', 'R3'), needs: ['R3'] },
+      { id: 'r4', label: 'R4 (10 kΩ)', real: 'Cseréld az R1-et az R4-re (10 kΩ).', apply: swapP('R1', 'R4'), needs: ['R4'] },
+      { id: 'r5', label: 'R5 (100 kΩ)', real: 'Cseréld az R1-et az R5-re (100 kΩ).', apply: swapP('R1', 'R5'), needs: ['R5'] },
+    ],
+    intro: { k: 'Az ellenállás fékezi az áramot. Minél nagyobb, annál kevesebb áram jut a lámpának.', m: 'Az ellenállások különböző erősen fékezik az áramot. Az értéküket ohmban (Ω) mérik: R1 100 Ω, R2 1 kΩ, R3 5,1 kΩ, R4 10 kΩ, R5 100 kΩ. (1 kΩ = 1000 Ω.)', n: 'Ohm törvénye: I = U / R. A LED-del sorban I ≈ (3 V − 1,8 V) / R: 100 Ω-mal kb. 12 mA, 100 kΩ-mal kb. 12 µA.' },
+    hint: { k: 'Kapcsold be, aztán próbáld ki a többi ellenállást. Melyikkel a legfényesebb?', m: 'Cseréld sorban az ellenállásokat, és figyeld a LED fényét és az áramot.', n: 'Számold ki előre az áramot Ohm törvényével, aztán ellenőrizd a kijelzőn.' },
+    why: { k: 'Az ellenállás olyan, mint egy szűk cső: kevesebb víz fér át rajta. Nagy ellenálláson kevés áram megy át, és a lámpa halvány.', m: 'Az ellenállás anyaga nehezebben engedi át az áramot, mint egy vezeték. Arra jó, hogy pont annyi áram folyjon, amennyi kell: például ne égjen ki a LED.', n: 'Az ellenálláson eső feszültség U = I · R, a hővé alakuló teljesítmény P = I² · R. Ezért melegszik egy túlterhelt ellenállás.' },
+    check: {
+      q: { k: 'Ha két ellenállást kötsz egymás után, fényesebb vagy halványabb lesz a lámpa?', m: 'Mi történik, ha az R1 után még egy 100 Ω-os ellenállást kötsz sorba?', n: 'Mekkora két sorba kötött 100 Ω-os ellenállás eredője, és mi lesz az árammal?' },
+      opts: [['Halványabb', 'dim'], ['Fényesebb', 'on'], ['Ugyanolyan', 'same']], right: 0,
+      after: { k: 'Igen! Két fék jobban fékez, mint egy.', m: 'Egymás után kötve az ellenállások összeadódnak: nagyobb fék, kevesebb áram.', n: 'R = 100 Ω + 100 Ω = 200 Ω, az áram kb. a felére csökken (kb. 6 mA).' },
+    },
+  },
+  {
+    id: 'p_lamp', part: 'L1', symbol: 'lamp', title: 'Izzó', tag: 'Forró drót, ami világít',
+    analogy: 'Kályha: a forró drót a melegtől világít.',
+    layout: LAY.bench_lamp, sim: { dt: 0.001, scale: 1 }, controls: ['S1'], probes: [{ ids: ['L1', 'L2'], label: 'Az izzó árama' }],
+    variants: [{ id: 'l2', label: 'A nagy izzó (L2, 6 V)', real: 'Cseréld az L1 izzót az L2-re (6 V-os).', apply: swapP('L1', 'L2'), needs: ['L2'] }],
+    intro: { k: 'Az izzóban egy vékony drót van. Ha áram folyik rajta, felforrósodik, és világítani kezd.', m: 'Az izzó egy vékony, tekercselt drót egy üvegburában. Az áram felmelegíti, és a forró drót világít. Sok áram kell neki, és nem kell elé ellenállás.', n: 'Az izzószál ellenállása hidegen kicsi, melegen nagyobb (az L1-é üzemi hőmérsékleten kb. 16 Ω). Az L1 3,2 V / 0,2 A-es, az L2 6 V-os: 3 V-on halványabban izzik.' },
+    hint: { k: 'Kapcsold be, aztán próbáld ki a nagy izzót is!', m: 'Kapcsold be, és hasonlítsd össze a két izzót: melyik fényesebb 3 V-on?', n: 'Nézd meg az áramokat. Miért kap kevesebbet az L2?' },
+    why: { k: 'Az izzó a melegtől világít, mint a kályha forró része. Ezért meleg is lesz, ne fogd meg sokáig!', m: 'Az izzó az áram nagy részét hővé alakítja, és csak a kis része lesz fény. Ezért cserélték le a LED-ekre, amelyek ugyanannyi fényhez sokkal kevesebb áramot kérnek.', n: 'Az L2-t 6 V-ra tervezték: 3 V-on a teljesítménye (P = U² / R) jóval kisebb a névlegesnél, ezért alig izzik. A LED fényhasznosítása az izzóénak sokszorosa.' },
+    check: {
+      q: { k: 'Melyik kér több áramot: az izzó vagy a LED?', m: 'Ugyanakkora fényhez melyik kér több áramot: az izzó vagy a LED?', n: 'Ugyanakkora fényhez melyiknek nagyobb a teljesítményfelvétele?' },
+      opts: [['Az izzó', 'on'], ['A LED', 'dim'], ['Ugyanannyit', 'same']], right: 0,
+      after: { k: 'Igen! Az izzó sok áramot elhasznál melegítésre.', m: 'Az izzó: az áram nagy része hő lesz belőle. A LED ugyanannyi fényhez sokkal kevesebbet kér.', n: 'Az izzó: hatásfoka néhány százalék, a LED-é ennek sokszorosa (a My Home kézikönyve szerint a LED az izzó áramának kb. ötödével beéri).' },
+    },
+  },
+  {
+    id: 'p_motor', part: 'M1', symbol: 'motor', title: 'Motor', tag: 'Az áramból mozgást csinál',
+    analogy: 'Mágneses forgó: az áram és a mágnes lökdösi egymást, és ettől forog.',
+    layout: LAY.bench_motor, sim: { dt: 0.002, scale: 1 }, controls: ['S1'], probes: [{ ids: ['M1'], label: 'A motor árama' }],
+    variants: [{ id: 'rev', label: 'Fordítsd meg a motort', real: 'Fordítsd meg a motort: a + jele a másik oldalra kerül.', apply: (lay) => lay.map((p) => (p.p === 'M1' ? { ...p, at: 'D7', dir: 'l' } : p)) }],
+    intro: { k: 'A motor az áramtól forog. Ha fordítva kötöd be, visszafelé forog.', m: 'A motorban tekercsek és egy mágnes van. Az áram a tekercsből mágnest csinál, és a két mágnes forgatja a tengelyt.', n: 'Egyenáramú motor: a tekercsek mágneses tere és az állandó mágnes egymásra hat. Induláskor nagy az áram, forgás közben a motor ellenfeszültséget kelt, és az áram lecsökken.' },
+    hint: { k: 'Kapcsold be, és nézd a ventilátort! Aztán fordítsd meg a motort.', m: 'Kapcsold be, figyeld az áramot induláskor és forgás közben. Aztán fordítsd meg.', n: 'Mekkora az áram induláskor, és mekkora, amikor már felpörgött? Miért?' },
+    why: { k: 'A motorban mágnesek lökdösik egymást, és ettől forog. Ha megfordítod az áramot, a lökdösés is megfordul.', m: 'Ha megfordítod a motort, az áram a másik irányba folyik a tekercsekben, a mágneses erő is megfordul, és visszafelé forog. Ugyanez a motor áramot is termel, ha te forgatod (Energia fejezet).', n: 'Forgás közben a motor generátorként is működik: a keltett feszültség szembe dolgozik az elemmel, ezért üresjárásban sokkal kisebb az áram, mint álló helyzetben.' },
+    check: {
+      q: { k: 'Ha két elemmel hajtanád, gyorsabban vagy lassabban forogna?', m: 'Mi történne, ha kétszer akkora feszültséggel (két elemtartóval) hajtanád a motort?', n: 'Hogyan függ az üresjárási fordulatszám a tápfeszültségtől?' },
+      opts: [['Gyorsabban', 'on'], ['Lassabban', 'slow'], ['Visszafelé', 'same']], right: 0,
+      after: { k: 'Igen! Több hajtóerő, gyorsabb forgás.', m: 'Nagyobb feszültség nagyobb áramot hajt át, és a motor gyorsabban forog.', n: 'Közel arányosan: a motor addig gyorsul, amíg a keltett ellenfeszültség majdnem eléri a tápfeszültséget.' },
+    },
+  },
+  {
+    id: 'p_spk', part: 'SP', symbol: 'spk', title: 'Hangszóró', tag: 'Rezgésből hang',
+    analogy: 'Dob: a lemeze rezeg, és ezt halljuk hangként.',
+    layout: LAY.bench_spk, sim: { dt: 0.001, scale: 1 }, controls: [{ press: 'S2', label: 'Nyomógomb (S2)' }, 'sound'], audio: { type: 'clicks', probe: 'SP' }, probes: [{ ids: ['SP'], label: 'A hangszóró árama' }],
+    intro: { k: 'A hangszóró hangot ad. Ha bekapcsolod vagy kikapcsolod az áramot, egyet kattan.', m: 'A hangszóróban egy tekercs és egy mágnes van, a tekercs egy vékony lemezhez (membránhoz) van rögzítve. Az áram megmozdítja a membránt, és a levegő rezgését halljuk hangként.', n: 'Elektrodinamikus hangszóró: a tekercsre ható erő arányos az árammal. Állandó áramnál a membrán nem mozog, csak a változáskor (kattanás). Hangot gyorsan változó, hangfrekvenciás áram ad.' },
+    hint: { k: 'Kapcsold be a hangot, nyomd meg a gombot, aztán engedd el!', m: 'Kapcsold be a hangot. Nyomd meg és engedd el a gombot: mikor kattan?', n: 'Mikor kattan: a megnyomáskor, nyomva tartás közben vagy elengedéskor? Mi kellene a folyamatos hanghoz?' },
+    why: { k: 'A hangszóró egy kis dob. Ha az áram megrántja, egyet koppan. Ha nagyon gyorsan rángatják, hangot hallasz.', m: 'A membrán csak akkor mozdul, amikor az áram változik. Ha másodpercenként több százszor kapcsolgatják, a sok kattanás hanggá áll össze: így szól a villogóból épített hang és a sziréna.', n: 'A hallható tartomány kb. 20 Hz – 20 kHz. A rezgőköreid (Rezgések fejezet) ilyen frekvencián kapcsolgatják a hangszóró áramát.' },
+    check: {
+      q: { k: 'Mi kell ahhoz, hogy a hangszóró ne csak kattanjon, hanem sípoljon?', m: 'Mit kellene csinálni a gombbal, hogy folyamatos hangot halljunk?', n: 'Milyen áram kell a folyamatos hanghoz?' },
+      opts: [['Nagyon gyorsan kapcsolgatni', 'sound'], ['Erősebben megnyomni', 'on'], ['Nyomva tartani', 'same']], right: 0,
+      after: { k: 'Igen! Ha nagyon gyorsan be-ki kapcsolod, sípolni fog. Kézzel ilyen gyors nem vagy, ezt egy villogó csinálja.', m: 'Másodpercenként több százszor kellene be- és kikapcsolni. Ezt egy rezgőkör tudja, kézzel nem megy.', n: 'Hangfrekvenciás, változó áram: például egy astabil multivibrátor kimenete néhány száz Hz-en.' },
+    },
+  },
+  {
+    id: 'p_cap', part: 'C5', symbol: 'cap', title: 'Kondenzátor', tag: 'Kis tartály az áramnak',
+    analogy: 'Vödör: gyorsan megtelik töltéssel, aztán kiadja.',
+    layout: LAY.capbat, sim: { dt: 0.002, scale: 1, meter: { M6: '5V' } }, controls: ['S2', { meter: 'M6', ranges: ['5V'] }], probes: [{ ids: ['D1'], label: 'A LED árama' }],
+    variants: [
+      { id: 'one', label: 'Csak egy C5', real: 'Vedd ki az egyik 470 µF-os kondenzátort.', apply: (lay) => lay.filter((p) => p.id !== 'C5b') },
+      { id: 'c4', label: 'Két kisebb (C4, 100 µF)', real: 'Cseréld a két C5-öt C4-re (100 µF).', apply: swapP('C5', 'C4'), needs: ['C4'] },
+    ],
+    intro: { k: 'A kondenzátor egy kis tartály az áramnak. Gyorsan megtelik, és aztán egy kicsit kiadja.', m: 'A kondenzátor két, egymáshoz nagyon közeli fémlemezből áll. Ha feltöltöd, töltést tárol, és később kiadja. A nagyobbakon + jel van: azokat csak egy irányban szabad bekötni.', n: 'C = Q / U. A Boffin kondenzátorai: C1 0,02 µF, C2 0,1 µF, C3 10 µF, C4 100 µF, C5 470 µF. Az elektrolit kondenzátorok (C3–C5) polarizáltak.' },
+    hint: { k: 'Nyomd meg a gombot egy kicsit, aztán engedd el, és nézd a lámpát!', m: 'Töltsd fel a gombbal, engedd el, és figyeld a mérőt. Próbáld ki egy kondenzátorral és a kisebbekkel (C4) is.', n: 'Mérd meg, mennyi idő alatt esik a feszültség a felére a különböző kapacitásokkal.' },
+    why: { k: 'A kondenzátor olyan, mint egy vödör: a gomb megtölti, aztán a lámpa kiissza belőle. A kisebb vödör hamarabb kiürül.', m: 'Minél nagyobb a kondenzátor, annál több töltés fér bele, és annál tovább tud áramot adni. A villogókban és az időzítőkben ez adja az időt.', n: 'Kisülés ellenálláson át: U(t) = U₀ · e^(−t / RC). Az időállandó a kapacitással arányos: két C4-gyel kb. 4,7-szer gyorsabb, mint két C5-tel.' },
+    check: {
+      q: { k: 'Ha egy pici kondenzátorral (C2) próbálnád, meddig világítana a lámpa?', m: 'Mi lenne, ha a nagy kondenzátorok helyett a pici C2-t (0,1 µF) használnád?', n: 'Mennyi ideig tartana a kisülés 0,1 µF-tal?' },
+      opts: [['Csak egy villanásnyi ideig', 'fade'], ['Tovább', 'slow'], ['Ugyanannyi ideig', 'same']], right: 0,
+      after: { k: 'Igen! A pici vödör egy szempillantás alatt kiürül.', m: 'A C2 kb. tízezerszer kisebb, mint a két C5 együtt: annyi töltés sem fér bele, hogy lássuk a lámpát.', n: 'Kb. tízezerszer rövidebb időállandó: ezredmásodpercek alatt kisül, a LED legfeljebb egy alig látható villanást ad.' },
+    },
+  },
+  {
+    id: 'p_pot', part: 'RV', symbol: 'pot', title: 'Állítható ellenállás', tag: 'Csúszkával állítható fék',
+    analogy: 'Csúszka egy ellenálláscsíkon: két ellenállás egyben.',
+    layout: LAY.dimmer, sim: { dt: 0.002, scale: 1, pot: { RV: 0.5 }, meter: { M6: '50mA' } }, controls: ['S1', { pot: 'RV', label: 'Csúszka (RV)', invert: true }, { meter: 'M6' }], probes: [{ ids: ['D1'], label: 'A LED árama' }],
+    intro: { k: 'Ez egy állítható fék. A karjával állítod, mennyire fékezze az áramot.', m: 'Az RV-ben egy 50 kΩ-os ellenálláscsík van, és egy csúszka, ami végigmegy rajta. Három lába van: a csík két vége és a csúszka.', n: 'Potenciométer: a csúszka a csíkot két részre osztja (R_a + R_b = 50 kΩ). Két lábbal bekötve változtatható ellenállás, hárommal feszültségosztó.' },
+    hint: { k: 'Kapcsold be, és húzd a csúszkát ide-oda!', m: 'Kapcsold be, húzd a csúszkát, és figyeld a LED fényét és a mérőt.', n: 'Hol áll a csúszka, amikor a LED épp kialszik? Mekkora ott az ellenállás?' },
+    why: { k: 'Ha a csúszkát elhúzod, hosszabb vagy rövidebb csíkon kell átmennie az áramnak. Hosszabb csík, nagyobb fék, halványabb lámpa.', m: 'Itt a csík egyik vége és a csúszka van bekötve: a csúszka helye szabja meg, mekkora darabon fut át az áram. A hangerőszabályzók és a régi rádiók tekerőgombjai is ilyenek.', n: 'Itt változtatható ellenállásként (két láb) dolgozik. A rádiónál és a motorszabályzónál feszültségosztóként (mindhárom láb): ott a csúszkán a két végpont közötti, tetszőleges feszültség jelenik meg.' },
+    check: {
+      q: { k: 'Melyik két lába között van mindig ugyanakkora ellenállás, akárhogy húzod a csúszkát?', m: 'Melyik két láb között nem változik az ellenállás, ha mozgatod a csúszkát?', n: 'Melyik két láb között állandó az 50 kΩ?' },
+      opts: [['A két szélső láb között', 'same'], ['Az egyik szélső és a csúszka között', 'dim'], ['Sehol', 'off']], right: 0,
+      after: { k: 'Igen! A két vég között mindig az egész csík van.', m: 'A két szélső láb a csík két vége: köztük mindig a teljes, 50 kΩ-os csík van. A csúszkával csak azt állítod, hol osztod ketté.', n: 'A két szélső láb között R_a + R_b = 50 kΩ állandó; csak az arányuk változik.' },
+    },
+  },
+  {
+    id: 'p_photo', part: 'Q4', symbol: 'photo', title: 'Fototranzisztor', tag: 'A fény nyitja ki',
+    analogy: 'Fénytől nyíló csap: minél több fény, annál több áram.',
+    layout: LAY.bench_photo, light: 0.85, sim: { dt: 0.001, scale: 1 }, controls: ['S1', 'light'], probes: [{ ids: ['D1'], label: 'Áram (a fénytől függ)' }],
+    intro: { k: 'Ez egy kis fekete szem. Fényben átengedi az áramot, sötétben nem.', m: 'A fototranzisztor (Q4) olyan tranzisztor, amit nem áram, hanem fény nyit ki. Minél több fény éri, annál több áramot enged át.', n: 'A fototranzisztor bázisáramát a beeső fény adja, ezt a tranzisztor felerősíti. Sötétben csak nagyon kicsi áram szivárog át rajta.' },
+    hint: { k: 'Kapcsold be, és húzd a fényt! Aztán takard le a szemet.', m: 'Kapcsold be, állítsd a fényt, és figyeld a LED-et és az áramot.', n: 'Hogyan függ az áram a fénytől? Hol éri el azt az áramot, amit egy 100 Ω-os ellenállás adna?' },
+    why: { k: 'A szem fényt lát, és ettől kinyit egy kis kaput az áramnak. Sötétben bezárja.', m: 'A fény energiát ad a fototranzisztor belsejének, és ettől vezetni kezd. Így lehet fénnyel áramot vezérelni: ez az éjjeli lámpa és a fénytávíró érzékelője.', n: 'A modellünkben az áram a fény kb. 1,6. hatványával nő. A valódi alkatrész az infravörös fényre is érzékeny, ezért zavarhatja a napfény.' },
+    check: {
+      q: { k: 'Az éjjeli lámpa sötétben gyullad ki. Mit kellene tenni, hogy inkább világosban gyulladjon ki?', m: 'Az éjjeli lámpában a szem fényben elveszi az áramot a tranzisztortól. Mit cserélnél, hogy világosban gyulladjon ki?', n: 'Hogyan alakítanád át az éjjeli lámpa feszültségosztóját, hogy fényben kapcsoljon be?' },
+      opts: [['Felcserélném a szemet és az ellenállást', 'on'], ['Erősebb elemet tennék bele', 'same'], ['Ez nem lehetséges', 'off']], right: 0,
+      after: { k: 'Igen! Akkor a szem nem elveszi, hanem odaadja az áramot a kapunak.', m: 'Ha a szem kerül felülre, fényben áramot ad a tranzisztor bázisának, és a lámpa világosban gyullad ki. A Nappali lámpa kísérlet ugyanezt PNP tranzisztorral oldja meg.', n: 'Felcserélve a feszültségosztó fordítva működik: fényben a bázis feszültsége nő. (A Nappali lámpa ugyanezt PNP tranzisztorral éri el.)' },
+    },
+  },
+  {
+    id: 'p_mic', part: 'X1', symbol: 'mic', title: 'Mikrofon', tag: 'A hangtól változik',
+    analogy: 'Összenyomható szivacs: a hang nyomása változtatja, mennyi áramot enged át.',
+    layout: LAY.bench_mic, sim: { dt: 0.002, scale: 1 }, controls: ['S1', { mic: 'X1' }], probes: [{ ids: ['D1'], label: 'Áram a körben' }],
+    intro: { k: 'A mikrofon érzi a hangot. Ha belefújsz, megváltozik, mennyi áramot enged át.', m: 'A mikrofon (X1) olyan ellenállás, ami a levegő nyomására változik: csendben kb. 1 kΩ, erős fújásra kb. 10 kΩ.', n: 'A modellünkben a hangnyomás 1 és 10 kΩ között változtatja az ellenállást. Itt a LED-del sorban: nagyobb ellenállás, kisebb áram.' },
+    hint: { k: 'Kapcsold be, és fújj bele! Mi lesz a lámpával?', m: 'Kapcsold be, és nyomd a „Fújj bele” gombot, vagy kapcsold be a tablet mikrofonját.', n: 'Mennyire esik az áram fújás közben? Számold ki, mekkora lett a mikrofon ellenállása.' },
+    why: { k: 'Ha belefújsz, a mikrofon jobban fékezi az áramot, és a lámpa halványabb lesz.', m: 'A hang nyomása megváltoztatja a mikrofon ellenállását. Ez a kis változás már jel: a hangosbemondó ezt erősíti fel, a hangra villogó LED pedig kapcsolásra használja.', n: 'I ≈ (3 V − 1,8 V) / (R_mic + 100 Ω): 1 kΩ-nál kb. 1 mA, 10 kΩ-nál kb. 0,1 mA. Önmagában ez gyenge jel, ezért kell utána erősítő (tranzisztor vagy U4).' },
+    check: {
+      q: { k: 'Ha a mikrofont egy tranzisztor kapujához kötöd, mire lehet jó?', m: 'Mire használhatod a mikrofon ellenállás-változását, ha egy tranzisztorhoz kötöd?', n: 'Mit nyersz, ha a mikrofon egy tranzisztor bázisát vezérli?' },
+      opts: [['Tapsra kapcsoló lámpára', 'on'], ['Semmire', 'off'], ['Elem töltésére', 'same']], right: 0,
+      after: { k: 'Igen! Így épült a hangra villogó LED.', m: 'A tranzisztor felerősíti a kicsi változást, így egy taps is fel tudja kapcsolni a lámpát (Hangra villogó LED).', n: 'A mikrofon kis ellenállás-változása a bázis feszültségét mozgatja, a tranzisztor ezt sokszoros kollektoráram-változássá erősíti.' },
+    },
+  },
+  {
+    id: 'p_npn', part: 'Q2', symbol: 'npn', title: 'NPN tranzisztor', tag: 'Kicsi áram nyit ki egy nagyot',
+    analogy: 'Csap egy kis karral: a karját felfelé (a + felé) húzva nyílik.',
+    layout: LAY.bench_npn, sim: { dt: 0.002, scale: 1, pot: { RV: 0.95 } }, controls: ['S1', { pot: 'RV', label: 'Bázis (RV)', invert: true }],
+    probes: [{ ids: ['Q2', 'Q1'], term: 'B', label: 'Bázisáram (kicsi)' }, { ids: ['Q2', 'Q1'], term: 'C', label: 'Kollektoráram (nagy)' }, { ids: ['Q2', 'Q1'], ratio: true, label: 'Hányszoros?' }],
+    variants: [{ id: 'pnp', label: 'Ugyanez PNP-vel', real: 'A PNP-s változat: a zöld Q1 tranzisztor, az emittere a + felé kerül.', layout: 'bench_pnp' }],
+    intro: { k: 'A tranzisztor egy kis csap. Egy egészen kicsi áram a középső lábán kinyit egy nagy áramot a másik kettő között.', m: 'A tranzisztornak három lába van: bázis (B), kollektor (C) és emitter (E). A bázisba folyó kicsi áram kb. 150-szer nagyobb áramot enged át a kollektor és az emitter között.', n: 'NPN bipoláris tranzisztor: I_C ≈ β · I_B (itt β ≈ 150), amíg a kollektorkör engedi; utána telítésbe megy, és kapcsolóként dolgozik. Bekapcsolásához a bázist kb. 0,6–0,7 V-tal az emitter fölé kell vinni.' },
+    hint: { k: 'Kapcsold be, és lassan húzd a csúszkát jobbra! Figyeld a két számot.', m: 'Húzd a csúszkát, és hasonlítsd össze a bázisáramot és a kollektoráramot. Aztán nézd meg a PNP-s változatot is!', n: 'Hol kezd vezetni? Mekkora az erősítés középen, és mi történik a végén (telítés)?' },
+    why: { k: 'Az NPN tranzisztort úgy nyitod ki, hogy a kis karját felfelé, a + felé húzod. Akkor a nagy áram is megindul.', m: 'Az NPN emittere a − felé kerül. Ha a bázisát a + felé húzod, egy kicsi áram folyik be rajta, és a tranzisztor kinyit. A legtöbb kísérletben ilyen piros tranzisztor kapcsolta a lámpát.', n: 'Az NPN-ben a fő áram a kollektorból az emitter felé folyik (a rajzjel nyila kifelé mutat). Kapcsolóként a terhelés alá, a (−) oldalra szokás tenni: ez az alsó oldali kapcsoló.' },
+    check: {
+      q: { k: 'Ha a csúszkát egészen balra húzod (a − felé), mi lesz a lámpával?', m: 'Mi történik, ha a bázist egészen a − felé húzod?', n: 'Mi lesz a kollektorárammal, ha a bázis feszültsége 0,5 V alá esik?' },
+      opts: [['Elalszik', 'off'], ['Fényesebb lesz', 'on'], ['Villogni kezd', 'blink']], right: 0,
+      after: { k: 'Igen! Lefelé húzva a csap bezárul.', m: 'Ha a bázis nem kap áramot, a tranzisztor zárva van, és a lámpa elalszik.', n: '0,5 V alatt a bázisáram elhanyagolható, így a kollektoráram is (I_C ≈ β · I_B).' },
+    },
+  },
+  {
+    id: 'p_pnp', part: 'Q1', symbol: 'pnp', title: 'PNP tranzisztor', tag: 'Az NPN tükörképe',
+    analogy: 'Fordított csap: a karját lefelé (a − felé) húzva nyílik.',
+    layout: LAY.bench_pnp, sim: { dt: 0.002, scale: 1, pot: { RV: 0.05 } }, controls: ['S1', { pot: 'RV', label: 'Bázis (RV)', invert: true }],
+    probes: [{ ids: ['Q1', 'Q2'], term: 'B', label: 'Bázisáram (kicsi)' }, { ids: ['Q1', 'Q2'], term: 'C', label: 'Kollektoráram (nagy)' }, { ids: ['Q1', 'Q2'], ratio: true, label: 'Hányszoros?' }],
+    variants: [{ id: 'npn', label: 'Ugyanez NPN-nel', real: 'Az NPN-es változat: a piros Q2 tranzisztor, az emittere a − felé kerül.', layout: 'bench_npn' }],
+    intro: { k: 'Ez is egy kis csap, csak fordítva működik: akkor nyit ki, ha a karját lefelé, a − felé húzod.', m: 'A PNP tranzisztor (Q1, zöld) az NPN tükörképe: az emittere a + felé kerül, és akkor nyit ki, ha a bázisából áram folyik ki a − felé.', n: 'PNP: I_C ≈ β · I_B itt is igaz, de minden áram és feszültség iránya fordított. Akkor vezet, ha a bázis kb. 0,6–0,7 V-tal az emitter (a +) alatt van.' },
+    hint: { k: 'Húzd a csúszkát, és figyeld: most melyik irányba gyullad ki a lámpa?', m: 'Húzd a csúszkát mindkét irányba. Hasonlítsd össze az NPN-es változattal: ugyanaz a csúszka, fordított hatás.', n: 'Hasonlítsd össze a két változat számait ugyanannál a csúszkaállásnál.' },
+    why: { k: 'A PNP az NPN fordítottja. Az NPN-t felfelé húzva nyitod ki, a PNP-t lefelé.', m: 'A PNP-t a lámpa fölé, a + oldalra szokás tenni, az NPN-t a lámpa alá, a − oldalra. Ugyanazt tudják, csak egymás tükörképei. A Nappali lámpa kísérletben PNP dolgozik.', n: 'A PNP rajzjelében a nyíl befelé mutat (az emitterbe folyik be az áram). Kapcsolóként felső oldali kapcsoló a (+) és a terhelés között. NPN és PNP párokból épülnek például az erősítők kimeneti fokozatai.' },
+    check: {
+      q: { k: 'Melyik tranzisztort tennéd a lámpa fölé, a + oldalra?', m: 'Ha a tranzisztornak a + és a lámpa közé kell kerülnie, melyiket választod?', n: 'Felső oldali kapcsolóhoz (a + és a terhelés közé) melyik típus való?' },
+      opts: [['A PNP-t', 'on'], ['Az NPN-t', 'same'], ['Bármelyik ugyanúgy jó', 'blink']], right: 0,
+      after: { k: 'Igen! A PNP a + oldalon, az NPN a − oldalon szeret lenni.', m: 'A PNP emittere a +-ra kerül, ezért ő való a lámpa fölé. Az NPN-é a −-ra, ő a lámpa alá.', n: 'A PNP: az emittere a (+)-on van, a bázisát a (−) felé húzva kapcsol. Egy NPN felső oldalon emitterkövetőként dolgozna, és elvesztene kb. 0,7 V-ot (a motorszabályzó két tranzisztora ezért vesztett kb. 1,3 V-ot).' },
+    },
+  },
+  {
+    id: 'p_meter', part: 'M6', symbol: 'meter', title: 'Mérőműszer', tag: 'Megmutatja, mennyi áram folyik',
+    analogy: 'Vízóra: megmutatja, mennyi víz folyik át rajta.',
+    layout: LAY.dimmer, sim: { dt: 0.002, scale: 1, pot: { RV: 0.3 }, meter: { M6: '50mA' } }, controls: ['S1', { pot: 'RV', label: 'Csúszka (RV)', invert: true }, { meter: 'M6' }], probes: [],
+    intro: { k: 'A mérő megmutatja, mennyi áram folyik. Minél jobban kitér a mutató, annál több.', m: 'Az M6 mérőműszer a My Home dobozban van. Három állása van: 5 V (feszültség), 0,5 mA és 50 mA (áram). Áramot sorosan, a kör részeként mér.', n: 'Árammérőként kicsi a belső ellenállása (50 mA-es állásban kb. 2 Ω), sorosan kell bekötni. Feszültségmérőként nagy (5 V-os állásban 10 kΩ), a mért alkatrésszel párhuzamosan kell bekötni.' },
+    hint: { k: 'Kapcsold be, és húzd a csúszkát: figyeld a mutatót!', m: 'Próbáld ki mindhárom állást. Melyikben mutat értelmes számot?', n: 'Mi történik, ha sorosan bekötve 5 V-os állásba kapcsolod? És ha 0,5 mA-esbe?' },
+    why: { k: 'A mérő olyan, mint egy vízóra: az áram átfolyik rajta, és közben meglöki a mutatót.', m: 'A mérőt jó állásba kell kapcsolni. Ha túl kicsi a méréshatár, a mutató kiakad. Ha feszültséget mérsz vele, a mért alkatrész mellé kell kötni, nem a körbe.', n: 'Sorosan, 5 V-os állásban a 10 kΩ-os belső ellenállás szinte elzárja a kört. Áramállásban viszont párhuzamosan kötve rövidre zárná azt, amivel párhuzamos: ezért figyelmeztet a kondenzátoros kísérlet.' },
+    check: {
+      q: { k: 'Ha a mérőt 50 mA-es állásban egyenesen az elemre kötnéd, mi történne?', m: 'Mi lenne, ha a mérőt áramállásban (50 mA) egyenesen az elem két végére kötnéd?', n: 'Mekkora áram folyna, ha az 50 mA-es állású mérőt közvetlenül a 3 V-os elemre kötnéd?' },
+      opts: [['Rövidzár: nagyon nagy áram folyna', 'on'], ['A mérő 3 V-ot mutatna', 'same'], ['Nem folyna áram', 'off']], right: 0,
+      after: { k: 'Igen! Ilyet sose csinálj: a mérő szinte nem fékezi az áramot, és tönkremenne.', m: 'Áramállásban a mérőnek szinte nincs ellenállása, ezért rövidre zárná az elemet. A mérő és az elem is tönkremehet.', n: 'I ≈ 3 V / (2 Ω + 0,4 Ω) ≈ 1,2 A: a végkitérés huszonnégyszerese. Feszültséget mindig feszültségállásban mérj.' },
+    },
+  },
+  {
+    id: 'p_ic', part: 'U23', symbol: 'ic', title: 'IC (integrált áramkör)', tag: 'Sok alkatrész egy tokban',
+    analogy: 'Fekete doboz: sok parányi alkatrész egy kis tokba zárva.',
+    layout: LAY.ic_u23, sim: { dt: 0.001, scale: 1 }, controls: ['S1'], probes: [{ ids: ['D1'], label: 'A LED árama' }],
+    intro: { k: 'Az IC egy kis doboz, amibe sok-sok parányi alkatrészt zártak. Kívülről nem látod, mi van benne.', m: 'Az IC (integrált áramkör) egy apró szilíciumlapka, rajta tranzisztorok, ellenállások és kondenzátorok. A Boffin IC-i modulok: a lapka mellett a szükséges kiegészítő alkatrészek is benne vannak.', n: 'Az integrált áramkörben a tranzisztorok, ellenállások és kondenzátorok egyetlen félvezető lapkán készülnek. A lábakon (táp, bemenetek, kimenet) át használjuk; a belső felépítést a gyártó adatlapja írja le.' },
+    hint: { k: 'Kapcsold be, és nézd a lámpát! A Fekete dobozok fejezetben kinyitjuk.', m: 'Kapcsold be. A G fejezetben (Fekete dobozok) mindegyik IC-t kinyitjuk, és megnézzük, mi van benne.', n: 'Nézd meg az U23 lábait: melyik a táp, melyik a kimenet, és melyik a vezérlő bemenet?' },
+    why: { k: 'Az IC-ben ugyanazok az alkatrészek vannak, amiket már ismersz, csak nagyon kicsik.', m: 'Egy telefonban több milliárd tranzisztor van, ezek mind IC-kben ülnek. A Boffin IC-i egyszerűbbek: egy villogó, egy sziréna, egy dallam. A legtöbbet már te is megépítetted kis alkatrészekből.', n: 'Az U23 belseje egy astabil multivibrátor és egy kimeneti kapcsolótranzisztor; ezt a Villogó kísérletben két tranzisztorból már megépítetted.' },
+    check: {
+      q: { k: 'Az U23-ban egy villogó van. Miből tudnád te is megépíteni?', m: 'Melyik alkatrészekből építhetnéd meg magad azt, amit az U23 csinál?', n: 'Milyen kapcsolással helyettesíthető az U23?' },
+      opts: [['Két tranzisztorból és két kondenzátorból', 'blink'], ['Egy elemből és egy lámpából', 'on'], ['Egyetlen ellenállásból', 'same']], right: 0,
+      after: { k: 'Igen! Ezt a Villogó kísérletben már meg is csináltad.', m: 'Két tranzisztor, két kondenzátor és néhány ellenállás: ez a villogó (Rezgések fejezet).', n: 'Egy astabil multivibrátorral (2 tranzisztor, 2 kondenzátor, 4 ellenállás) és egy kimeneti tranzisztorral.' },
+    },
+  },
+].map((c) => ({ variants: [], ...c, card: true, chapter: 'P', exclusive: true }));
+EXPS.push(...CARDS);
+
 
 // Egy változat alkalmazása: vagy átalakítja az elrendezést, vagy egy másik elrendezésre cseréli.
 function applyVariant(v, lay) { return v.layout ? LAY[v.layout] : v.apply(lay); }

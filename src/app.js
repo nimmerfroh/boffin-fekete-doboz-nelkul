@@ -525,7 +525,7 @@ function pointAt(fl, s) {
 // ---------- szimuláció ----------
 function currentLayout() {
   const ex = EXPS[S.exp]; let lay = ex.layout;
-  for (const v of ex.variants) if (S.variants[v.id]) lay = applyVariant(v, lay);
+  for (const v of ex.variants) if (S.variants[v.id]) { lay = applyVariant(v, lay); if (ex.exclusive) break; }
   return lay;
 }
 function startSim() {
@@ -613,7 +613,7 @@ function frame(ts) {
         if (blade) blade.setAttribute('d', it.def.mode === 'press' ? (on ? 'M-30,6 L-12,6 M12,6 L30,6 M-12,6 L12,6' : 'M-30,6 L-12,6 M12,6 L30,6 M-12,-2 L12,-2') : (on ? 'M-30,6 L-12,6 M12,6 L30,6 M-12,6 L12,6' : 'M-30,6 L-12,6 M12,6 L30,6 M-12,6 L12,-6'));
       }
     }
-    if (live && fcount % 6 === 0) { updateMeters(); updateMeterRead(); updateTuneRead(); }
+    if (live && fcount % 6 === 0) { updateMeters(); updateMeterRead(); updateTuneRead(); updateProbes(); updateWarn(); }
   }
   requestAnimationFrame(frame);
 }
@@ -847,7 +847,7 @@ function renderControls() {
   const ex = EXPS[S.exp];
   const live = S.stage >= 3;
   const status = $('#status'); status.innerHTML = '';
-  S.meterRead = null; S.micBar = null; S.tuneRead = null;
+  S.meterRead = null; S.micBar = null; S.tuneRead = null; S.probeEls = S.probeEls || null;
   if (live) {
     const p = document.createElement('span'); p.className = 'pill live'; p.textContent = 'Élő szimuláció'; status.append(p);
     if (ex.slow) { const q = document.createElement('span'); q.className = 'pill slow'; q.textContent = ex.slow + '× lassítva'; status.append(q); }
@@ -1055,7 +1055,9 @@ function onPartClick(ev) {
     if (c && typeof c === 'object') extra = '<p><b style="font-size:16px;display:inline">Most:</b> bázis ' + fmtA(c.B) + ', kollektor ' + fmtA(c.C) + '</p>';
   }
   const kits = kitsHaving(pl.p).map((k) => '<span class="chip k' + k + '">' + KIT_SHORT[k] + '</span>').join(' ');
-  showPop('<b>' + def.name + (def.kind !== 'wire' && def.kind !== 'jumper' ? ' · ' + def.short : '') + '</b><p>' + ab[1] + '</p>' + extra + (kits ? '<p style="display:flex;gap:4px;flex-wrap:wrap">' + kits + '</p>' : ''), ev.clientX, ev.clientY);
+  const card = cardFor(pl.p);
+  showPop('<b>' + def.name + (def.kind !== 'wire' && def.kind !== 'jumper' ? ' · ' + def.short : '') + '</b><p>' + ab[1] + '</p>' + extra + (kits ? '<p style="display:flex;gap:4px;flex-wrap:wrap">' + kits + '</p>' : '') + (card && card !== EXPS[S.exp] ? '<button class="mini" data-card="1">Ismerd meg! (alkatrész-album)</button>' : ''), ev.clientX, ev.clientY);
+  const cb = $('#pop').querySelector('[data-card]'); if (cb) cb.onclick = () => { $('#pop').hidden = true; openCard(EXPS.indexOf(card)); };
 }
 function onPostClick(ev) {
   const name = ev.target.getAttribute('data-post'); if (!name) return;
@@ -1151,6 +1153,7 @@ function renderPanel() {
   const ex = EXPS[S.exp];
   panel.innerHTML = '';
   meterBox = null;
+  if (ex.card) { renderCardPanel(ex); return; }
   const head = el('div'); head.append(el('h2', null, ex.title), el('div', 'tag', ex.tag)); panel.append(head);
   const st = el('div', 'stages'); st.setAttribute('role', 'tablist');
   STAGES.forEach((name, i) => {
@@ -1273,11 +1276,12 @@ function checkCard(ex) {
   q.opts.forEach(([txt, icon], idx) => {
     const b = el('button', 'opt'); b.append(guessIcon(icon)); b.append(document.createTextNode(txt));
     if (S.check != null) { if (idx === q.right) b.classList.add('right'); else if (idx === S.check) b.classList.add('wrong'); }
-    b.onclick = () => { S.check = idx; renderPanel(); if (S.autoread) speak(feedbackText(idx === q.right, 'Igen!', q.after[S.age])); };
+    b.onclick = () => { S.check = idx; if (ex.card && idx === q.right) { markDone(); renderAlbumCount(); } renderPanel(); if (S.autoread) speak(feedbackText(idx === q.right, 'Igen!', q.after[S.age])); };
     opts.append(b);
   });
   d.append(opts);
   if (S.check != null) d.append(feedbackEl(S.check === q.right, 'Igen!', q.after[S.age]));
+  if (ex.card && S.check === q.right) d.append(el('p', 'sticker-got', 'Megvan a matrica! ⭐ Nézd meg az albumban.'));
   return d;
 }
 function insideCard(ex) {
@@ -1345,6 +1349,130 @@ function goStage(i) {
   refreshBoard(); renderPanel(); renderControls();
   focusWork();
 }
+// ---------- alkatrész-album ----------
+const CARD_LIST = () => EXPS.filter((e) => e.card);
+// melyik kártya tartozik egy alkatrészhez (azonos fajta: pl. bármelyik ellenállás → az ellenállás kártyája)
+function cardFor(p) {
+  const k = P[p].kind; const list = CARD_LIST();
+  return list.find((c) => c.part === p) || list.find((c) => P[c.part].kind === k) || null;
+}
+function openCard(i) { showAlbum(false); selectExp(i); focusWork(); }
+function renderAlbumCount() { const c = $('#albumcount'); if (c) { const list = CARD_LIST(); c.textContent = list.filter((e) => S.done[e.id]).length + ' / ' + list.length; } }
+function showAlbum(on) {
+  S.album = on;
+  $('#album').hidden = !on; $('.main').hidden = on; $('#exps').hidden = on || !!EXPS[S.exp].card;
+  $('#albumbtn').setAttribute('aria-pressed', String(on));
+  if (on) {
+    if (S.soundOn) setSound(false);
+    renderAlbum();
+    const a = $('#album'); const top = a.getBoundingClientRect().top; if (S.booted && top < 0) window.scrollTo({ top: Math.max(0, scrollY + top - 8) });
+  }
+}
+function renderAlbum() {
+  const box = $('#albumgrid'); box.innerHTML = '';
+  for (const c of CARD_LIST()) {
+    const i = EXPS.indexOf(c); const got = !!S.done[c.id];
+    const b = el('button', 'sticker' + (got ? ' got' : '')); b.setAttribute('aria-label', c.title + (got ? ', megvan a matrica' : ''));
+    const ic = el('div', 'sicon'); ic.append(symbolSvg(c.symbol)); b.append(ic);
+    b.append(el('b', null, c.title), el('small', null, c.tag));
+    if (got) b.append(el('span', 'star', '⭐'));
+    b.onclick = () => openCard(i);
+    box.append(b);
+  }
+  renderAlbumCount();
+}
+// rajzjelek (kapcsolási rajz) az albumhoz és a kártyákhoz
+function symbolSvg(kind) {
+  const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 120 60'); s.setAttribute('aria-hidden', 'true');
+  const g = svgEl('g', { fill: 'none', stroke: 'currentColor', 'stroke-width': 3, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, s);
+  const P2 = (d) => svgEl('path', { d }, g);
+  const txt = (x, y, t, size) => { const e = svgEl('text', { x, y, 'text-anchor': 'middle', 'font-size': size || 14, 'font-weight': 800, fill: 'currentColor', stroke: 'none' }, s); e.textContent = t; };
+  switch (kind) {
+    case 'bat': P2('M10,30 H50 M70,30 H110 M50,14 V46 M58,22 V38 M62,14 V46 M70,22 V38'); txt(44, 12, '+'); break;
+    case 'wire': P2('M10,30 H110'); svgEl('circle', { cx: 10, cy: 30, r: 4, fill: 'currentColor' }, g); svgEl('circle', { cx: 110, cy: 30, r: 4, fill: 'currentColor' }, g); break;
+    case 'sw': P2('M10,40 H40 M80,40 H110 M40,40 L78,22'); svgEl('circle', { cx: 40, cy: 40, r: 3, fill: 'currentColor' }, g); svgEl('circle', { cx: 80, cy: 40, r: 3, fill: 'currentColor' }, g); break;
+    case 'led': P2('M10,30 H45 M75,30 H110 M45,14 V46 L75,30 Z M75,14 V46 M64,12 L74,2 M74,12 L84,2'); P2('M70,2 H74 V6 M80,2 H84 V6'); break;
+    case 'res': P2('M10,30 H30 L36,18 L46,42 L56,18 L66,42 L76,18 L86,42 L90,30 H110'); break;
+    case 'lamp': P2('M10,30 H40 M80,30 H110'); svgEl('circle', { cx: 60, cy: 30, r: 20 }, g); P2('M46,16 L74,44 M74,16 L46,44'); break;
+    case 'motor': P2('M10,30 H40 M80,30 H110'); svgEl('circle', { cx: 60, cy: 30, r: 20 }, g); txt(60, 36, 'M', 18); break;
+    case 'spk': P2('M10,22 H40 M10,38 H40 M40,18 H52 V42 H40 Z M52,18 L72,6 V54 L52,42'); break;
+    case 'cap': P2('M10,30 H52 M68,30 H110 M52,12 V48 M68,12 Q60,30 68,48'); txt(44, 12, '+'); break;
+    case 'pot': P2('M10,40 H30 L36,28 L46,52 L56,28 L66,52 L76,28 L86,52 L90,40 H110 M60,8 V26 M54,20 L60,27 L66,20'); break;
+    case 'photo': svgEl('circle', { cx: 64, cy: 32, r: 22 }, g); P2('M56,18 V46 M20,32 H56 M56,24 L84,10 M56,40 L84,54 M76,50 L84,54 L78,46 M14,8 L30,20 M24,4 L40,16 M26,20 H30 V16 M36,16 H40 V12'); break;
+    case 'mic': P2('M10,30 H38 M82,30 H110 M38,10 V50'); svgEl('circle', { cx: 60, cy: 30, r: 22 }, g); break;
+    case 'npn': svgEl('circle', { cx: 64, cy: 30, r: 24 }, g); P2('M56,14 V46 M20,30 H56 M56,22 L82,6 M56,38 L82,54 M72,52 L82,54 L78,44'); txt(18, 52, 'B', 12); txt(100, 10, 'C', 12); txt(100, 58, 'E', 12); break;
+    case 'pnp': svgEl('circle', { cx: 64, cy: 30, r: 24 }, g); P2('M56,14 V46 M20,30 H56 M56,22 L82,6 M56,38 L82,54 M66,38 L57,39 L62,47'); txt(18, 52, 'B', 12); txt(100, 10, 'C', 12); txt(100, 58, 'E', 12); break;
+    case 'meter': P2('M10,30 H38 M82,30 H110'); svgEl('circle', { cx: 60, cy: 30, r: 22 }, g); txt(60, 36, 'A', 18); break;
+    case 'ic': P2('M30,10 H90 V50 H30 Z M18,20 H30 M18,40 H30 M90,20 H102 M90,40 H102'); txt(60, 36, 'IC', 16); break;
+  }
+  return s;
+}
+// élő mérőszámok a kártyákon
+function probeVal(pr) {
+  const sim = S.sim; if (!sim) return null;
+  const id = pr.ids.find((x) => sim.cur[x] != null); if (!id) return null;
+  const c = sim.cur[id];
+  if (pr.ratio) { const b = Math.abs(c.B), cc = Math.abs(c.C); return b > 2e-7 ? Math.round(cc / b) + '×' : '–'; }
+  const v = pr.term ? c[pr.term] : c; return typeof v === 'number' ? fmtA(Math.abs(v)) : null;
+}
+function updateProbes() { if (!S.probeEls) return; for (const [pr, e] of S.probeEls) { const v = probeVal(pr); const t = v == null ? '–' : v; if (e.textContent !== t) e.textContent = t; } }
+// figyelmeztetés: túl nagy áram (a valódi alkatrész tönkremenne) vagy rövidzár
+function updateWarn() {
+  const st = $('#status'); let w = st.querySelector('.pill.warn');
+  let msg = '';
+  if (S.sim && S.stage >= 3) {
+    for (const e of S.sim.nl.elements) {
+      if (e.internal) continue; const c = S.sim.cur[e.id];
+      if (e.def.kind === 'led' && typeof c === 'number' && c > 0.03) msg = 'Túl nagy áram a LED-en (' + fmtA(c) + '): a valódi LED kiégne!';
+      if (e.def.kind === 'bat' && typeof c === 'number' && Math.abs(c) > 1) msg = 'Rövidzár: ' + fmtA(Math.abs(c)) + ' folyik az elemből!';
+    }
+  }
+  // csak a tartós túláramot jelezzük (a kondenzátor feltöltésekor egy pillanatra folyó nagy áram nem rövidzár)
+  S.warnN = msg ? (S.warnN || 0) + 1 : 0; if (S.warnN < 3) msg = '';
+  if (msg && !w) { w = el('span', 'pill warn'); st.append(w); }
+  if (w) { if (msg) w.textContent = '⚠ ' + msg; else w.remove(); }
+}
+function renderCardPanel(ex) {
+  const head = el('div'); head.append(el('div', 'cardkicker', 'Alkatrész-album'), el('h2', null, ex.title), el('div', 'tag', ex.tag)); panel.append(head);
+  const body = el('div'); body.style.display = 'flex'; body.style.flexDirection = 'column'; body.style.gap = '14px'; panel.append(body);
+  body.append(sayBlock(ex.intro[S.age], { auto: true }));
+  const sym = el('div', 'symrow'); const sv = el('div', 'symbox'); sv.append(symbolSvg(ex.symbol)); sym.append(sv);
+  const an = el('div', 'analogy'); an.append(el('b', null, 'Hasonlat: '), document.createTextNode(ex.analogy)); sym.append(an);
+  body.append(sym);
+  body.append(el('h3', null, 'Próbáld ki'));
+  body.append(sayBlock(ex.hint[S.age]));
+  if (ex.variants.length) {
+    const ch = el('div', 'choices'); ch.setAttribute('role', 'group'); ch.setAttribute('aria-label', 'Változatok');
+    const opt = (label, id) => { const on = id ? !!S.variants[id] : !ex.variants.some((v) => S.variants[v.id]); const b = el('button', 'mini', label); b.setAttribute('aria-pressed', String(on)); b.onclick = () => { S.variants = id ? { [id]: true } : {}; startSim(); refreshBoard(); renderPanel(); renderControls(); if (S.soundOn) setSound(true); }; ch.append(b); };
+    opt('Alap', null); for (const v of ex.variants) opt(v.label, v.id);
+    body.append(ch);
+    const act = ex.variants.find((v) => S.variants[v.id]); if (act) body.append(el('p', 'note', act.real));
+  }
+  S.probeEls = [];
+  if (ex.probes && ex.probes.length) {
+    const pb = el('div', 'meter');
+    for (const pr of ex.probes) { const d = el('div'); d.append(el('small', null, pr.label)); const v = el('b', null, '–'); d.append(v); pb.append(d); S.probeEls.push([pr, v]); }
+    body.append(pb); updateProbes();
+  }
+  body.append(el('h3', null, 'Hogyan működik?'));
+  body.append(sayBlock(ex.why[S.age]));
+  const kits = kitsHaving(ex.part).map((k) => '<span class="chip k' + k + '">' + KIT_SHORT[k] + '</span>').join(' ');
+  if (kits) { const k = el('div', 'where'); k.innerHTML = '<b>Melyik dobozban van?</b> ' + kits; body.append(k); }
+  const kind = P[ex.part].kind;
+  const rel = EXPS.filter((e) => !e.card && e.layout.some((p) => P[p.p].kind === kind || (kind === 'sw' && P[p.p].kind === 'sw')));
+  if (rel.length) {
+    body.append(el('h3', null, 'Ezekben a kísérletekben szerepel'));
+    const rl = el('div', 'rel');
+    for (const e of rel.slice(0, 12)) { const b = el('button', 'mini', e.chapter + ' · ' + e.title); b.onclick = () => { selectExp(EXPS.indexOf(e)); focusWork(); }; rl.append(b); }
+    body.append(rl);
+  }
+  if (ex.check) body.append(checkCard(ex));
+  const nav = el('div', 'navrow');
+  const back = el('button', 'btn', '← Album'); back.onclick = () => showAlbum(true); nav.append(back);
+  const list = CARD_LIST(); const k2 = list.indexOf(ex);
+  if (k2 < list.length - 1) { const nx = el('button', 'btn primary', 'Következő: ' + list[k2 + 1].title); nx.onclick = () => { openCard(EXPS.indexOf(list[k2 + 1])); }; nav.append(nx); }
+  panel.append(nav);
+}
 function markDone() { S.done[EXPS[S.exp].id] = true; store.set('done', S.done); }
 function selectExp(i) {
   if (S.soundOn) setSound(false);
@@ -1353,10 +1481,11 @@ function selectExp(i) {
   S.ctl = initCtl(EXPS[i]); S.vc = 0; S.icOpen = false;
   S.light = EXPS[i].light || 0.85;
   store.set('exp', i);
-  renderStrip(); goStage(0);
+  renderStrip(); goStage(EXPS[i].card ? 3 : 0);
 }
 function renderStrip() {
   const nav = $('#exps'); nav.innerHTML = '';
+  nav.hidden = !!EXPS[S.exp].card || !!S.album;
   const cur = EXPS[S.exp].chapter;
   const chaps = el('div', 'chaps'); chaps.setAttribute('role', 'tablist'); chaps.setAttribute('aria-label', 'Fejezetek');
   for (const c of CHAPTERS) {
@@ -1414,6 +1543,8 @@ $('#puki').onclick = async () => {
     const g = ac.createGain(); g.gain.value = 0.9; src.connect(g).connect(ac.destination); src.start();
   } catch (e) { /* offline és még nincs letöltve, vagy nem sikerült dekódolni */ }
 };
+$('#albumbtn').onclick = () => showAlbum(!S.album);
+$('#albumback').onclick = () => { showAlbum(false); if (EXPS[S.exp].card) { const first = EXPS.findIndex((e) => !e.card && !S.done[e.id]); selectExp(first >= 0 ? first : 0); } };
 $('#autoread').onclick = () => { S.autoread = !S.autoread; store.set('autoreadSet', true); syncAutoread(); if (!S.autoread) { try { speechSynthesis.cancel(); } catch (e) { /* nincs */ } } };
 
 // ---------- indulás ----------

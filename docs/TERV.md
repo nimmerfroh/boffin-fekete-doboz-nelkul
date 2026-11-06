@@ -79,6 +79,11 @@ Minden fázis végén: tesztek, böngészős ellenőrzés, commit, push, a GitHu
 - ✅ Offline működés (telepíthető webapp)
 - A valódi készleten szerzett tapasztalatok alapján a szimuláció finomítása
 
+## Alkatrész-album (2026. november 6.)
+- ✅ 16 alkatrészkártya próbapaddal (valódi szimuláció), magyarázattal három szinten, rajzjellel, hasonlattal, kérdéssel és matricával.
+- ✅ NPN ↔ PNP összehasonlítás ugyanazzal a csúszkával; új kísérlet: Nappali lámpa (PNP).
+- ✅ Figyelmeztetés tartós túláramnál (LED > 30 mA, elem > 1 A).
+
 ## Munkamenet (2026. november 6-tól)
 - A fejlesztés a `dev` ágon folyik; ami ott minden teszten átment, az automatikusan kimegy a https://nimmerfroh.github.io/boffin-fekete-doboz-nelkul/dev/ címre (DEV címkével).
 - A `main` ágba (élesbe) csak akkor kerül át, ha a dev címen kipróbáltuk, és rábólintottunk.
