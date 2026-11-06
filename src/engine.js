@@ -464,7 +464,11 @@
       const i = (vpin(pin) - vpin(o)) / R; cur[pin] = (cur[pin] || 0) + i; if (o === 'N') sumN += i; else cur[o] = (cur[o] || 0) - i;
     }
     let io = 0;
-    if (d.ic === 'amp') { io = t.OUT >= 0 ? (v('OUT') - (st.vtUsed || 0)) / AMP_ROUT : 0; st.iSup = Math.abs(io); cur.P = (cur.P || 0) + st.iSup; sumN += st.iSup; }
+    if (d.ic === 'amp') {
+      io = t.OUT >= 0 ? (v('OUT') - (st.vtUsed || 0)) / AMP_ROUT : 0;
+      const vp = v('P'), isup = vp * (st.gSup || 0); cur.P = (cur.P || 0) + isup; sumN += isup;   // ebben a lépésben felvett tápáram
+      st.gSup = st.active && vp > 0.5 ? Math.abs(io) / vp : 0;   // a következő lépésre
+    }
     else if (t.OUT >= 0) io = v('OUT') * st.gOut;
     cur.OUT = (cur.OUT || 0) + io;
     if (d.ic === 'organ' && t.FB >= 0) { cur.FB = (v('FB') - st.fbV) / 47000; sumN += cur.FB; }
@@ -514,6 +518,7 @@
   // jxs: a pn-átmenetek előző iterációs feszültségei (ezt frissíti); visszaadja, volt-e korlátozás.
   Sim.prototype._load = function (v, dt, capV) {
     const n = this.n, G = this.G, R = this.rhs; G.fill(0); R.fill(0);
+    if (this.gminBoost) for (let k = 0; k < n; k++) G[k * n + k] += this.gminBoost;
     const vv = (net) => (net === this.ground || net < 0 ? 0 : v[this.map[net]]);
     const I = (net) => this._i(net);
     const stampG = (a, b, g) => {
@@ -563,8 +568,9 @@
         if (d.ic === 'amp') {
           // a kimenet feszültségforrás kis belső ellenállással (az előző lépés bemenetéből számolva)
           if (t.OUT >= 0) { const g = 1 / AMP_ROUT; stampG(I(t.OUT), I(t.N), g); stampI(I(t.OUT), I(t.N), -st.vt * g); }
-          // a kimenet áramát a tápból veszi fel (az előző lépés kimeneti áramának nagysága): így az elem fizeti a hangszóró energiáját
-          if (t.P >= 0) stampI(I(t.P), I(t.N), st.iSup || 0);
+          // a kimenet áramát a tápból veszi fel. Áramforrás helyett a tápfeszültségtől függő vezetésként: így lekapcsolt
+          // tápnál (S1 ki) is mindig van megoldás, és az elem fizeti a hangszóró energiáját.
+          if (t.P >= 0) stampG(I(t.P), I(t.N), st.gSup || 0);
         } else if (t.OUT >= 0) stampG(I(t.OUT), I(t.N), st.gOut);
         if (d.ic === 'organ' && t.FB >= 0) { const g = 1 / 47000; stampG(I(t.FB), I(t.N), g); stampI(I(t.FB), I(t.N), -st.fbV * g); }
         if (d.ic === 'melody' && t.P >= 0) stampG(I(t.P), I(t.N), st.gP);
@@ -635,13 +641,13 @@
   };
 
   // Newton-iteráció a pn-átmenetek SPICE-féle korlátozásával (pnjlim) és fizikai feszültségkorláttal.
-  // Ha 60 iteráció alatt nem áll be, a további lépéseket felezve teszi meg (csillapítás).
+  // Ha 25 iteráció alatt nem áll be, a további lépéseket felezve teszi meg (csillapítás); 40 után feladja (kisebb lépés jön).
   Sim.prototype._newton = function (dt) {
     const v = this.v, x = this.vnew;
-    for (let it = 0; it < 100; it++) {
+    for (let it = 0; it < 40; it++) {
       const limited = this._load(v, dt, this.capV);
       this._solveInto(x);
-      let conv = !limited; const damp = it < 60 ? 1 : 0.5;
+      let conv = !limited; const damp = it < 25 ? 1 : 0.5;
       for (let k = 0; k < this.n; k++) {
         if (!isFinite(x[k])) return false;
         const d = (x[k] - v[k]) * damp;
@@ -713,7 +719,12 @@
         this._commit(h); left -= h; h = Math.min(dt, h * 2);
       } else {
         this._restore(snap);
-        if (h <= hMin || ++n > 400) { ok = false; this._commit(h); left -= h; h = Math.min(dt, h * 2); continue; }   // vészkijárat: ne akadjon el
+        if (h <= hMin || ++n > 40) {
+          // vészkijárat: minden csomópontra egy kis segédvezetés a föld felé, így biztosan van megoldás, és nem fagy be az állapot
+          ok = false; this.gminBoost = 1e-3; const got = this._newton(h); this.gminBoost = 0;
+          if (!got) this._restore(snap);
+          this._commit(h); left -= h; h = Math.min(dt, h * 2); n = 0; continue;
+        }
         h /= 4;
       }
     }

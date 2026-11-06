@@ -34,6 +34,7 @@
   --accent: #2457C5;      /* a kék Boffin-vezeték színe */
   --accent-ink: #FFFFFF;
   --spark: #F5A400;       /* áram */
+  --spark-ink: #8A5A00;   /* az áramszín szövegként (kontraszt) */
   --good: #177A49;
   --bad: #C2413A;
   --board: #D6E1EB;
@@ -49,14 +50,14 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #10151B; --surface: #19212A; --surface-2: #1E2731; --ink: #E7EDF3; --muted: #98A5B3; --line: #2C3846;
-    --accent: #6F9BFF; --accent-ink: #0D1520; --spark: #FFC23D; --good: #45C983; --bad: #F07067;
+    --accent: #6F9BFF; --accent-ink: #0D1520; --spark: #FFC23D; --spark-ink: #FFC23D; --good: #45C983; --bad: #F07067;
     --board: #1C2733; --board-edge: #2C3A49; --post: #4E6074; --label: #7D8FA3; --shadow: rgba(0, 0, 0, .45);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #10151B; --surface: #19212A; --surface-2: #1E2731; --ink: #E7EDF3; --muted: #98A5B3; --line: #2C3846;
-  --accent: #6F9BFF; --accent-ink: #0D1520; --spark: #FFC23D; --good: #45C983; --bad: #F07067;
+  --accent: #6F9BFF; --accent-ink: #0D1520; --spark: #FFC23D; --spark-ink: #FFC23D; --good: #45C983; --bad: #F07067;
   --board: #1C2733; --board-edge: #2C3A49; --post: #4E6074; --label: #7D8FA3; --shadow: rgba(0, 0, 0, .45);
   color-scheme: dark;
 }
@@ -121,7 +122,7 @@ button, .ctrl, .seg, #ctrls, #board, .lightctl, .meterctl { -webkit-user-select:
 .pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 3px 10px; font-size: 13px; font-weight: 700; background: var(--surface-2); color: var(--muted); }
 .pill.live { color: var(--good); }
 .pill.live::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
-.pill.slow { color: var(--spark); }
+.pill.slow { color: var(--spark-ink); }   /* a narancs áramszín szövegként túl világos */
 .boardscroll { overflow-x: auto; }
 svg.board { display: block; width: 100%; height: auto; min-width: 520px; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
 .ctrls { display: flex; flex-wrap: wrap; gap: 10px; padding: 10px 6px 4px; align-items: center; }
@@ -802,7 +803,11 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
       const i = (vpin(pin) - vpin(o)) / R; cur[pin] = (cur[pin] || 0) + i; if (o === 'N') sumN += i; else cur[o] = (cur[o] || 0) - i;
     }
     let io = 0;
-    if (d.ic === 'amp') { io = t.OUT >= 0 ? (v('OUT') - (st.vtUsed || 0)) / AMP_ROUT : 0; st.iSup = Math.abs(io); cur.P = (cur.P || 0) + st.iSup; sumN += st.iSup; }
+    if (d.ic === 'amp') {
+      io = t.OUT >= 0 ? (v('OUT') - (st.vtUsed || 0)) / AMP_ROUT : 0;
+      const vp = v('P'), isup = vp * (st.gSup || 0); cur.P = (cur.P || 0) + isup; sumN += isup;   // ebben a lépésben felvett tápáram
+      st.gSup = st.active && vp > 0.5 ? Math.abs(io) / vp : 0;   // a következő lépésre
+    }
     else if (t.OUT >= 0) io = v('OUT') * st.gOut;
     cur.OUT = (cur.OUT || 0) + io;
     if (d.ic === 'organ' && t.FB >= 0) { cur.FB = (v('FB') - st.fbV) / 47000; sumN += cur.FB; }
@@ -852,6 +857,7 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
   // jxs: a pn-átmenetek előző iterációs feszültségei (ezt frissíti); visszaadja, volt-e korlátozás.
   Sim.prototype._load = function (v, dt, capV) {
     const n = this.n, G = this.G, R = this.rhs; G.fill(0); R.fill(0);
+    if (this.gminBoost) for (let k = 0; k < n; k++) G[k * n + k] += this.gminBoost;
     const vv = (net) => (net === this.ground || net < 0 ? 0 : v[this.map[net]]);
     const I = (net) => this._i(net);
     const stampG = (a, b, g) => {
@@ -901,8 +907,9 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
         if (d.ic === 'amp') {
           // a kimenet feszültségforrás kis belső ellenállással (az előző lépés bemenetéből számolva)
           if (t.OUT >= 0) { const g = 1 / AMP_ROUT; stampG(I(t.OUT), I(t.N), g); stampI(I(t.OUT), I(t.N), -st.vt * g); }
-          // a kimenet áramát a tápból veszi fel (az előző lépés kimeneti áramának nagysága): így az elem fizeti a hangszóró energiáját
-          if (t.P >= 0) stampI(I(t.P), I(t.N), st.iSup || 0);
+          // a kimenet áramát a tápból veszi fel. Áramforrás helyett a tápfeszültségtől függő vezetésként: így lekapcsolt
+          // tápnál (S1 ki) is mindig van megoldás, és az elem fizeti a hangszóró energiáját.
+          if (t.P >= 0) stampG(I(t.P), I(t.N), st.gSup || 0);
         } else if (t.OUT >= 0) stampG(I(t.OUT), I(t.N), st.gOut);
         if (d.ic === 'organ' && t.FB >= 0) { const g = 1 / 47000; stampG(I(t.FB), I(t.N), g); stampI(I(t.FB), I(t.N), -st.fbV * g); }
         if (d.ic === 'melody' && t.P >= 0) stampG(I(t.P), I(t.N), st.gP);
@@ -973,13 +980,13 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
   };
 
   // Newton-iteráció a pn-átmenetek SPICE-féle korlátozásával (pnjlim) és fizikai feszültségkorláttal.
-  // Ha 60 iteráció alatt nem áll be, a további lépéseket felezve teszi meg (csillapítás).
+  // Ha 25 iteráció alatt nem áll be, a további lépéseket felezve teszi meg (csillapítás); 40 után feladja (kisebb lépés jön).
   Sim.prototype._newton = function (dt) {
     const v = this.v, x = this.vnew;
-    for (let it = 0; it < 100; it++) {
+    for (let it = 0; it < 40; it++) {
       const limited = this._load(v, dt, this.capV);
       this._solveInto(x);
-      let conv = !limited; const damp = it < 60 ? 1 : 0.5;
+      let conv = !limited; const damp = it < 25 ? 1 : 0.5;
       for (let k = 0; k < this.n; k++) {
         if (!isFinite(x[k])) return false;
         const d = (x[k] - v[k]) * damp;
@@ -1051,7 +1058,12 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
         this._commit(h); left -= h; h = Math.min(dt, h * 2);
       } else {
         this._restore(snap);
-        if (h <= hMin || ++n > 400) { ok = false; this._commit(h); left -= h; h = Math.min(dt, h * 2); continue; }   // vészkijárat: ne akadjon el
+        if (h <= hMin || ++n > 40) {
+          // vészkijárat: minden csomópontra egy kis segédvezetés a föld felé, így biztosan van megoldás, és nem fagy be az állapot
+          ok = false; this.gminBoost = 1e-3; const got = this._newton(h); this.gminBoost = 0;
+          if (!got) this._restore(snap);
+          this._commit(h); left -= h; h = Math.min(dt, h * 2); n = 0; continue;
+        }
         h /= 4;
       }
     }
@@ -1468,8 +1480,8 @@ L.lightlink = L.fast.concat([
   { p: 'W3', at: '2:C7', dir: 'd', id: 'Ws2' },
   { p: 'Q2', at: '2:C5', dir: 'd', id: 'Q2c' },
   { p: 'Q4', at: '2:A2', dir: 'd' },
-  { p: 'R4', at: '2:E2', dir: 'd' },
-  { p: 'R3', at: '2:D2', dir: 'r', id: 'R3c' },   // a bázisáram korlátozása: szobafénynél se kapjon nagy egyenáramot a hangszóró
+  { p: 'R3', at: '2:E2', dir: 'd', id: 'R3d' },   // levezető: a szórt fény kis áramát elvezeti a bázis elől
+  { p: 'R4', at: '2:D2', dir: 'r', id: 'R4b' },   // a bázisáram korlátozása: szobafénynél se kapjon nagy egyenáramot a hangszóró
   { p: 'SP', at: '2:A5', dir: 'd' },
   { p: 'W3', at: '2:E5', dir: 'd', id: 'Le2' },
   { p: 'S1', at: '2:A7', dir: 'd', id: 'S1b' },
@@ -1852,7 +1864,7 @@ const EXPS = [
     why: {
       k: 'Ez ugyanaz a villogó, csak több százszor gyorsabb. A hangszóró ilyen gyors kapcsolgatástól zümmögni kezd. A dobozban lévő hangot adó IC-k belsejében is ilyen apró villogó dolgozik.',
       m: 'Kisebb kondenzátor gyorsabban töltődik, ezért több százszor gyorsabban kapcsolgat. Az IC-k, például a riasztó IC, belül ugyanilyen alkatrészekből állnak: tranzisztorokból, ellenállásokból és kondenzátorokból, csak parányiak, és egyetlen kis lapkán vannak. Most te építettél egyet nagyban!',
-      n: 'Ugyanabban a kapcsolásban a frekvencia fordítva arányos C-vel: 100 µF-ról 0,1 µF-ra csökkentve ezerszeres lenne. Itt azonban a jobb oldali LED helyére hangszóró is került, ami megváltoztatja a kollektor feszültséglépését, ezért a szimulációban kb. 640-szoros (2,5 Hz → kb. 1,6 kHz). Ha az egyik oldalt 0,02 µF-ra cseréled, az a félperiódus rövidül, a hang magasabb lesz (a szimulációban kb. 2,4 kHz). A hangot adó IC-kben ugyanilyen oszcillátor van, csak integrált formában.',
+      n: 'Ugyanabban a kapcsolásban a frekvencia fordítva arányos C-vel: 100 µF-ról 0,1 µF-ra csökkentve ezerszeres lenne. Itt azonban a jobb oldali LED helyére hangszóró is került, ami megváltoztatja a kollektor feszültséglépését, ezért a szimulációban kb. 640-szoros (2,5 Hz → kb. 1,6 kHz). Ha az egyik oldalt 0,02 µF-ra cseréled, az a félperiódus rövidül, a hang magasabb lesz (a szimulációban kb. 3,4 kHz). A hangot adó IC-kben ugyanilyen oszcillátor van, csak integrált formában.',
     },
   },
   // ===================== A) Áram és alkatrészek =====================
@@ -1972,7 +1984,7 @@ const EXPS = [
     guess: {
       q: { k: 'Feltöltöd, aztán elengeded a gombot. Mit csinál a lámpa?', m: 'Feltöltöd a kondenzátorokat, aztán elengeded az S2-t. Mi lesz a LED-del?', n: 'Mi történik a LED-del és a feszültséggel az S2 elengedése után?' },
       opts: [['Még világít egy kicsit', 'fade'], ['Azonnal kialszik', 'off'], ['Örökké világít', 'on']], right: 0,
-      after: { k: 'Igen! A kondenzátorban maradt áram, abból világít még.', m: 'A kondenzátorok tárolták a töltést, és most átadják a LED-nek. Ahogy fogy, a LED halványul.', n: 'A kondenzátor feszültsége csökken, a LED kb. 1,7 V alatt már alig látszik: a szimulációban kb. 1,4 másodperc.' },
+      after: { k: 'Igen! A kondenzátorban maradt egy kis elektromosság, abból világít még.', m: 'A kondenzátorok tárolták a töltést, és most átadják a LED-nek. Ahogy fogy, a LED halványul.', n: 'A kondenzátor feszültsége csökken, a LED kb. 1,7 V alatt már alig látszik: a szimulációban kb. 1,4 másodperc.' },
     },
     variants: [
       { id: 'one', label: 'Csak egy kondenzátorral', real: 'Vedd ki az egyik 470 µF-os kondenzátort (a B3–D3 közöttit). Rövidebb vagy hosszabb ideig világít majd?', apply: (lay) => lay.filter((p) => p.id !== 'C5b') },
@@ -2225,8 +2237,8 @@ const EXPS = [
   },
   {
     id: 'siren', chapter: 'E', title: 'Sziréna', tag: 'Felfelé és lefelé csúszó hang',
-    layout: LAY.siren, sim: { dt: 0.000005, scale: 1 / 1000 }, slow: 1000, controls: ['S1', { press: 'S2', label: 'Sziréna gomb (S2)' }, 'sound'],
-    audio: { type: 'siren', probe: 'SP', cap: 'C5', R: 10000, Rb: 570, C: 470e-6,   /* Rb: a szimulációhoz illesztve (nyomva kb. 0,9 V-ig töltődik) */ grid: [0.7, 0.75, 0.85, 1, 1.25, 1.6, 2, 2.5, 3] },
+    layout: LAY.siren, sim: { dt: 0.000005, scale: 1 / 1000, capScale: 1 }, slow: 1000, controls: ['S1', { press: 'S2', label: 'Sziréna gomb (S2)' }, 'sound'],
+    audio: { type: 'siren', probe: 'SP', cap: 'C5', R: 10000, Rb: 450, C: 470e-6,   /* Rb: a szimulációhoz illesztve (nyomva kb. 0,85–0,9 V, elengedve kb. 0,6 s alatt elhallgat) */ grid: [0.7, 0.75, 0.85, 1, 1.25, 1.6, 2, 2.5, 3] },
     intro: {
       k: 'Tartsd nyomva a gombot: a hang egyre magasabb. Engedd el: lassan lecsúszik és elhallgat. Mint egy mentőautó!',
       m: 'A hangos villogó egyik oldala nem közvetlenül az elemről kap áramot, hanem egy nagy kondenzátorról (C5). A gomb lassan feltölti, elengedve lassan kiürül, és közben változik a hang.',
@@ -2312,7 +2324,7 @@ const EXPS = [
     intro: {
       k: 'Két rács, két áramkör, és nincs köztük vezeték! Az egyik nagyon gyorsan villog, a fény egy üvegszálon átmegy a másikhoz, és az megszólal.',
       m: 'Az 1. rácson egy nagyon gyors villogó van, olyan gyors, hogy a szemed nem látja. A D1 LED fényét egy üvegszálas kábel viszi át a 2. rács fototranzisztorára. A vevő a fény villogásából hangot csinál.',
-      n: 'Optikai átvitel: az adó egy kb. 2,5 kHz-es astabil multivibrátor, a D1 LED fénye üvegszálon jut a vevő fototranzisztorára (Q4). A Q4 árama az R3-on (5,1 kΩ) át vezérli a Q2c tranzisztort, ami a hangszórót hajtja; az R3 korlátozza a bázisáramot, hogy erős fénynél se folyjon nagy egyenáram a hangszórón. A két áramkör elektromosan teljesen független.',
+      n: 'Optikai átvitel: az adó egy kb. 2,5 kHz-es astabil multivibrátor, a D1 LED fénye üvegszálon jut a vevő fototranzisztorára (Q4). A Q4 árama az R4-en (10 kΩ) át vezérli a Q2c tranzisztort, ami a hangszórót hajtja; az R4 korlátozza a bázisáramot, hogy erős fénynél se folyjon nagy egyenáram a hangszórón. A két áramkör elektromosan teljesen független.',
     },
     guess: {
       q: { k: 'Ha letakarod a kábelt, hogy ne menjen át a fény, mi lesz a hanggal?', m: 'Mi történik a hanggal, ha elzárod a fényt a kábelben?', n: 'Mit hallasz, ha megszakítod az optikai összeköttetést?' },
@@ -2328,7 +2340,7 @@ const EXPS = [
     why: {
       k: 'A LED olyan gyorsan villog, hogy nem látod. A kis fekete szem a kábel másik végén látja, és minden villanásnál meglöki a hangszórót. A sok gyors lökésből lesz a hang.',
       m: 'A hang rezgés. Az adó ezt a rezgést fényvillogássá alakítja. Az üvegszál a fényt a kanyarokban is továbbviszi. A vevő a villogást visszaalakítja árammá, és a hangszóró megszólal. Az internet is nagyrészt így utazik: üvegszálakban, fényvillanásokként. A Light dobozban lévő infravevő IC (U24) is fényjeleket fog, csak láthatatlan infravörös fénnyel.',
-      n: 'A Q4 fotoárama a D1 fényével arányos, és a Q2c-t a LED villogásának ütemében kapcsolgatja. A szimulációban kb. 2,4 kHz-es hang szól a vevőben, és ha a fényt elzárjuk, a vevő árama gyakorlatilag nulla. Az R4 (10 kΩ) levezeti a szórt fény kis áramát, hogy a vevő nyugalomban zárva maradjon. A fénycsatolást a szimuláció egyszerűsítve modellezi (a LED-áram egy része jut el a fototranzisztorig).',
+      n: 'A Q4 fotoárama a D1 fényével arányos, és a Q2c-t a LED villogásának ütemében kapcsolgatja. A szimulációban kb. 2,4 kHz-es hang szól a vevőben, és ha a fényt elzárjuk, a vevő árama gyakorlatilag nulla. Az R3 (5,1 kΩ) levezeti a szórt fény kis áramát, hogy a vevő nyugalomban zárva maradjon. A fénycsatolást a szimuláció egyszerűsítve modellezi (a LED-áram egy része jut el a fototranzisztorig).',
     },
   },
 
@@ -2708,7 +2720,7 @@ const EXPS = [
       n: 'Középhullámú rádió: a hangolt kör (A1 ∥ CV) rezonanciafrekvenciája f = 1 / (2π·√(L·C)). A szimulációban L ≈ 380 µH, C ≈ 55–235 pF (a szórt kapacitással), így kb. 530–1100 kHz hangolható. Magyarországon középhullámon a Kossuth Rádió szól, 540 kHz-en, a solti adóról.',
     },
     guess: {
-      q: { k: 'Hol szól a rádió: a tekerő elején, közepén vagy a végén?', m: 'A forgókondenzátor melyik állásánál fogod a Kossuth Rádiót?', n: 'A forgókondenzátor melyik állása felé kell tekerni a 540 kHz-hez: a nagy vagy a kis kapacitás felé?' },
+      q: { k: 'Hol szól a rádió: a tekerő elején, közepén vagy a végén?', m: 'A forgókondenzátor melyik állásánál fogod a Kossuth Rádiót?', n: 'A forgókondenzátor melyik állásánál szól a 540 kHz-es adó?' },
       opts: [['Majdnem a végén', 'on'], ['Középen', 'same'], ['Az elején', 'off']], right: 0,
       after: { k: 'Igen! Majdnem egészen el kell tekerni.', m: 'Majdnem a végén: a Kossuth a középhullám legalsó szélén van, ahhoz a legnagyobb kapacitás kell.', n: 'C = 1 / ((2π·540 kHz)²·380 µH) ≈ 229 pF, ebből kb. 15 pF a szórt kapacitás, tehát a CV kb. 214 pF-on áll, közel a maximumhoz.' },
     },
@@ -2761,7 +2773,7 @@ const CHECKS = {
     after: { k: 'Igen! A sorrend mindegy, csak a kör legyen zárt.', m: 'Egy körben az áram mindenhol ugyanakkora, ezért mindegy, melyik alkatrész van elöl.', n: 'Soros körben az áram minden ponton ugyanaz, és a feszültségek összege sem függ a sorrendtől: semmi nem változik.' },
   },
   conduct: {
-    q: { k: 'Ha egy pénzérmét teszel a két kábelvég közé, mi lesz a lámpával?', m: 'Mit mutat a LED, ha egy fémpénzt vizsgálsz?', n: 'Mit csinál a LED, ha egy fémpénzt vizsgálsz, és miért?' },
+    q: { k: 'Ha egy pénzérmét teszel a két kábelvég közé, mi lesz a lámpával?', m: 'Mit mutat a LED, ha egy fémpénzt vizsgálsz?', n: 'Mit csinál a LED, ha egy fémpénzt vizsgálsz?' },
     opts: [['Fényesen világít', 'on'], ['Halványan', 'dim'], ['Nem világít', 'off']], right: 0,
     after: { k: 'Igen! A pénz fémből van, és a fém vezet.', m: 'A pénzérme fém, a fémek jól vezetnek, ezért a LED fényesen ég, mint az alufóliánál.', n: 'A fémek ellenállása nagyon kicsi (az érméé néhány ezred ohm), így a kör áramát csak az R1 és a LED korlátozza.' },
   },
@@ -2796,7 +2808,7 @@ const CHECKS = {
     after: { k: 'Igen! Most a szemnek könnyebb elvezetni a kicsi áramot, ezért csak nagy sötétben gyullad ki.', m: 'A nagyobb ellenálláson kevesebb áram jut a bázishoz, ezt a fototranzisztor már kis fénynél is el tudja vezetni. Ezért csak sötétebben gyullad ki, és halványabb is lesz.', n: 'A bázisra jutó áram kb. 2,3 V / 100 kΩ ≈ 23 µA; ennyit a fototranzisztor már gyenge fénynél is elvezet. A küszöb sötétebb fény felé tolódik, a LED-áram pedig legfeljebb β · 23 µA.' },
   },
   touch: {
-    q: { k: 'Ha nedves ujjal érsz hozzá, mi lesz?', m: 'Mi történik, ha nedves ujjal érinted meg a két pontot?', n: 'Mi lesz a LED-del, ha nedves a bőröd, és miért?' },
+    q: { k: 'Ha nedves ujjal érsz hozzá, mi lesz?', m: 'Mi történik, ha nedves ujjal érinted meg a két pontot?', n: 'Mi lesz a LED-del, ha nedves a bőröd?' },
     opts: [['Könnyebben kigyullad', 'on'], ['Nem gyullad ki', 'off'], ['Villogni kezd', 'blink']], right: 0,
     after: { k: 'Igen! A nedves bőr jobban vezet.', m: 'A nedves bőr ellenállása kisebb, ezért több áram jut a tranzisztorhoz, és biztosabban kigyullad a lámpa.', n: 'A bőr ellenállása nedvesen sokszor kisebb, így a bázisáram nő; a LED áramát továbbra is az R1 korlátozza.' },
   },
@@ -2868,7 +2880,7 @@ const CHECKS = {
   clap: {
     q: { k: 'Ha a felső ellenállást kisebbre cseréled, mi lesz?', m: 'Mi történik, ha az R4 (10 kΩ) helyett az R3-at (5,1 kΩ) teszed be?', n: 'Hogyan változik a bekapcsolási küszöb, ha a felső ellenállás 5,1 kΩ-ra csökken?' },
     opts: [['Érzékenyebb: halkabb hangra is villan', 'sound'], ['Kevésbé érzékeny', 'dim'], ['Semmi nem változik', 'same']], right: 0,
-    after: { k: 'Igen! Kisebb hang is elég lesz.', m: 'A kisebb felső ellenállás több feszültséget ad a bázisra, ezért a mikrofon kisebb változása is elég a bekapcsoláshoz.', n: 'A küszöb ott van, ahol a bázis kb. 0,6–0,7 V-ot kap: R_X1 ≈ R_felső / 4 körül. A szimulációban 10 kΩ-nál kb. 3 kΩ, 5,1 kΩ-nál kb. 1,5 kΩ, vagyis sokkal kisebb hangnyomás is elég.' },
+    after: { k: 'Igen! Kisebb hang is elég lesz.', m: 'A kisebb felső ellenállás több feszültséget ad a bázisra, ezért a mikrofon kisebb változása is elég a bekapcsoláshoz.', n: 'A küszöb ott van, ahol a bázis kb. 0,6–0,7 V-ot kap: R_X1 ≈ R_felső / 3,5 körül. A szimulációban 10 kΩ-nál kb. 3 kΩ, 5,1 kΩ-nál kb. 1,5 kΩ, vagyis sokkal kisebb hangnyomás is elég.' },
   },
   amp: {
     q: { k: 'Ha csak egy tranzisztor lenne kettő helyett, milyen hangos lenne?', m: 'Ha a két tranzisztor helyett csak egyet használnál, hogyan szólna?', n: 'Hogyan szólna, ha a Darlington-pár helyett egyetlen tranzisztor maradna?' },
@@ -2986,7 +2998,7 @@ const CARDS = [
     hint: { k: 'Kapcsold be és ki a kapcsolót. Aztán próbáld ki a nyomógombbal is!', m: 'Kapcsolgasd az S1-et. Aztán cseréld nyomógombra, nyomd meg, majd engedd el.', n: 'Hasonlítsd össze a kettőt: melyik kell egy villanyhoz, és melyik egy csengőhöz?' },
     why: { k: 'A kapcsoló olyan, mint egy kis híd. Bekapcsolva átengedi az áramot, kikapcsolva felhúzza a hidat.', m: 'A kapcsoló belsejében két fémlemez van. Bekapcsolva összeérnek, és az áram átjut. Kikapcsolva szétválnak, és a kör megszakad.', n: 'A tolókapcsoló bistabil (mindkét állapotában megmarad), a nyomógomb monostabil (rugó viszi vissza). Az emlékező lámpa (flip-flop) elektronikusan csinál két nyomógombból egy tolókapcsolót.' },
     check: {
-      q: { k: 'Melyik kell egy csengőhöz: a tolókapcsoló vagy a nyomógomb?', m: 'Egy ajtócsengőbe melyiket tennéd?', n: 'Melyik kell egy csengőhöz, és miért?' },
+      q: { k: 'Melyik kell egy csengőhöz: a tolókapcsoló vagy a nyomógomb?', m: 'Egy ajtócsengőbe melyiket tennéd?', n: 'Melyik kapcsoló való egy csengőhöz?' },
       opts: [['A nyomógomb', 'sound'], ['A tolókapcsoló', 'on'], ['Mindegy', 'same']], right: 0,
       after: { k: 'Igen! A csengő csak addig szól, amíg nyomod.', m: 'A nyomógomb: elengedéskor magától kikapcsol, így a csengő nem szól tovább.', n: 'A nyomógomb, mert monostabil: elengedve a rugó bontja a kört.' },
     },
@@ -3304,6 +3316,10 @@ function speak(text) {
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text.replace(/µF/g, ' mikrofarád').replace(/kΩ/g, ' kiloohm').replace(/Ω/g, ' ohm').replace(/mA/g, ' milliamper').replace(/ V\b/g, ' volt'));
     u.lang = huVoice.lang || 'hu-HU'; u.voice = huVoice; u.rate = S.age === 'k' ? 0.92 : 1;
+    u.onerror = () => {   // ha az online (természetes) hang nem érhető el, egyszer újra a helyi magyar hanggal
+      if (u.retried) return; const local = speechSynthesis.getVoices().find((v) => /^hu(-|_|$)/i.test(v.lang) && v.localService && v !== huVoice);
+      if (!local) return; const u2 = new SpeechSynthesisUtterance(u.text); u2.retried = true; u2.lang = local.lang; u2.voice = local; u2.rate = u.rate; huVoice = local; speechSynthesis.speak(u2);
+    };
     speechSynthesis.speak(u);
   } catch (e) { /* nincs beszédszintézis */ }
 }
@@ -3509,7 +3525,7 @@ function drawPart(parent, pl, level, contacts, opts) {
     const lab = svgEl('text', { x: 0, y: 19, 'text-anchor': 'middle', 'font-size': 13, 'font-weight': 800, fill: '#fff', 'font-family': 'var(--font-display)' }, body); lab.textContent = 'B1 · 3 V';
   } else {
     svgEl('rect', { x: -W / 2, y: -H / 2, width: W, height: H, rx: 12, fill: col, stroke: 'rgba(0,0,0,.28)', 'stroke-width': 2 }, body);
-    const ink = def.kind === 'res' ? '#3B2A00' : '#fff';
+    const ink = def.kind === 'res' ? '#3B2A00' : (def.kind === 'lamp' || def.kind === 'coil' || def.kind === 'motor') ? '#1F2933' : '#fff';
     const sym = svgEl('g', { stroke: ink, fill: 'none', 'stroke-width': 2.4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, body);
     const flipText = Math.abs(ang) > 90;
     const label = (txt, y, size, weight) => {
@@ -3795,7 +3811,7 @@ function frame(ts) {
       for (const gl of it.glows) {
         if (gl.type === 'led') { const a = Math.abs(c || 0); const b = c > 0 ? Math.min(1, Math.sqrt(a / 0.01)) : 0; /* 10 mA: teljes fény, 0,3 mA: épp pislákol */
           if (gl.rgb) { const col = RGB_SEQ[Math.floor((live ? S.sim.time : 0) / 0.8) % RGB_SEQ.length]; gl.el.setAttribute('fill', col); gl.lens.setAttribute('fill', col); } gl.el.setAttribute('opacity', (b * 0.85).toFixed(2)); gl.lens.setAttribute('opacity', b.toFixed(2)); }
-        else if (gl.type === 'lamp') { const b = Math.min(1, Math.abs(c || 0) / 0.15); gl.el.setAttribute('opacity', (b * 0.9).toFixed(2)); }
+        else if (gl.type === 'lamp') { const b = Math.min(1, Math.pow(Math.abs(c || 0) / (it.def.Inom || 0.2), 1.5));   /* a névleges teljesítményhez képest */ gl.el.setAttribute('opacity', (b * 0.9).toFixed(2)); }
         else if (gl.type === 'spk') { const b = Math.min(1, Math.abs(c || 0) / 0.02); gl.el.setAttribute('opacity', (b * 0.9).toFixed(2)); gl.el.setAttribute('r', 18 + b * 8); }
         else if (gl.type === 'mic') { const p = live ? S.sim.mic[it.id] || 0 : 0; gl.el.setAttribute('opacity', (p * 0.9).toFixed(2)); gl.el.setAttribute('r', 16 + p * 9); }
         else if (gl.type === 'shade') { gl.el.setAttribute('opacity', ((1 - S.light) * 0.75).toFixed(2)); }
@@ -3807,7 +3823,7 @@ function frame(ts) {
       if (it.icAct) { const st = live && S.sim.ic[it.id]; it.icAct.setAttribute('opacity', st && st.active ? (st.on ? 1 : 0.35) : 0); }
       if (it.icRGB) { const st = live && S.sim.ic[it.id]; const on = st && st.active && st.rgb.some((x) => x); it.icRGB.setAttribute('fill', on ? rgbCss(st.rgb) : '#555'); it.icGlow.setAttribute('fill', on ? rgbCss(st.rgb) : '#fff'); it.icGlow.setAttribute('opacity', on ? 0.8 : 0); }
       if (it.objLabel) { const nm = S.ctl.objName[it.id] || '?'; if (it.objLabel.textContent !== nm) it.objLabel.textContent = nm; }
-      if (it.capBar) { const vC = live ? S.sim.capV[it.id] || 0 : 0; it.capBar.el.setAttribute('width', (Math.min(1, Math.abs(vC) / 3) * it.capBar.w).toFixed(1)); }
+      if (it.capBar) { const vC = live ? S.sim.capV[it.id] || 0 : 0; const sc = (EXPS[S.exp].sim && EXPS[S.exp].sim.capScale) || 3; it.capBar.el.setAttribute('width', (Math.min(1, Math.abs(vC) / sc) * it.capBar.w).toFixed(1)); }
       if (it.isSwitch) {
         const on = live ? !!S.sim.switches[it.id] : false;
         const blade = it.g.querySelector('.swblade');
@@ -3827,7 +3843,7 @@ function audioCfg() { return EXPS[S.exp].audio || { type: 'loop', probe: 'SP' };
 function ensureAC() {
   const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
   if (!S.ac) { try { S.ac = new AC(); } catch (e) { return null; } }
-  if (S.ac.state === 'suspended') S.ac.resume().catch(() => {});
+  if (S.ac.state === 'suspended' || S.ac.state === 'interrupted') S.ac.resume().catch(() => {});
   return S.ac;
 }
 const tick0 = () => new Promise((r) => setTimeout(r, 0));
@@ -3979,7 +3995,7 @@ async function setMicInput(on) {
   const req = S.micReq = (S.micReq || 0) + 1;   // a közben elavult kérés eredményét eldobjuk
   if (!on) { S.micPending = false; if (S.micStream) S.micStream.getTracks().forEach((t) => t.stop()); S.micStream = null; S.micAn = null; if (S.soundOn && audioCfg().type === 'micamp') setSound(true); else renderControls(); return; }
   if (S.micPending) return; S.micPending = true;
-  const ac = ensureAC(); if (!ac || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { S.micErr = 'Ez a böngésző nem engedi a mikrofont.'; renderControls(); return; }
+  const ac = ensureAC(); if (!ac || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { S.micPending = false; S.micErr = 'Ez a böngésző nem engedi a mikrofont.'; renderControls(); return; }
   try {
     // az erősítős kísérleteknél visszhangszűrés: a tablet hangszórója ne gerjedjen be a mikrofonon át
     const echo = audioCfg().type === 'micamp';
@@ -4267,7 +4283,7 @@ function onPartClick(ev) {
     if (typeof c === 'number' && def.kind !== 'wire') extra = '<p><b style="font-size:16px;display:inline">Most:</b> ' + fmtA(c) + '</p>';
     if (c && typeof c === 'object' && (def.kind === 'npn' || def.kind === 'pnp')) extra = '<p><b style="font-size:16px;display:inline">Most:</b> bázis ' + fmtA(c.B) + ', kollektor ' + fmtA(c.C) + '</p>';
     else if (c && typeof c === 'object' && def.kind === 'pot') extra = '<p><b style="font-size:16px;display:inline">Most:</b> a csúszkán ' + fmtA(c.w || 0) + '</p>';
-    else if (c && typeof c === 'object' && def.kind === 'ic' && typeof c.N === 'number') extra = '<p><b style="font-size:16px;display:inline">Most:</b> felvett áram ' + fmtA(c.N) + '</p>';
+    else if (c && typeof c === 'object' && def.kind === 'ic' && typeof c.P === 'number') extra = '<p><b style="font-size:16px;display:inline">Most:</b> a tápból felvett áram ' + fmtA(c.P) + (typeof c.OUT === 'number' && Math.abs(c.OUT) > 1e-4 ? ', a kimeneten ' + fmtA(c.OUT) : '') + '</p>';
   }
   const kits = kitsHaving(pl.p).map((k) => '<span class="chip k' + k + '">' + KIT_SHORT[k] + '</span>').join(' ');
   const card = cardFor(pl.p);
@@ -4421,7 +4437,7 @@ function renderPanel() {
     const q = ex.guess;
     body.append(sayBlock(q.q[S.age], { auto: true }));
     const opts = el('div', 'opts');
-    q.opts.forEach(([txt, icon], idx) => {
+    optOrder(ex.id + ':guess', q.opts.length).forEach((idx) => { const [txt, icon] = q.opts[idx];
       const b = el('button', 'opt'); b.append(guessIcon(icon)); b.append(document.createTextNode(txt));
       if (S.guess != null) { if (idx === q.right) b.classList.add('right'); else if (idx === S.guess) b.classList.add('wrong'); }
       b.onclick = () => { S.guess = idx; renderPanel(); if (S.autoread) speak(feedbackText(idx === q.right, 'Eltaláltad!', q.after[S.age])); };
@@ -4476,6 +4492,13 @@ function renderPanel() {
 }
 
 // „Ellenőrizd magad!”: egy új helyzetről szóló kérdés a kísérlet végén (megértette-e, nem csak megcsinálta)
+// a válaszlehetőségek sorrendje kérdésenként rögzített, de keverhető (különben mindig az első lenne a jó)
+function optOrder(key, n) {
+  let h = 2166136261; for (const ch of key) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
+  const idx = Array.from({ length: n }, (_, i) => i);
+  for (let i = n - 1; i > 0; i--) { h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0; const j = h % (i + 1); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+  return idx;
+}
 // a visszajelzés: jó válasznál nem kettőzzük az „Igen!”-t, rossz válasznál elhagyjuk az elején álló helyeslést
 const AFFIRM = /^(Igen|Így van|Pontosan|Úgy van)[!,.]\s*/;
 function feedbackText(ok, okWord, after) { return ok ? (AFFIRM.test(after) ? after : okWord + ' ' + after) : 'Nem egészen. ' + after.replace(AFFIRM, ''); }
@@ -4488,7 +4511,7 @@ function checkCard(ex) {
   d.append(el('h3', null, 'Ellenőrizd magad!'));
   d.append(sayBlock(q.q[S.age]));
   const opts = el('div', 'opts');
-  q.opts.forEach(([txt, icon], idx) => {
+  optOrder(ex.id + ':check', q.opts.length).forEach((idx) => { const [txt, icon] = q.opts[idx];
     const b = el('button', 'opt'); b.append(guessIcon(icon)); b.append(document.createTextNode(txt));
     if (S.check != null) { if (idx === q.right) b.classList.add('right'); else if (idx === S.check) b.classList.add('wrong'); }
     b.onclick = () => { S.check = idx; if (ex.card && idx === q.right) { markDone(); renderAlbumCount(); } renderPanel(); if (S.autoread) speak(feedbackText(idx === q.right, 'Igen!', q.after[S.age])); };
@@ -4694,7 +4717,7 @@ function renderCardPanel(ex) {
 function markDone() { S.done[EXPS[S.exp].id] = true; store.set('done', S.done); }
 function selectExp(i) {
   if (S.soundOn) setSound(false);
-  if (S.micStream) setMicInput(false); S.micBlow = false; S.micP = 0;
+  if (S.micStream || S.micPending) setMicInput(false); S.micBlow = false; S.micP = 0;
   S.exp = i; S.step = 0; S.guess = null; S.check = null; S.variants = {}; S.sim = null; S.maxStage = 0; S.audio = null;
   S.ctl = initCtl(EXPS[i]); S.vc = 0; S.icOpen = false;
   S.light = EXPS[i].light || 0.85;
@@ -4774,6 +4797,7 @@ $('#autoread').onclick = () => { S.autoread = !S.autoread; store.set('autoreadSe
 
 // ---------- indulás ----------
 S.exp = Math.max(0, EXPS.findIndex((e) => e.id === store.get('expId', null)));   // a kísérletet azonosítóval tároljuk (a sorrend változhat)
+if (store.get('expId', null) == null) S.stage = 0;   // régi (sorszámos) tárolás után az első lépéstől
 S.light = EXPS[S.exp].light || 0.85;
 S.ctl = initCtl(EXPS[S.exp]);
 S.maxStage = S.stage;

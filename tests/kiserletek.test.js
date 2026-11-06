@@ -439,6 +439,7 @@ test('biztonság: alapállásban egyik kísérlet sem terhel túl LED-et, tranzi
       for (let m = 0; m < (1 << sws.length); m++) for (const pv of (pots.length ? [0, 1] : [0])) for (const light of [0, 1]) {
         const opts = { light, pot: {}, meter: { ...((ex.sim && ex.sim.meter) || {}) } }; pots.forEach((p) => { opts.pot[p] = pv; });
         const s = new E.Sim(lay, opts); sws.forEach((k, i) => { s.switches[k] = !!((m >> i) & 1); });
+        const hasIC = s.nl.elements.some((e) => e.def.kind === 'ic'); let spSum = 0, spN = 0;
         for (let i = 0; i < 150; i++) {
           s.step(0.002); if (i < 60) continue;   // a bekapcsolási tranziens (kondenzátor-töltés, motorindulás) után
           for (const e of s.nl.elements) {
@@ -447,14 +448,17 @@ test('biztonság: alapállásban egyik kísérlet sem terhel túl LED-et, tranzi
             if (e.def.kind === 'npn' || e.def.kind === 'pnp') assert.ok(Math.abs(c.C) <= 0.2, `${name}: ${e.id} Ic ${c.C}`);
             if (e.def.kind === 'bat') assert.ok(Math.abs(c) <= 1, `${name}: ${e.id} ${c}`);
             if (e.def.kind === 'meter') assert.ok(Math.abs(s.meterReading(e.id).frac) <= 1.2, `${name}: ${e.id} túlterhelés ${s.meterReading(e.id).frac}`);
+            if (e.def.kind === 'spk') { spSum += Math.abs(c); spN++; }
           }
         }
+        // a hangszóró átlagos (tartós) árama; az IC-s modulok a gyártó szerint közvetlenül hajtják a hangszórót
+        if (!hasIC && spN) assert.ok(spSum / spN <= 0.12, `${name}: a hangszóró átlagárama ${spSum / spN}`);
       }
     }
   }
 });
 test('fénytávíró: nyitott vevőtartónál, szobafényben sem kap nagy egyenáramot a hangszóró', () => {
-  for (const bf of [80, 150, 300]) withBeta(bf, () => {
+  for (const bf of [80, 150, 300, 500]) withBeta(bf, () => {
     const s = new E.Sim(L.lightlink, { light: 1 }); s.photoLight = function () { return this.light; }; s.switches.S1 = false; s.switches.S1b = true;
     run(s, 0.4, 0.002); assert.ok(Math.abs(s.cur.SP) < 0.15, `β=${bf}: ${s.cur.SP}`);
   });
@@ -464,6 +468,8 @@ test('a szövegekben szereplő számok egyeznek a szimulációval', () => {
   // hang a villogóból kb. 1,6 kHz; orgona kb. 250 Hz – 3,4 kHz
   const f = (lay, opts, prep) => { const q = new E.Sim(lay, opts || {}); q.switches.S1 = true; if (prep) prep(q); const ed = []; let on = false; for (let i = 0; i < 0.04 * 48000; i++) { q.step(1 / 48000); const n = Math.abs(q.cur.SP || 0) > 0.01; if (n && !on) ed.push(q.time); on = n; } return (ed.length - 2) / (ed[ed.length - 1] - ed[1]); };
   const fs = f(L.sound); assert.ok(fs > 1400 && fs < 1800, 'hang ' + fs);
+  const sv = X.EXPS.find((e) => e.id === 'sound'); const fc1 = f(X.applyVariant(sv.variants.find((v) => v.id === 'c1'), sv.layout));
+  assert.ok(fc1 > 3100 && fc1 < 3700, 'hang C1-gyel ' + fc1);
   const lo = f(L.organ, { pot: { RV: 1 } }, (q) => { q.switches.S2 = true; }), hi = f(L.organ, { pot: { RV: 0 } }, (q) => { q.switches.S2 = true; });
   assert.ok(lo > 200 && lo < 300 && hi > 3000 && hi < 3800, `orgona ${lo}–${hi}`);
   // sziréna: nyomva a C5 kb. 0,9 V-ig töltődik
@@ -482,4 +488,14 @@ test('a service worker előre letölti az összes betűfájlt', () => {
   const sw = fs.readFileSync(path.join(__dirname, '..', 'src', 'sw.template.js'), 'utf8');
   const list = JSON.parse(/const FONTS = (\[[^\]]*\])/.exec(sw)[1].replace(/'/g, '"')).sort();
   assert.deepEqual(list, files);
+});
+
+test('U4 és rádió: ha jel közben kikapcsolod az S1-et, nem fagy be (gyors, konvergáló lépések)', () => {
+  for (const k of ['ic_u4', 'ic_u5']) {
+    const s = new E.Sim(L[k], { pot: { RV: 0.9 }, tune: { CV: 0.964 } }); for (const sw in s.switches) if (/^S1/.test(sw)) s.switches[sw] = true;
+    run(s, 0.4, 0.002); s.mic.X1 = 0.8; s.pot.RV = 0.1; run(s, 0.006, 0.002); s.switches.S1 = false;
+    const t0 = Date.now(); let bad = 0; for (let i = 0; i < 200; i++) if (!s.step(0.002)) bad++;
+    assert.equal(bad, 0, k + ': nem konvergált lépések');
+    assert.ok(Date.now() - t0 < 500, k + ': lassú lépések ' + (Date.now() - t0) + ' ms / 200 lépés');
+  }
 });

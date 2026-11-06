@@ -34,6 +34,7 @@
   --accent: #2457C5;      /* a kék Boffin-vezeték színe */
   --accent-ink: #FFFFFF;
   --spark: #F5A400;       /* áram */
+  --spark-ink: #8A5A00;   /* az áramszín szövegként (kontraszt) */
   --good: #177A49;
   --bad: #C2413A;
   --board: #D6E1EB;
@@ -49,14 +50,14 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #10151B; --surface: #19212A; --surface-2: #1E2731; --ink: #E7EDF3; --muted: #98A5B3; --line: #2C3846;
-    --accent: #6F9BFF; --accent-ink: #0D1520; --spark: #FFC23D; --good: #45C983; --bad: #F07067;
+    --accent: #6F9BFF; --accent-ink: #0D1520; --spark: #FFC23D; --spark-ink: #FFC23D; --good: #45C983; --bad: #F07067;
     --board: #1C2733; --board-edge: #2C3A49; --post: #4E6074; --label: #7D8FA3; --shadow: rgba(0, 0, 0, .45);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #10151B; --surface: #19212A; --surface-2: #1E2731; --ink: #E7EDF3; --muted: #98A5B3; --line: #2C3846;
-  --accent: #6F9BFF; --accent-ink: #0D1520; --spark: #FFC23D; --good: #45C983; --bad: #F07067;
+  --accent: #6F9BFF; --accent-ink: #0D1520; --spark: #FFC23D; --spark-ink: #FFC23D; --good: #45C983; --bad: #F07067;
   --board: #1C2733; --board-edge: #2C3A49; --post: #4E6074; --label: #7D8FA3; --shadow: rgba(0, 0, 0, .45);
   color-scheme: dark;
 }
@@ -121,7 +122,7 @@ button, .ctrl, .seg, #ctrls, #board, .lightctl, .meterctl { -webkit-user-select:
 .pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 3px 10px; font-size: 13px; font-weight: 700; background: var(--surface-2); color: var(--muted); }
 .pill.live { color: var(--good); }
 .pill.live::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
-.pill.slow { color: var(--spark); }
+.pill.slow { color: var(--spark-ink); }   /* a narancs áramszín szövegként túl világos */
 .boardscroll { overflow-x: auto; }
 svg.board { display: block; width: 100%; height: auto; min-width: 520px; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
 .ctrls { display: flex; flex-wrap: wrap; gap: 10px; padding: 10px 6px 4px; align-items: center; }

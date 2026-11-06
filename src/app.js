@@ -107,6 +107,10 @@ function speak(text) {
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text.replace(/µF/g, ' mikrofarád').replace(/kΩ/g, ' kiloohm').replace(/Ω/g, ' ohm').replace(/mA/g, ' milliamper').replace(/ V\b/g, ' volt'));
     u.lang = huVoice.lang || 'hu-HU'; u.voice = huVoice; u.rate = S.age === 'k' ? 0.92 : 1;
+    u.onerror = () => {   // ha az online (természetes) hang nem érhető el, egyszer újra a helyi magyar hanggal
+      if (u.retried) return; const local = speechSynthesis.getVoices().find((v) => /^hu(-|_|$)/i.test(v.lang) && v.localService && v !== huVoice);
+      if (!local) return; const u2 = new SpeechSynthesisUtterance(u.text); u2.retried = true; u2.lang = local.lang; u2.voice = local; u2.rate = u.rate; huVoice = local; speechSynthesis.speak(u2);
+    };
     speechSynthesis.speak(u);
   } catch (e) { /* nincs beszédszintézis */ }
 }
@@ -312,7 +316,7 @@ function drawPart(parent, pl, level, contacts, opts) {
     const lab = svgEl('text', { x: 0, y: 19, 'text-anchor': 'middle', 'font-size': 13, 'font-weight': 800, fill: '#fff', 'font-family': 'var(--font-display)' }, body); lab.textContent = 'B1 · 3 V';
   } else {
     svgEl('rect', { x: -W / 2, y: -H / 2, width: W, height: H, rx: 12, fill: col, stroke: 'rgba(0,0,0,.28)', 'stroke-width': 2 }, body);
-    const ink = def.kind === 'res' ? '#3B2A00' : '#fff';
+    const ink = def.kind === 'res' ? '#3B2A00' : (def.kind === 'lamp' || def.kind === 'coil' || def.kind === 'motor') ? '#1F2933' : '#fff';
     const sym = svgEl('g', { stroke: ink, fill: 'none', 'stroke-width': 2.4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, body);
     const flipText = Math.abs(ang) > 90;
     const label = (txt, y, size, weight) => {
@@ -598,7 +602,7 @@ function frame(ts) {
       for (const gl of it.glows) {
         if (gl.type === 'led') { const a = Math.abs(c || 0); const b = c > 0 ? Math.min(1, Math.sqrt(a / 0.01)) : 0; /* 10 mA: teljes fény, 0,3 mA: épp pislákol */
           if (gl.rgb) { const col = RGB_SEQ[Math.floor((live ? S.sim.time : 0) / 0.8) % RGB_SEQ.length]; gl.el.setAttribute('fill', col); gl.lens.setAttribute('fill', col); } gl.el.setAttribute('opacity', (b * 0.85).toFixed(2)); gl.lens.setAttribute('opacity', b.toFixed(2)); }
-        else if (gl.type === 'lamp') { const b = Math.min(1, Math.abs(c || 0) / 0.15); gl.el.setAttribute('opacity', (b * 0.9).toFixed(2)); }
+        else if (gl.type === 'lamp') { const b = Math.min(1, Math.pow(Math.abs(c || 0) / (it.def.Inom || 0.2), 1.5));   /* a névleges teljesítményhez képest */ gl.el.setAttribute('opacity', (b * 0.9).toFixed(2)); }
         else if (gl.type === 'spk') { const b = Math.min(1, Math.abs(c || 0) / 0.02); gl.el.setAttribute('opacity', (b * 0.9).toFixed(2)); gl.el.setAttribute('r', 18 + b * 8); }
         else if (gl.type === 'mic') { const p = live ? S.sim.mic[it.id] || 0 : 0; gl.el.setAttribute('opacity', (p * 0.9).toFixed(2)); gl.el.setAttribute('r', 16 + p * 9); }
         else if (gl.type === 'shade') { gl.el.setAttribute('opacity', ((1 - S.light) * 0.75).toFixed(2)); }
@@ -610,7 +614,7 @@ function frame(ts) {
       if (it.icAct) { const st = live && S.sim.ic[it.id]; it.icAct.setAttribute('opacity', st && st.active ? (st.on ? 1 : 0.35) : 0); }
       if (it.icRGB) { const st = live && S.sim.ic[it.id]; const on = st && st.active && st.rgb.some((x) => x); it.icRGB.setAttribute('fill', on ? rgbCss(st.rgb) : '#555'); it.icGlow.setAttribute('fill', on ? rgbCss(st.rgb) : '#fff'); it.icGlow.setAttribute('opacity', on ? 0.8 : 0); }
       if (it.objLabel) { const nm = S.ctl.objName[it.id] || '?'; if (it.objLabel.textContent !== nm) it.objLabel.textContent = nm; }
-      if (it.capBar) { const vC = live ? S.sim.capV[it.id] || 0 : 0; it.capBar.el.setAttribute('width', (Math.min(1, Math.abs(vC) / 3) * it.capBar.w).toFixed(1)); }
+      if (it.capBar) { const vC = live ? S.sim.capV[it.id] || 0 : 0; const sc = (EXPS[S.exp].sim && EXPS[S.exp].sim.capScale) || 3; it.capBar.el.setAttribute('width', (Math.min(1, Math.abs(vC) / sc) * it.capBar.w).toFixed(1)); }
       if (it.isSwitch) {
         const on = live ? !!S.sim.switches[it.id] : false;
         const blade = it.g.querySelector('.swblade');
@@ -630,7 +634,7 @@ function audioCfg() { return EXPS[S.exp].audio || { type: 'loop', probe: 'SP' };
 function ensureAC() {
   const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
   if (!S.ac) { try { S.ac = new AC(); } catch (e) { return null; } }
-  if (S.ac.state === 'suspended') S.ac.resume().catch(() => {});
+  if (S.ac.state === 'suspended' || S.ac.state === 'interrupted') S.ac.resume().catch(() => {});
   return S.ac;
 }
 const tick0 = () => new Promise((r) => setTimeout(r, 0));
@@ -782,7 +786,7 @@ async function setMicInput(on) {
   const req = S.micReq = (S.micReq || 0) + 1;   // a közben elavult kérés eredményét eldobjuk
   if (!on) { S.micPending = false; if (S.micStream) S.micStream.getTracks().forEach((t) => t.stop()); S.micStream = null; S.micAn = null; if (S.soundOn && audioCfg().type === 'micamp') setSound(true); else renderControls(); return; }
   if (S.micPending) return; S.micPending = true;
-  const ac = ensureAC(); if (!ac || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { S.micErr = 'Ez a böngésző nem engedi a mikrofont.'; renderControls(); return; }
+  const ac = ensureAC(); if (!ac || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { S.micPending = false; S.micErr = 'Ez a böngésző nem engedi a mikrofont.'; renderControls(); return; }
   try {
     // az erősítős kísérleteknél visszhangszűrés: a tablet hangszórója ne gerjedjen be a mikrofonon át
     const echo = audioCfg().type === 'micamp';
@@ -1070,7 +1074,7 @@ function onPartClick(ev) {
     if (typeof c === 'number' && def.kind !== 'wire') extra = '<p><b style="font-size:16px;display:inline">Most:</b> ' + fmtA(c) + '</p>';
     if (c && typeof c === 'object' && (def.kind === 'npn' || def.kind === 'pnp')) extra = '<p><b style="font-size:16px;display:inline">Most:</b> bázis ' + fmtA(c.B) + ', kollektor ' + fmtA(c.C) + '</p>';
     else if (c && typeof c === 'object' && def.kind === 'pot') extra = '<p><b style="font-size:16px;display:inline">Most:</b> a csúszkán ' + fmtA(c.w || 0) + '</p>';
-    else if (c && typeof c === 'object' && def.kind === 'ic' && typeof c.N === 'number') extra = '<p><b style="font-size:16px;display:inline">Most:</b> felvett áram ' + fmtA(c.N) + '</p>';
+    else if (c && typeof c === 'object' && def.kind === 'ic' && typeof c.P === 'number') extra = '<p><b style="font-size:16px;display:inline">Most:</b> a tápból felvett áram ' + fmtA(c.P) + (typeof c.OUT === 'number' && Math.abs(c.OUT) > 1e-4 ? ', a kimeneten ' + fmtA(c.OUT) : '') + '</p>';
   }
   const kits = kitsHaving(pl.p).map((k) => '<span class="chip k' + k + '">' + KIT_SHORT[k] + '</span>').join(' ');
   const card = cardFor(pl.p);
@@ -1224,7 +1228,7 @@ function renderPanel() {
     const q = ex.guess;
     body.append(sayBlock(q.q[S.age], { auto: true }));
     const opts = el('div', 'opts');
-    q.opts.forEach(([txt, icon], idx) => {
+    optOrder(ex.id + ':guess', q.opts.length).forEach((idx) => { const [txt, icon] = q.opts[idx];
       const b = el('button', 'opt'); b.append(guessIcon(icon)); b.append(document.createTextNode(txt));
       if (S.guess != null) { if (idx === q.right) b.classList.add('right'); else if (idx === S.guess) b.classList.add('wrong'); }
       b.onclick = () => { S.guess = idx; renderPanel(); if (S.autoread) speak(feedbackText(idx === q.right, 'Eltaláltad!', q.after[S.age])); };
@@ -1279,6 +1283,13 @@ function renderPanel() {
 }
 
 // „Ellenőrizd magad!”: egy új helyzetről szóló kérdés a kísérlet végén (megértette-e, nem csak megcsinálta)
+// a válaszlehetőségek sorrendje kérdésenként rögzített, de keverhető (különben mindig az első lenne a jó)
+function optOrder(key, n) {
+  let h = 2166136261; for (const ch of key) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
+  const idx = Array.from({ length: n }, (_, i) => i);
+  for (let i = n - 1; i > 0; i--) { h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0; const j = h % (i + 1); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+  return idx;
+}
 // a visszajelzés: jó válasznál nem kettőzzük az „Igen!”-t, rossz válasznál elhagyjuk az elején álló helyeslést
 const AFFIRM = /^(Igen|Így van|Pontosan|Úgy van)[!,.]\s*/;
 function feedbackText(ok, okWord, after) { return ok ? (AFFIRM.test(after) ? after : okWord + ' ' + after) : 'Nem egészen. ' + after.replace(AFFIRM, ''); }
@@ -1291,7 +1302,7 @@ function checkCard(ex) {
   d.append(el('h3', null, 'Ellenőrizd magad!'));
   d.append(sayBlock(q.q[S.age]));
   const opts = el('div', 'opts');
-  q.opts.forEach(([txt, icon], idx) => {
+  optOrder(ex.id + ':check', q.opts.length).forEach((idx) => { const [txt, icon] = q.opts[idx];
     const b = el('button', 'opt'); b.append(guessIcon(icon)); b.append(document.createTextNode(txt));
     if (S.check != null) { if (idx === q.right) b.classList.add('right'); else if (idx === S.check) b.classList.add('wrong'); }
     b.onclick = () => { S.check = idx; if (ex.card && idx === q.right) { markDone(); renderAlbumCount(); } renderPanel(); if (S.autoread) speak(feedbackText(idx === q.right, 'Igen!', q.after[S.age])); };
@@ -1497,7 +1508,7 @@ function renderCardPanel(ex) {
 function markDone() { S.done[EXPS[S.exp].id] = true; store.set('done', S.done); }
 function selectExp(i) {
   if (S.soundOn) setSound(false);
-  if (S.micStream) setMicInput(false); S.micBlow = false; S.micP = 0;
+  if (S.micStream || S.micPending) setMicInput(false); S.micBlow = false; S.micP = 0;
   S.exp = i; S.step = 0; S.guess = null; S.check = null; S.variants = {}; S.sim = null; S.maxStage = 0; S.audio = null;
   S.ctl = initCtl(EXPS[i]); S.vc = 0; S.icOpen = false;
   S.light = EXPS[i].light || 0.85;
@@ -1577,6 +1588,7 @@ $('#autoread').onclick = () => { S.autoread = !S.autoread; store.set('autoreadSe
 
 // ---------- indulás ----------
 S.exp = Math.max(0, EXPS.findIndex((e) => e.id === store.get('expId', null)));   // a kísérletet azonosítóval tároljuk (a sorrend változhat)
+if (store.get('expId', null) == null) S.stage = 0;   // régi (sorszámos) tárolás után az első lépéstől
 S.light = EXPS[S.exp].light || 0.85;
 S.ctl = initCtl(EXPS[S.exp]);
 S.maxStage = S.stage;
