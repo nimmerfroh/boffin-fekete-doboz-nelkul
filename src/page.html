@@ -71,7 +71,7 @@ body {
   color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.5;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 12px 32px;
+  padding-block: 0 32px;
 }
 .wrap { max-width: 1280px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
 h1, h2, h3 { font-family: var(--font-display); line-height: 1.1; margin: 0; text-wrap: balance; }
@@ -82,11 +82,20 @@ button, .ctrl, .seg, #ctrls, #board, .lightctl, .meterctl { -webkit-user-select:
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
 /* fejléc */
-.top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; justify-content: space-between; }
-.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.brand svg { flex: none; }
-.brand h1 { font-size: 30px; font-weight: 800; letter-spacing: -.01em; }
-.brand p { margin: 0; color: var(--muted); font-size: 14px; }
+/* vékony, a képernyő tetejére ragadó fejléc; a kísérletválasztó belőle csúszik le */
+.top { position: sticky; top: 0; z-index: 30; background: var(--bg); padding: 10px 0; display: flex; flex-wrap: nowrap; align-items: center; gap: 10px 14px; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; flex: none; }
+.brand svg { flex: none; width: 40px; height: 40px; }
+.brand h1 { font-size: 22px; font-weight: 800; letter-spacing: -.01em; white-space: nowrap; }
+.brand p { display: none; }
+.nowbtn { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 10px; border: 2px solid var(--accent); background: var(--surface); border-radius: 16px; min-height: 52px; padding: 4px 12px 4px 6px; cursor: pointer; text-align: left; }
+.nowbtn .nowk { flex: none; min-width: 40px; height: 40px; padding: 0 6px; border-radius: 12px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-family: var(--font-display); font-weight: 800; font-size: 19px; }
+.nowbtn .nowt { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.15; }
+.nowbtn .nowt small { color: var(--muted); font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nowbtn .nowt b { font-family: var(--font-display); font-size: 18px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nowbtn .chev { flex: none; transition: transform .18s; color: var(--accent); }
+.nowbtn[aria-expanded="true"] .chev { transform: rotate(180deg); }
+.tools { flex: none; }
 .tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .seg { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px; gap: 2px; }
 .seg button { border: 0; background: transparent; border-radius: 999px; padding: 8px 14px; min-height: 44px; cursor: pointer; font-weight: 700; font-size: 15px; display: inline-flex; align-items: center; gap: 6px; }
@@ -96,15 +105,23 @@ button, .ctrl, .seg, #ctrls, #board, .lightctl, .meterctl { -webkit-user-select:
 .iconbtn[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
 
 /* fejezetek és kísérletválasztó */
-.exps { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-.cardbar { display: flex; gap: 10px; flex-wrap: wrap; }
-.chaps { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+/* lecsúszó kísérletválasztó */
+.exps { position: fixed; z-index: 40; top: var(--drawtop, 70px); left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); max-width: 1248px; margin-inline: auto;
+  max-height: calc(100vh - var(--drawtop, 70px) - 16px); max-height: calc(100dvh - var(--drawtop, 70px) - 16px); overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 18px; padding: 14px; box-shadow: 0 18px 40px var(--shadow);
+  opacity: 0; visibility: hidden; transform: translateY(-14px); transition: opacity .18s, transform .18s, visibility 0s .18s; }
+.exps.open { opacity: 1; visibility: visible; transform: none; transition: opacity .18s, transform .18s; }
+.drawback { position: fixed; inset: 0; z-index: 35; background: rgba(15, 23, 32, .35); }
+.drawhead { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.drawhead h2 { font-size: 22px; }
+.drawhead .x { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-size: 22px; line-height: 1; }
+.chaps { display: flex; flex-wrap: wrap; gap: 8px; }
 .chap { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; min-height: 44px; padding: 4px 14px 4px 5px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 15px; }
 .chap i { font-style: normal; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); font-family: var(--font-display); font-weight: 800; font-size: 17px; }
 .chap small { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 .chap[aria-selected="true"] { border-color: var(--accent); }
 .chap[aria-selected="true"] i { background: var(--accent); color: var(--accent-ink); }
-.exprow { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(170px, 1fr); gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+.exprow { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
 .exp { text-align: left; border: 2px solid transparent; background: var(--surface); border-radius: var(--r); padding: 10px 12px; cursor: pointer; display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: center; min-height: 64px; box-shadow: 0 1px 0 var(--line); }
 .exp .num { grid-row: span 2; width: 34px; height: 34px; border-radius: 10px; background: var(--surface-2); display: grid; place-items: center; font-family: var(--font-display); font-weight: 800; font-size: 20px; color: var(--muted); }
 .exp b { font-family: var(--font-display); font-size: 18px; font-weight: 800; line-height: 1.1; }
@@ -160,6 +177,8 @@ svg.board { display: block; width: 100%; height: auto; min-width: 520px; touch-a
 .stages { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
 .stage { border: 0; background: var(--surface-2); border-radius: 12px; padding: 8px 4px; min-height: 52px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0; font-size: 13px; font-weight: 700; color: var(--muted); line-height: 1.15; text-align: center; }
 .stage span { font-family: var(--font-display); font-size: 18px; font-weight: 800; }
+.stage { overflow-wrap: anywhere; hyphens: auto; }
+@media (max-width: 600px) { .stage { font-size: 11.5px; padding: 8px 2px; } .stages { gap: 4px; } }
 .stage[aria-current="step"] { background: var(--accent); color: var(--accent-ink); }
 .stage.seen:not([aria-current="step"]) { color: var(--ink); }
 .say { display: flex; gap: 10px; align-items: flex-start; }
@@ -181,7 +200,7 @@ svg.board { display: block; width: 100%; height: auto; min-width: 520px; touch-a
 .navrow { display: flex; gap: 10px; flex-wrap: wrap; }
 /* széles nézet: a munkaterület pontosan a képernyő magassága; a panel tartalma magában görgethető, a gombsor mindig látszik */
 @media (min-width: 901px) {
-  .main { height: max(520px, calc(100vh - 16px)); height: max(520px, calc(100dvh - 16px)); align-items: stretch; }
+  .main { height: max(480px, calc(100vh - var(--toph, 70px) - 24px)); height: max(480px, calc(100dvh - var(--toph, 70px) - 24px)); align-items: stretch; }
   .boardcard { overflow-y: auto; overscroll-behavior: contain; }
   .panel { overflow: hidden; }
   .panel .pbody { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-right: 6px; margin-right: -6px; }
@@ -232,7 +251,14 @@ svg.board { display: block; width: 100%; height: auto; min-width: 520px; touch-a
 .checkq h3 { margin: 0; }
 .voicewarn details { flex: 1 1 260px; } .voicewarn summary { cursor: pointer; color: var(--accent); font-weight: 700; }
 /* telefonon tömörebb fejléc: alcím nélkül, a Puki és a Felolvasás csak ikonnal */
-@media (max-width: 600px) { .brand p { display: none; } .brand h1 { font-size: 24px; } .tools .lbl { display: none; } .top { gap: 10px; } }
+/* keskenyebb képernyőn a cím helyett csak a logó (a DEV címke megmarad), a gombokon csak ikon */
+@media (max-width: 1180px) { .brand h1 { font-size: 0; } .tools #puki .lbl, .tools #autoread .lbl { display: none; } }
+@media (max-width: 900px) { .nowbtn .nowt small { display: none; } .nowbtn .nowt b { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; font-size: 16px; line-height: 1.12; } }
+@media (max-width: 600px) { .chaps { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } .chap { padding-right: 8px; } }
+@media (max-width: 900px) { .tools .lbl, .seg .ev { display: none; } .seg button { padding: 8px 12px; } .seg .age { min-width: 20px; text-align: center; } }
+/* telefonon a fejléc két sorban, és nem ragad a tetejére (kevés a hely) */
+@media (max-width: 600px) { .top { position: static; flex-wrap: wrap; } .nowbtn { order: 3; flex-basis: 100%; } .tools { flex: 1 1 auto; justify-content: flex-end; gap: 6px; } .tools .iconbtn { padding: 0 11px; } .seg button { padding: 8px 9px; } .brand svg { width: 36px; height: 36px; } }
+@media (prefers-reduced-motion: reduce) { .exps, .exps.open, .nowbtn .chev { transition: none; } }
 /* keskeny nézetben az építési lépés a rács alatt is látszik */
 .buildbar { display: none; flex-direction: column; gap: 8px; width: 100%; }
 .buildbar p { margin: 0; font-size: 18px; font-weight: 700; }
@@ -242,7 +268,7 @@ svg.board { display: block; width: 100%; height: auto; min-width: 520px; touch-a
 
 /* alkatrész-album */
 .album { display: flex; flex-direction: column; gap: 14px; padding: 18px; }
-.album[hidden], .main[hidden], .exps[hidden] { display: none !important; }
+.album[hidden], .main[hidden] { display: none !important; }
 .albumhead { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; justify-content: space-between; }
 .albumhead p { margin: 4px 0 0; color: var(--muted); max-width: 60ch; }
 .albumcount { font-size: 17px; }
@@ -287,11 +313,16 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
         <p>IC-mentes kísérletek a Boffin I 300, II Light és II My Home alkatrészeiből</p>
       </div>
     </div>
+    <button class="nowbtn" id="nowbtn" aria-expanded="false" aria-controls="exps">
+      <span class="nowk" id="nowk">A1</span>
+      <span class="nowt"><small id="nows">Kísérletek</small><b id="nowt"></b></span>
+      <svg class="chev" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
     <div class="tools">
       <div class="seg" role="group" aria-label="Ki játszik?">
-        <button data-age="k" aria-pressed="false"><span class="age">5</span> éves</button>
-        <button data-age="m" aria-pressed="true"><span class="age">7</span> éves</button>
-        <button data-age="n" aria-pressed="false"><span class="age">11</span> éves</button>
+        <button data-age="k" aria-label="5 éves" aria-pressed="false"><span class="age">5</span><span class="ev"> éves</span></button>
+        <button data-age="m" aria-label="7 éves" aria-pressed="true"><span class="age">7</span><span class="ev"> éves</span></button>
+        <button data-age="n" aria-label="11 éves" aria-pressed="false"><span class="age">11</span><span class="ev"> éves</span></button>
       </div>
       <button class="iconbtn" id="albumbtn" aria-pressed="false" title="Ismerkedés az alkatrészekkel" aria-label="Alkatrészek">
         <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 12h3l2-4 2 8 2-4h1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -317,6 +348,7 @@ footer { color: var(--muted); font-size: 13px; max-width: 80ch; }
     <div class="albumgrid" id="albumgrid"></div>
   </section>
 
+  <div class="drawback" id="drawback" hidden></div>
   <nav class="exps" id="exps" aria-label="Kísérletek"></nav>
 
   <section class="main">

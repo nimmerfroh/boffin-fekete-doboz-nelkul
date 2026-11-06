@@ -1372,10 +1372,12 @@ function refreshBoard() {
 function focusWork() {
   if (!S.booted) return;
   const m = document.querySelector('.main'); if (!m) return;
+  // a munkaterület teteje a ragadós fejléc alá kerüljön (telefonon a fejléc nem ragad, ott a képernyő tetejére)
+  const hd = $('.top'); const off = (hd && getComputedStyle(hd).position === 'sticky' ? hd.offsetHeight : 0) + 8;
   const top = m.getBoundingClientRect().top;
-  if (Math.abs(top - 8) < 4) return;
+  if (Math.abs(top - off) < 24 && top >= off - 4) return;
   const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  window.scrollTo({ top: Math.max(0, scrollY + top - 8), behavior: reduce ? 'auto' : 'smooth' });
+  window.scrollTo({ top: Math.max(0, scrollY + top - off), behavior: reduce ? 'auto' : 'smooth' });
 }
 function goStage(i) {
   const prev = S.stage;
@@ -1408,7 +1410,7 @@ function backToExps() {
 function renderAlbumCount() { const c = $('#albumcount'); if (c) { const list = CARD_LIST(); c.textContent = list.filter((e) => S.done[e.id]).length + ' / ' + list.length; } }
 function showAlbum(on) {
   S.album = on;
-  $('#album').hidden = !on; $('.main').hidden = on; $('#exps').hidden = on;
+  $('#album').hidden = !on; $('.main').hidden = on; setDrawer(false); updateNow();
   $('#albumbtn').setAttribute('aria-pressed', String(on));
   if (on) {
     if (S.soundOn) setSound(false);
@@ -1537,15 +1539,13 @@ function selectExp(i) {
 }
 function renderStrip() {
   const nav = $('#exps'); nav.innerHTML = '';
-  nav.hidden = !!S.album;
-  // alkatrészkártyán a fejezetek helyett egy rövid sáv: vissza a kísérletekhez vagy az albumhoz
-  if (EXPS[S.exp].card) {
-    const bar = el('div', 'cardbar');
-    const b1 = el('button', 'btn primary', '← Vissza a kísérletekhez'); b1.onclick = backToExps;
-    const b2 = el('button', 'btn', 'Alkatrész-album'); b2.onclick = () => showAlbum(true);
-    bar.append(b1, b2); nav.append(bar); return;
-  }
-  const cur = EXPS[S.exp].chapter;
+  updateNow();
+  // a lecsúszó választóban a fejezetgomb csak a listát váltja; kísérletet a kártyájára koppintva választunk
+  const base = EXPS[S.exp].card ? EXPS[S.lastExp != null ? S.lastExp : 0].chapter : EXPS[S.exp].chapter;
+  const cur = S.navChap || base;
+  const head = el('div', 'drawhead'); head.append(el('h2', null, 'Válassz kísérletet'));
+  const x = el('button', 'x', '×'); x.setAttribute('aria-label', 'Bezárás'); x.onclick = () => setDrawer(false); head.append(x);
+  nav.append(head);
   const chaps = el('div', 'chaps'); chaps.setAttribute('role', 'tablist'); chaps.setAttribute('aria-label', 'Fejezetek');
   for (const c of CHAPTERS) {
     const list = EXPS.filter((e) => e.chapter === c.id);
@@ -1555,7 +1555,7 @@ function renderStrip() {
     b.innerHTML = '<i></i><span></span><small></small>';
     b.querySelector('i').textContent = c.id; b.querySelector('span').textContent = c.short; b.querySelector('small').textContent = done + '/' + list.length;
     b.title = c.title;
-    b.onclick = () => { if (c.id !== cur) { const next = list.find((e) => !S.done[e.id]) || list[0]; selectExp(EXPS.indexOf(next)); } };
+    b.onclick = () => { S.navChap = c.id; renderStrip(); const f = $('#exps .chap[aria-selected="true"]'); if (f) f.focus({ preventScroll: true }); };
     chaps.append(b);
   }
   const row = el('div', 'exprow');
@@ -1566,13 +1566,37 @@ function renderStrip() {
     if (i === S.exp) b.setAttribute('aria-current', 'true');
     b.innerHTML = '<span class="num">' + (S.done[ex.id] ? '✓' : cur + k) + '</span><b></b><small></small>';
     b.querySelector('b').textContent = ex.title; b.querySelector('small').textContent = ex.tag;
-    b.onclick = () => selectExp(i);
+    b.onclick = () => pickExp(i);
     row.append(b);
   });
   nav.append(chaps, row);
-  // a kiválasztott fejezet és kísérlet mindig látszódjon a vízszintesen görgethető sorokban
-  const show = (box, it) => { if (!it) return; const l = it.offsetLeft - box.offsetLeft, r = l + it.offsetWidth; if (l < box.scrollLeft || r > box.scrollLeft + box.clientWidth) box.scrollLeft = Math.max(0, l - 16); };
-  requestAnimationFrame(() => { show(chaps, chaps.querySelector('[aria-selected="true"]')); show(row, row.querySelector('[aria-current]')); });
+}
+// a fejléc közepén lévő gomb: mi van most nyitva (koppintásra lecsúszik a választó)
+function updateNow() {
+  const ex = EXPS[S.exp]; let k, sub, t;
+  if (S.album) { k = '★'; sub = 'Alkatrész-album · kísérletek'; t = 'Matricák'; }
+  else if (ex.card) { k = '★'; sub = 'Alkatrész · kísérletek'; t = ex.title; }
+  else { k = ex.chapter + (EXPS.filter((e) => e.chapter === ex.chapter).indexOf(ex) + 1); sub = 'Kísérletek – koppints a váltáshoz'; t = ex.title; }
+  $('#nowk').textContent = k; $('#nows').textContent = sub; $('#nowt').textContent = t;
+  $('#nowbtn').setAttribute('aria-label', 'Kísérletek: most ' + t + '. Koppints a választáshoz.');
+}
+function setDrawer(on) {
+  const d = $('#exps'); if (!d || on === !!S.drawer) return;
+  S.drawer = on;
+  if (on) {
+    S.navChap = null; renderStrip();
+    const hb = $('.top').getBoundingClientRect().bottom;
+    document.documentElement.style.setProperty('--drawtop', Math.max(8, Math.round(hb) + 4) + 'px');
+  }
+  d.classList.toggle('open', on); $('#drawback').hidden = !on; $('#nowbtn').setAttribute('aria-expanded', String(on));
+  if (on) requestAnimationFrame(() => { const f = d.querySelector('[aria-current]') || d.querySelector('.chap[aria-selected="true"]'); if (f) f.focus({ preventScroll: true }); if (f) f.scrollIntoView({ block: 'nearest' }); });
+  else if (d.contains(document.activeElement)) $('#nowbtn').focus({ preventScroll: true });
+}
+function pickExp(i) {
+  setDrawer(false);
+  if (S.album) showAlbum(false);
+  if (i !== S.exp) selectExp(i);
+  focusWork();
 }
 function setAge(a) {
   S.age = a; store.set('age', a);
@@ -1603,6 +1627,11 @@ $('#puki').onclick = async () => {
   } catch (e) { /* offline és még nincs letöltve, vagy nem sikerült dekódolni */ }
 };
 $('#albumbtn').onclick = () => showAlbum(!S.album);
+$('#nowbtn').onclick = () => setDrawer(!S.drawer);
+$('#drawback').onclick = () => setDrawer(false);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && S.drawer) setDrawer(false); });
+// a ragadós fejléc magassága: ennyivel kisebb a munkaterület
+{ const hd = $('.top'); const upd = () => document.documentElement.style.setProperty('--toph', hd.offsetHeight + 'px'); upd(); if (window.ResizeObserver) new ResizeObserver(upd).observe(hd); }
 // ha az app háttérbe kerül (másik app, lezárt képernyő): a hang és a mikrofon leáll
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) return;
