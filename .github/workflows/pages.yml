@@ -1,0 +1,71 @@
+# A webhely kiadása: az éles (main) ág a gyökérbe, a fejlesztői (dev) ág a /dev/ alá.
+# Bármelyik ágra feltöltve mindkettő újraépül a saját legfrissebb állapotából.
+name: Webhely kiadása (main + dev)
+
+on:
+  push:
+    branches: [main, dev]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# mindig csak a legutolsó futás számít: az a két ág legfrissebb állapotát adja ki
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Az éles ág letöltése
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          path: main
+      - name: Van-e fejlesztői ág?
+        id: dev
+        run: |
+          if git ls-remote --exit-code --heads "https://github.com/${{ github.repository }}" dev >/dev/null; then echo "van=1" >> "$GITHUB_OUTPUT"; fi
+      - name: A fejlesztői ág letöltése
+        if: steps.dev.outputs.van == '1'
+        uses: actions/checkout@v5
+        with:
+          ref: dev
+          path: dev
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Tesztek (éles)
+        working-directory: main
+        run: node --test
+      - name: Tesztek (fejlesztői)
+        id: devtest
+        if: steps.dev.outputs.van == '1'
+        continue-on-error: true
+        working-directory: dev
+        run: node --test
+      - name: A webhely összerakása
+        run: |
+          node main/build.mjs --out _site --channel main
+          if [ "${{ steps.devtest.outcome }}" = "success" ]; then
+            node dev/build.mjs --out _site/dev --channel dev
+          else
+            echo "::warning::A fejlesztői ág tesztjei nem mentek át (vagy nincs dev ág), ezért a /dev/ most kimarad."
+          fi
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

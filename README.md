@@ -49,8 +49,17 @@ node --test           # a kísérletek ellenőrzése szimulációval (tests/*.te
 - `src/engine.js`: rácsgeometria, építési ellenőrzés, áramkör-szimulátor
 - `src/layouts.js`: a kísérletek elrendezése a rácson
 - `src/app.js`: felület, szövegek, animáció, hang
-- `index.html`: a kész, önálló oldal (ezt szolgálja ki a GitHub Pages)
-- `sw.js`, `manifest.webmanifest`, `icons/`: offline működés és telepíthető webapp (a `sw.js`-t a build készíti a `src/sw.template.js`-ből)
+- `index.html`, `sw.js`: a kész, önálló oldal és a service worker (helyi kipróbáláshoz; a `sw.js`-t a build készíti a `src/sw.template.js`-ből)
+- `manifest.webmanifest`, `icons/`, `hangok/`: telepíthető webapp, ikonok, hangok
+
+### Ágak és címek
+
+| Ág | Cím | Mire való |
+|---|---|---|
+| `main` | https://nimmerfroh.github.io/boffin-fekete-doboz-nelkul/ | éles változat |
+| `dev` | https://nimmerfroh.github.io/boffin-fekete-doboz-nelkul/dev/ | fejlesztői változat (DEV címkével): itt próbáljuk ki az újdonságokat |
+
+A fejlesztés a `dev` ágon folyik; ami ott bevált, az kerül át a `main`-be. Bármelyik ágra feltöltve a `.github/workflows/pages.yml` lefuttatja mindkét ág tesztjeit, és kiadja a webhelyet: a `main`-t a gyökérbe, a `dev`-et a `/dev/` alá (`node build.mjs --out _site --channel main`, illetve `--out _site/dev --channel dev`). A két változat külön appként telepíthető, és külön offline tárolót használ.
 
 ## Licenc
 
