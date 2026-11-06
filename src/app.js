@@ -1397,10 +1397,18 @@ function cardFor(p) {
   return list.find((c) => c.part === p) || list.find((c) => P[c.part].kind === k) || null;
 }
 function openCard(i) { showAlbum(false); selectExp(i); focusWork(); }
+// vissza a kísérletekhez: oda, ahol a gyerek utoljára járt (ha nincs ilyen, az első még el nem végzett kísérlethez)
+function backToExps() {
+  showAlbum(false);
+  if (!EXPS[S.exp].card) return;
+  let i = S.lastExp;
+  if (i == null || !EXPS[i] || EXPS[i].card) { i = EXPS.findIndex((e) => !e.card && !S.done[e.id]); if (i < 0) i = 0; }
+  selectExp(i); focusWork();
+}
 function renderAlbumCount() { const c = $('#albumcount'); if (c) { const list = CARD_LIST(); c.textContent = list.filter((e) => S.done[e.id]).length + ' / ' + list.length; } }
 function showAlbum(on) {
   S.album = on;
-  $('#album').hidden = !on; $('.main').hidden = on; $('#exps').hidden = on || !!EXPS[S.exp].card;
+  $('#album').hidden = !on; $('.main').hidden = on; $('#exps').hidden = on;
   $('#albumbtn').setAttribute('aria-pressed', String(on));
   if (on) {
     if (S.soundOn) setSound(false);
@@ -1511,6 +1519,7 @@ function renderCardPanel(ex) {
   if (ex.check) body.append(checkCard(ex));
   const nav = el('div', 'navrow');
   const back = el('button', 'btn', '← Album'); back.onclick = () => showAlbum(true); nav.append(back);
+  const toExps = el('button', 'btn', 'Kísérletek'); toExps.onclick = backToExps; nav.append(toExps);
   const list = CARD_LIST(); const k2 = list.indexOf(ex);
   if (k2 < list.length - 1) { const nx = el('button', 'btn primary', 'Következő: ' + list[k2 + 1].title); nx.onclick = () => { openCard(EXPS.indexOf(list[k2 + 1])); }; nav.append(nx); }
   panel.append(nav);
@@ -1519,6 +1528,7 @@ function markDone() { S.done[EXPS[S.exp].id] = true; store.set('done', S.done); 
 function selectExp(i) {
   if (S.soundOn) setSound(false);
   if (S.micStream || S.micPending) setMicInput(false); S.micBlow = false; S.micP = 0;
+  if (!EXPS[i].card) S.lastExp = i;
   S.exp = i; S.step = 0; S.guess = null; S.check = null; S.variants = {}; S.sim = null; S.maxStage = 0; S.audio = null;
   S.ctl = initCtl(EXPS[i]); S.vc = 0; S.icOpen = false;
   S.light = EXPS[i].light || 0.85;
@@ -1527,7 +1537,14 @@ function selectExp(i) {
 }
 function renderStrip() {
   const nav = $('#exps'); nav.innerHTML = '';
-  nav.hidden = !!EXPS[S.exp].card || !!S.album;
+  nav.hidden = !!S.album;
+  // alkatrészkártyán a fejezetek helyett egy rövid sáv: vissza a kísérletekhez vagy az albumhoz
+  if (EXPS[S.exp].card) {
+    const bar = el('div', 'cardbar');
+    const b1 = el('button', 'btn primary', '← Vissza a kísérletekhez'); b1.onclick = backToExps;
+    const b2 = el('button', 'btn', 'Alkatrész-album'); b2.onclick = () => showAlbum(true);
+    bar.append(b1, b2); nav.append(bar); return;
+  }
   const cur = EXPS[S.exp].chapter;
   const chaps = el('div', 'chaps'); chaps.setAttribute('role', 'tablist'); chaps.setAttribute('aria-label', 'Fejezetek');
   for (const c of CHAPTERS) {
@@ -1593,7 +1610,7 @@ document.addEventListener('visibilitychange', () => {
   if (S.micStream || S.micPending) setMicInput(false);
   try { if (S.ac && S.ac.state === 'running') S.ac.suspend(); } catch (e) { /* nincs */ }
 });
-$('#albumback').onclick = () => { showAlbum(false); if (EXPS[S.exp].card) { const first = EXPS.findIndex((e) => !e.card && !S.done[e.id]); selectExp(first >= 0 ? first : 0); } };
+$('#albumback').onclick = backToExps;
 $('#autoread').onclick = () => { S.autoread = !S.autoread; store.set('autoreadSet', true); syncAutoread(); if (!S.autoread) { try { speechSynthesis.cancel(); } catch (e) { /* nincs */ } } };
 
 // ---------- indulás ----------
