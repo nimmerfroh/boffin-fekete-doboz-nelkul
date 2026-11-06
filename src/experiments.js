@@ -150,8 +150,8 @@ const EXPS = [
     variants: [],
     hint: {
       k: 'Válassz egy tárgyat lent, és nézd: világít a lámpa? Kileng a mutató?',
-      m: 'Válassz tárgyat. Ha a mutató alig mozdul, kapcsold a műszert érzékenyebb állásba (0,5 mA).',
-      n: 'Válassz tárgyat, és váltogasd a méréshatárt. A csapvíz és a kéz árama a LED-nek kevés, de a 0,5 mA-es állásban látszik.',
+      m: 'Válassz tárgyat. Mindig az 50 mA-es állásban kezdd! Ha a mutató alig mozdul, kapcsold érzékenyebbre (0,5 mA), de mielőtt másik tárgyat teszel be, kapcsold vissza 50 mA-re: egy jól vezető tárgy (fém, ceruzabél) túlterhelné a 0,5 mA-es állást.',
+      n: 'Válassz tárgyat, és váltogasd a méréshatárt (mindig 50 mA-ről indulj). A csapvíz és a kéz árama a LED-nek kevés, de a 0,5 mA-es állásban látszik. Fémmel vagy grafittal viszont a 0,5 mA-es állás 4–8-szorosan túlterhelődne.',
     },
     why: {
       k: 'Van, ami átengedi az áramot, mint a fém és a ceruza hegye. Ezek a vezetők. Van, ami nem, mint a papír és a műanyag. Ezek a szigetelők. A víz és a kezed is átenged egy kicsit, de csak nagyon keveset.',
@@ -202,7 +202,7 @@ const EXPS = [
     variants: [],
     hint: {
       k: 'Kapcsold be, és húzd a gombot! Nézd a lámpát és a mutatót.',
-      m: 'Kapcsold be az S1-et, és tekerd az RV-t. Ha a mutató már alig mozdul, kapcsold a műszert 0,5 mA-re.',
+      m: 'Kapcsold be az S1-et, és tekerd az RV-t. Ha a mutató már alig mozdul, kapcsold a műszert 0,5 mA-re, de mielőtt visszatekered a fényes oldalra, kapcsold vissza 50 mA-re, különben a mérő túlterhelődik.',
       n: 'Figyeld, hogy a fényerő nem egyenletesen változik: a gomb elején gyorsan halványul, utána alig. Miért?',
     },
     why: {
@@ -215,7 +215,7 @@ const EXPS = [
   // ===================== B) Energia és mozgás =====================
   {
     id: 'generator', chapter: 'B', title: 'A motor mint áramfejlesztő', tag: 'Pörgesd meg, és áramot ad',
-    layout: LAY.generator, sim: { dt: 0.002, scale: 1, meter: { M6: '5V' } }, controls: [{ spin: 'M1' }, { meter: 'M6' }],
+    layout: LAY.generator, sim: { dt: 0.002, scale: 1, meter: { M6: '5V' } }, controls: [{ spin: 'M1' }, { meter: 'M6', ranges: ['5V'] }],
     intro: {
       k: 'Itt nincs elem! Pörgesd meg kézzel a motort, és figyeld a mutatót.',
       m: 'Nincs elem az áramkörben, csak egy motor és a mérőműszer. Ha a motort kézzel pörgeted, áramot termel.',
@@ -589,7 +589,7 @@ const EXPS = [
     intro: {
       k: 'Két rács, két áramkör, és nincs köztük vezeték! Az egyik nagyon gyorsan villog, a fény egy üvegszálon átmegy a másikhoz, és az megszólal.',
       m: 'Az 1. rácson egy nagyon gyors villogó van, olyan gyors, hogy a szemed nem látja. A D1 LED fényét egy üvegszálas kábel viszi át a 2. rács fototranzisztorára. A vevő a fény villogásából hangot csinál.',
-      n: 'Optikai átvitel: az adó egy kb. 2,5 kHz-es astabil multivibrátor, a D1 LED fénye üvegszálon jut a vevő fototranzisztorára (Q4). A Q4 árama vezérli a Q2c tranzisztort, ami a hangszórót hajtja. A két áramkör elektromosan teljesen független.',
+      n: 'Optikai átvitel: az adó egy kb. 2,5 kHz-es astabil multivibrátor, a D1 LED fénye üvegszálon jut a vevő fototranzisztorára (Q4). A Q4 árama az R3-on (5,1 kΩ) át vezérli a Q2c tranzisztort, ami a hangszórót hajtja; az R3 korlátozza a bázisáramot, hogy erős fénynél se folyjon nagy egyenáram a hangszórón. A két áramkör elektromosan teljesen független.',
     },
     guess: {
       q: { k: 'Ha letakarod a kábelt, hogy ne menjen át a fény, mi lesz a hanggal?', m: 'Mi történik a hanggal, ha elzárod a fényt a kábelben?', n: 'Mit hallasz, ha megszakítod az optikai összeköttetést?' },
@@ -599,7 +599,7 @@ const EXPS = [
     variants: [],
     hint: {
       k: 'Kapcsold be mindkét kapcsolót és a hangot! Aztán kapcsold ki a „Fény a kábelben” gombot.',
-      m: 'Kapcsold be mindkét S1-et és a hangot. A valódi áramkörön szakítsd meg a fényt, például húzd ki a kábelt a tartóból. A „Fény a kábelben” kapcsolóval itt is kipróbálhatod. Ki- és bekapcsolgatva morzejeleket küldhetsz!',
+      m: 'Kapcsold be mindkét S1-et és a hangot. A valódi áramkörön szakítsd meg a fényt: kapcsold ki az adót (S1), vagy fogd le ujjal a kábel adó felőli végét a tartóval együtt. A kábelt ne húzd ki a vevő tartójából, és ne hagyd úgy: a nyitott tartón át a szobafény bekapcsolja a vevőt, és a hangszóró folyamatosan áramot kap. A „Fény a kábelben” kapcsolóval itt is kipróbálhatod. Ki- és bekapcsolgatva morzejeleket küldhetsz!',
       n: 'Figyeld a fototranzisztor áramát a mérőn, és hasonlítsd össze az adó LED-jének áramával. A kijelzés 1000× lassított.',
     },
     why: {
@@ -929,7 +929,7 @@ const EXPS = [
   },
   {
     id: 'u32', chapter: 'G', title: 'Kinyitjuk: U32 dallam IC', tag: 'Zene, hangszóróval együtt',
-    layout: LAY.ic_u32, sim: { dt: 0.002, scale: 1, meter: { M6: '50mA' } }, controls: ['S1', { meter: 'M6' }, 'sound'], audio: { type: 'ic', ic: 'U32', builtin: true },
+    layout: LAY.ic_u32, sim: { dt: 0.002, scale: 1, meter: { M6: '50mA' } }, controls: ['S1', { meter: 'M6', ranges: ['50mA'] }, 'sound'], audio: { type: 'ic', ic: 'U32', builtin: true },
     inside: {
       title: 'Mi van az U32-ben?',
       blocks: ['Hangot adó rezgőkör (mint a hangszeredben)', 'Memória a dallam hangjaival', 'Beépített kis hangszóró'],
@@ -1323,9 +1323,9 @@ const CARDS = [
     id: 'p_motor', part: 'M1', symbol: 'motor', title: 'Motor', tag: 'Az áramból mozgást csinál',
     analogy: 'Mágneses forgó: az áram és a mágnes lökdösi egymást, és ettől forog.',
     layout: LAY.bench_motor, sim: { dt: 0.002, scale: 1 }, controls: ['S1'], probes: [{ ids: ['M1'], label: 'A motor árama' }],
-    variants: [{ id: 'rev', label: 'Fordítsd meg a motort', real: 'Fordítsd meg a motort: a + jele a másik oldalra kerül.', apply: (lay) => lay.map((p) => (p.p === 'M1' ? { ...p, at: 'D7', dir: 'l' } : p)) }],
+    variants: [{ id: 'rev', label: 'Fordítsd meg a motort', real: 'A valódi készleten előbb vedd le a propellert! Fordítva forogva a propeller felfelé tolja magát, és leröppenhet. Aztán fordítsd meg a motort: a + jele a másik oldalra kerül.', apply: (lay) => lay.map((p) => (p.p === 'M1' ? { ...p, at: 'D7', dir: 'l' } : p)) }],
     intro: { k: 'A motor az áramtól forog. Ha fordítva kötöd be, visszafelé forog.', m: 'A motorban tekercsek és egy mágnes van. Az áram a tekercsből mágnest csinál, és a két mágnes forgatja a tengelyt.', n: 'Egyenáramú motor: a tekercsek mágneses tere és az állandó mágnes egymásra hat. Induláskor nagy az áram, forgás közben a motor ellenfeszültséget kelt, és az áram lecsökken.' },
-    hint: { k: 'Kapcsold be, és nézd a ventilátort! Aztán fordítsd meg a motort.', m: 'Kapcsold be, figyeld az áramot induláskor és forgás közben. Aztán fordítsd meg.', n: 'Mekkora az áram induláskor, és mekkora, amikor már felpörgött? Miért?' },
+    hint: { k: 'Kapcsold be, és nézd a ventilátort! Ne hajolj fölé, amíg forog. Mielőtt megfordítod a motort, kérd meg a szülődet, hogy vegye le a propellert.', m: 'Kapcsold be, figyeld az áramot induláskor és forgás közben. A megfordítás előtt vedd le a propellert: fordítva forogva felfelé tolja magát, és leröppenhet. Ne hajolj a forgó motor fölé.', n: 'Mekkora az áram induláskor, és mekkora, amikor már felpörgött? Miért? (A megfordításhoz vedd le a propellert: fordított irányban felfelé húz, és leröppenhet.)' },
     why: { k: 'A motorban mágnesek lökdösik egymást, és ettől forog. Ha megfordítod az áramot, a lökdösés is megfordul.', m: 'Ha megfordítod a motort, az áram a másik irányba folyik a tekercsekben, a mágneses erő is megfordul, és visszafelé forog. Ugyanez a motor áramot is termel, ha te forgatod (Energia fejezet).', n: 'Forgás közben a motor generátorként is működik: a keltett feszültség szembe dolgozik az elemmel, ezért üresjárásban sokkal kisebb az áram, mint álló helyzetben.' },
     check: {
       q: { k: 'Ha két elemmel hajtanád, gyorsabban vagy lassabban forogna?', m: 'Mi történne, ha kétszer akkora feszültséggel (két elemtartóval) hajtanád a motort?', n: 'Hogyan függ az üresjárási fordulatszám a tápfeszültségtől?' },
@@ -1437,7 +1437,7 @@ const CARDS = [
     analogy: 'Vízóra: megmutatja, mennyi víz folyik át rajta.',
     layout: LAY.dimmer, sim: { dt: 0.002, scale: 1, pot: { RV: 0.3 }, meter: { M6: '50mA' } }, controls: ['S1', { pot: 'RV', label: 'Csúszka (RV)', invert: true }, { meter: 'M6' }], probes: [],
     intro: { k: 'A mérő megmutatja, mennyi áram folyik. Minél jobban kitér a mutató, annál több.', m: 'Az M6 mérőműszer a My Home dobozban van. Három állása van: 5 V (feszültség), 0,5 mA és 50 mA (áram). Áramot sorosan, a kör részeként mér.', n: 'Árammérőként kicsi a belső ellenállása (50 mA-es állásban kb. 2 Ω), sorosan kell bekötni. Feszültségmérőként nagy (5 V-os állásban 10 kΩ), a mért alkatrésszel párhuzamosan kell bekötni.' },
-    hint: { k: 'Kapcsold be, és húzd a csúszkát: figyeld a mutatót!', m: 'Próbáld ki mindhárom állást. Melyikben mutat értelmes számot?', n: 'Mi történik, ha sorosan bekötve 5 V-os állásba kapcsolod? És ha 0,5 mA-esbe?' },
+    hint: { k: 'Kapcsold be, és húzd a csúszkát: figyeld a mutatót!', m: 'Próbáld ki mindhárom állást a képernyőn. Melyikben mutat értelmes számot? A valódi mérőt mindig az 50 mA-es állásban kezdd, és ha a mutató kiakad, azonnal kapcsolj vissza.', n: 'Mi történik, ha sorosan bekötve 5 V-os állásba kapcsolod? És ha 0,5 mA-esbe? (Ezt a képernyőn nézd meg: a valódi mérőt a 0,5 mA-es állásban itt túlterhelnéd.)' },
     why: { k: 'A mérő olyan, mint egy vízóra: az áram átfolyik rajta, és közben meglöki a mutatót.', m: 'A mérőt jó állásba kell kapcsolni. Ha túl kicsi a méréshatár, a mutató kiakad. Ha feszültséget mérsz vele, a mért alkatrész mellé kell kötni, nem a körbe.', n: 'Sorosan, 5 V-os állásban a 10 kΩ-os belső ellenállás szinte elzárja a kört. Áramállásban viszont párhuzamosan kötve rövidre zárná azt, amivel párhuzamos: ezért figyelmeztet a kondenzátoros kísérlet.' },
     check: {
       q: { k: 'Ha a mérőt 50 mA-es állásban egyenesen az elemre kötnéd, mi történne?', m: 'Mi lenne, ha a mérőt áramállásban (50 mA) egyenesen az elem két végére kötnéd?', n: 'Mekkora áram folyna, ha az 50 mA-es állású mérőt közvetlenül a 3 V-os elemre kötnéd?' },

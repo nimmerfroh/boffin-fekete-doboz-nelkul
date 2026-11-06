@@ -334,7 +334,7 @@ L.lightlink = L.fast.concat([
   { p: 'Q2', at: '2:C5', dir: 'd', id: 'Q2c' },
   { p: 'Q4', at: '2:A2', dir: 'd' },
   { p: 'R4', at: '2:E2', dir: 'd' },
-  { p: 'W3', at: '2:D2', dir: 'r', id: 'Lb2' },
+  { p: 'R3', at: '2:D2', dir: 'r', id: 'R3c' },   // a bázisáram korlátozása: szobafénynél se kapjon nagy egyenáramot a hangszóró
   { p: 'SP', at: '2:A5', dir: 'd' },
   { p: 'W3', at: '2:E5', dir: 'd', id: 'Le2' },
   { p: 'S1', at: '2:A7', dir: 'd', id: 'S1b' },

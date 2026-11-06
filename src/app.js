@@ -1127,7 +1127,7 @@ function stepText(pl, level, layout) {
     const only = ex.controls.some((c) => c && c.meter === (pl.id || pl.p) && c.ranges);
     return `Tedd le a mérőműszert (M6) ${art(pn(geo.snaps[0]))} és ${art(pn(geo.snaps[1]))} pont közé, ${lv}. A + jele ${art(pn(geo.snaps[0]))} pont felé nézzen.` + (rg ? ` Állítsd a kapcsolóját ${E.METER[rg].label === '5 V' ? 'az' : 'a'} ${E.METER[rg].label} állásba.` : '') + (only ? ' Ennél a kísérletnél más állásba ne kapcsold: áramállásban a mérőn át rövidre zárnád az elemet.' : '');
   }
-  if (def.kind === 'motor') return `Tedd le a motort (${def.short}) ${art(pn(geo.snaps[0]))} és ${art(pn(geo.snaps[1]))} pont közé, ${lv}. A + jele ${art(pn(geo.snaps[0]))} pontnál legyen. Tedd rá a propellert.`;
+  if (def.kind === 'motor') return `Tedd le a motort (${def.short}) ${art(pn(geo.snaps[0]))} és ${art(pn(geo.snaps[1]))} pont közé, ${lv}. A + jele ${art(pn(geo.snaps[0]))} pontnál legyen. Tedd rá a propellert. Amíg forog, ne hajolj fölé, és ne nyúlj hozzá; ha a motor fordítva forog, a propeller leröppenhet.`;
   if (def.kind === 'jumper') return `Csíptesd ${def.color === 'red' ? 'a piros' : 'a fekete'} átkötő kábel egyik végét ${art(pn(geo.snaps[0]))} pont tetejére, a másikat ${art(pn(geo.snaps[1]))} pont tetejére.`;
   if (def.kind === 'wire') {
     if (def.n === 1) return `Tegyél egy 1-es vezetéket (kis kék gombot) ${art(pn(geo.snaps[0]))} pontra, ${lv}. Ez alátét, hogy a rá kerülő alkatrész vízszintesen álljon.`;
@@ -1425,6 +1425,7 @@ function updateWarn() {
       if (e.internal) continue; const c = S.sim.cur[e.id];
       if (e.def.kind === 'led' && typeof c === 'number' && c > 0.03) msg = 'Túl nagy áram a LED-en (' + fmtA(c) + '): a valódi LED kiégne!';
       if (e.def.kind === 'bat' && typeof c === 'number' && Math.abs(c) > 1) msg = 'Rövidzár: ' + fmtA(Math.abs(c)) + ' folyik az elemből!';
+      if (e.def.kind === 'meter') { const r = S.sim.meterReading(e.id); if (Math.abs(r.frac) > 1.2) msg = 'A mérő túlterhelődik (' + Math.abs(r.frac).toFixed(1).replace('.', ',') + '-szoros): kapcsolj nagyobb állásba!'; }
     }
   }
   // csak a tartós túláramot jelezzük (a kondenzátor feltöltésekor egy pillanatra folyó nagy áram nem rövidzár)

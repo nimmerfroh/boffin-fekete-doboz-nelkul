@@ -228,7 +228,9 @@
 
   // ---- Szimulátor (SPICE-szerű: társított modellek, pn-átmenet korlátozás, lépésfelezés) ----
   const VT = 0.025851;
-  const BJT = { Is: 1e-14, bf: 150, br: 2 };
+  // Cbe, Cbc: a tranzisztor belső kapacitásai. Nélkülük a rezgőkörök átbillenése végtelen gyors lenne: az egyenleteknek
+  // egy ponton nincs folytonos megoldásuk, és a számítás elakad. A valódi kis tranzisztorokéhoz hasonló értékek.
+  const BJT = { Is: 1e-14, bf: 150, br: 2, Cbe: 20e-12, Cbc: 5e-12 };
   root.__BJT = BJT;
   function pnjlim(vnew, vold, vt, vcrit) {
     if (vnew > vcrit && Math.abs(vnew - vold) > 2 * vt) {
@@ -257,6 +259,10 @@
         elements.push({ ...e, t: { a: e.t.a, b: mid } });
         elements.push({ idx: -1, id: e.id + '#rs', p: 'RS', def: { kind: 'res', R: e.def.Rs }, t: { a: mid, b: e.t.b }, internal: true });
       } else elements.push(e);
+      if ((e.def.kind === 'npn' || e.def.kind === 'pnp') && e.t.B >= 0) {
+        if (e.t.E >= 0) elements.push({ idx: -1, id: e.id + '#cbe', p: 'CJ', def: { kind: 'cap', C: BJT.Cbe }, t: { a: e.t.B, b: e.t.E }, internal: true });
+        if (e.t.C >= 0) elements.push({ idx: -1, id: e.id + '#cbc', p: 'CJ', def: { kind: 'cap', C: BJT.Cbc }, t: { a: e.t.B, b: e.t.C }, internal: true });
+      }
     }
     this.nl = { ...nl0, nets, elements };
     this.layout = layout;
@@ -288,7 +294,7 @@
       if (e.def.kind === 'sw') this.switches[e.id] = false;
       // a kondenzátorok kezdőfeszültségében néhány mV eltérés: a valódi áramkörökben a zaj és az
       // alkatrész-eltérések mindig kibillentik a szimmetrikus rezgőköröket, a szimulációban ez pótolja őket
-      if (e.def.kind === 'cap') this.capV[e.id] = (opts.capInit && opts.capInit[e.id] != null) ? opts.capInit[e.id] : jitter(e.id);
+      if (e.def.kind === 'cap') this.capV[e.id] = (opts.capInit && opts.capInit[e.id] != null) ? opts.capInit[e.id] : e.internal ? 0 : jitter(e.id);
       if (e.def.kind === 'npn' || e.def.kind === 'pnp') this.jx[e.id] = { vbe: 0, vbc: 0 };
       if (e.def.kind === 'led') this.jx[e.id] = { vd: 0 };
       if (e.def.kind === 'pot') this.pot[e.id] = (opts.pot && opts.pot[e.id] != null) ? opts.pot[e.id] : 0.5;
@@ -625,26 +631,17 @@
     for (let i = n - 1; i >= 0; i--) { let s = x[i]; for (let j = i + 1; j < n; j++) s -= A[i * n + j] * x[j]; x[i] = s / A[i * n + i]; }
   };
 
+  // Newton-iteráció a pn-átmenetek SPICE-féle korlátozásával (pnjlim) és fizikai feszültségkorláttal.
+  // Ha 60 iteráció alatt nem áll be, a további lépéseket felezve teszi meg (csillapítás).
   Sim.prototype._newton = function (dt) {
     const v = this.v, x = this.vnew;
-    // csomópontonkénti „bizalmi sugár”: ha egy csomópont lépésének iránya megfordul, a sugár feleződik
-    if (!this.trust || this.trust.length !== this.n) { this.trust = new Float64Array(this.n); this.lastD = new Float64Array(this.n); }
-    const tr = this.trust, ld = this.lastD; tr.fill(1); ld.fill(0);
-    for (let it = 0; it < 50; it++) {
+    for (let it = 0; it < 100; it++) {
       const limited = this._load(v, dt, this.capV);
       this._solveInto(x);
-      let conv = !limited;
-      // csillapítás csomópontonként: egy iterációban egy csomópont legfeljebb 1 V-ot mozdulhat
-      // (különben pl. egy áramforrásszerű elem miatt a megoldás két hamis érték között ugrálhat).
-      // Csomópontonként korlátozunk, hogy egy elszálló csomópont ne fogja vissza a többit.
+      let conv = !limited; const damp = it < 60 ? 1 : 0.5;
       for (let k = 0; k < this.n; k++) {
         if (!isFinite(x[k])) return false;
-        let d = x[k] - v[k];
-        if (it > 0) {
-          if (d * ld[k] < 0 && Math.abs(d) > 0.05) tr[k] = Math.max(0.02, tr[k] * 0.5);
-          if (Math.abs(d) > tr[k]) { d = Math.sign(d) * tr[k]; conv = false; }
-        }
-        ld[k] = d;
+        const d = (x[k] - v[k]) * damp;
         if (Math.abs(d) > 1e-6 + 1e-4 * Math.abs(x[k])) conv = false;
         // fizikai korlát: ezekben az áramkörökben egy csomópont sem lehet messze a tápfeszültségen kívül
         v[k] = Math.max(this.vLo, Math.min(this.vHi, v[k] + d));
@@ -701,15 +698,24 @@
   };
   Sim.prototype._restore = function (s) { this.v.set(s.v); for (const k in s.jx) Object.assign(this.jx[k], s.jx[k]); };
 
-  Sim.prototype.step = function (dt, depth) {
-    depth = depth || 0;
-    const snap = this._snap();
-    if (this._newton(dt)) { this._commit(dt); this.converged = true; return true; }
-    this._restore(snap);
-    if (depth >= 5) { this._newton(dt); this._commit(dt); this.converged = false; return false; }
-    const a = this.step(dt / 2, depth + 1);
-    const b = this.step(dt / 2, depth + 1);
-    return a && b;
+  // Egy időlépés adaptív alléptetéssel: ha a Newton-iteráció nem áll be, kisebb lépéssel próbálja újra
+  // (pl. egy rezgőkör átbillenésekor), utána fokozatosan visszanöveli a lépést. Hibás megoldást nem fogad el.
+  Sim.prototype.step = function (dt) {
+    let left = dt, h = Math.min(dt, this.hNext || dt), ok = true, n = 0;
+    const hMin = dt * 1e-7;
+    while (left > dt * 1e-12) {
+      if (h > left) h = left;
+      const snap = this._snap();
+      if (this._newton(h)) {
+        this._commit(h); left -= h; h = Math.min(dt, h * 2);
+      } else {
+        this._restore(snap);
+        if (h <= hMin || ++n > 400) { ok = false; this._commit(h); left -= h; h = Math.min(dt, h * 2); continue; }   // vészkijárat: ne akadjon el
+        h /= 4;
+      }
+    }
+    this.hNext = h; this.converged = ok;
+    return ok;
   };
 
 
