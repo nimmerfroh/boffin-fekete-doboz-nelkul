@@ -78,3 +78,7 @@ Minden fázis végén: tesztek, böngészős ellenőrzés, commit, push, a GitHu
 - ✅ U5 rádió (középhullám, a Kossuth Rádió 540 kHz-en)
 - ✅ Offline működés (telepíthető webapp)
 - A valódi készleten szerzett tapasztalatok alapján a szimuláció finomítása
+
+## Munkamenet (2026. november 6-tól)
+- A fejlesztés a `dev` ágon folyik; ami ott minden teszten átment, az automatikusan kimegy a https://nimmerfroh.github.io/boffin-fekete-doboz-nelkul/dev/ címre (DEV címkével).
+- A `main` ágba (élesbe) csak akkor kerül át, ha a dev címen kipróbáltuk, és rábólintottunk.
