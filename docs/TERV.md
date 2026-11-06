@@ -88,6 +88,11 @@ Minden fázis végén: tesztek, böngészős ellenőrzés, commit, push, a GitHu
 - A fejlesztés a `dev` ágon folyik; ami ott minden teszten átment, az automatikusan kimegy a https://nimmerfroh.github.io/boffin-fekete-doboz-nelkul/dev/ címre (DEV címkével).
 - A `main` ágba (élesbe) csak akkor kerül át, ha a dev címen kipróbáltuk, és rábólintottunk.
 
+## Képernyő-elrendezés (2026. november 6.)
+- Vékony, a képernyő tetejére ragadó fejléc; a közepén lévő gomb mutatja, mi van nyitva, és koppintásra lecsúszik belőle a fejezet- és kísérletválasztó.
+- Széles nézetben (fekvő tablet) a munkaterület pontosan kitölti a képernyőt: a rajzlap és a jobb oldali panel magában görget, a panel gombsora mindig látszik. Álló tableten és telefonon a gombsor a képernyő aljára ragad.
+- Alkatrészkártyáról egy gombnyomással vissza lehet menni a legutóbbi kísérlethez.
+
 ## Átnézések (2026. november 6.)
 - Két független átnézés (Codex gpt-6-astra és Claude Opus 5.5), aztán egy második kör (Opus) a javítások után.
 - Fő javítások: a szimulátor átbillenéskori nem konvergált lépései (belső tranzisztorkapacitások, adaptív lépésköz); biztonság a valódi készleten (fénytávíró vevője, mérő-túlterhelés, propeller); service worker és a két csatorna szétválasztása; hang- és mikrofonkezelés; kb. 35 kérdés és sok szám a szövegekben; a válaszok sorrendjének keverése; helyi betűtípusok; források és licencek a láblécben.
